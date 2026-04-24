@@ -46,8 +46,8 @@ INSTALLED_APPS = [
     'branches',
     'accounting',
     'hr',
-    # 'whitenoise.runserver_nostatic',
-    # 'whitenoise',
+    'whitenoise.runserver_nostatic',
+    'whitenoise',
 ]
 
 MIDDLEWARE = [
