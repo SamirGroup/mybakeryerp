@@ -1,0 +1,119 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novvoyxona ERP | BakeryERP</title>
+    <meta name="description" content="Novvoyxona uchun boshqaruv tizimi — Bakery Management System">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fa-solid fa-wheat-awn logo-icon"></i>
+                <h2>Novvoy<span class="highlight">ERP</span></h2>
+            </div>
+
+            <ul class="nav-links">
+                <li>
+                    <a href="/" class="{% if request.path == '/' %}active{% endif %}">
+                        <i class="fa-solid fa-chart-pie"></i>
+                        <span data-i18n="nav_dashboard">Boshqaruv paneli</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/production/" class="{% if request.path == '/production/' %}active{% endif %}">
+                        <i class="fa-solid fa-industry"></i>
+                        <span data-i18n="nav_production">Ishlab chiqarish</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/production/manage/" class="{% if '/production/manage' in request.path %}active{% endif %}">
+                        <i class="fa-solid fa-box-open"></i>
+                        <span data-i18n="nav_products">Mahsulotlar</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/sales/" class="{% if '/sales/' in request.path %}active{% endif %}">
+                        <i class="fa-solid fa-cash-register"></i>
+                        <span data-i18n="nav_sales">Sotuv</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/branches/" class="{% if '/branches/' in request.path %}active{% endif %}">
+                        <i class="fa-solid fa-store"></i>
+                        <span data-i18n="nav_branches">Filiallar</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/accounting/" class="{% if '/accounting/' in request.path %}active{% endif %}">
+                        <i class="fa-solid fa-wallet"></i>
+                        <span data-i18n="nav_accounting">Buxgalteriya</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/hr/" class="{% if '/hr/' in request.path %}active{% endif %}">
+                        <i class="fa-solid fa-users"></i>
+                        <span data-i18n="nav_hr">HR Bo'limi</span>
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Language Switcher in Sidebar footer -->
+            <div class="sidebar-footer">
+                <div class="lang-label"><i class="fa-solid fa-globe"></i> <span data-i18n="language">Til</span></div>
+                <div class="lang-switcher">
+                    <button class="lang-btn active" data-lang="uz" onclick="setLanguage('uz')" title="O'zbek (Lotin)">UZ</button>
+                    <button class="lang-btn" data-lang="uz-cyrl" onclick="setLanguage('uz-cyrl')" title="Ўзбек (Кирилл)">УЗ</button>
+                    <button class="lang-btn" data-lang="ru" onclick="setLanguage('ru')" title="Русский">RU</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="topbar">
+                <div class="breadcrumb">
+                    {% block breadcrumb %}{% endblock %}
+                </div>
+                <div class="topbar-actions">
+                    <button class="icon-btn"><i class="fa-regular fa-bell"></i></button>
+                    <div class="user-profile">
+                        <div class="avatar"><i class="fa-solid fa-user"></i></div>
+                        <span data-i18n="nav_admin">Admin</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-wrapper">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            <i class="fa-solid fa-{% if message.tags == 'success' %}circle-check{% elif message.tags == 'error' %}circle-xmark{% else %}triangle-exclamation{% endif %}"></i>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                {% block content %}
+                {% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <script src="{% static 'js/i18n.js' %}"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

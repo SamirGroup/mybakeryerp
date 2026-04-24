@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+
+{% block extra_head %}
+<style>
+    .dashboard-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; margin-bottom: 24px; }
+    .widget { background-color: white; border-radius: var(--border-radius); padding: 24px; box-shadow: var(--card-shadow); }
+    .widget.span-3 { grid-column: span 3; }
+    .widget.span-4 { grid-column: span 4; }
+    .widget.span-6 { grid-column: span 6; }
+    .widget.span-8 { grid-column: span 8; }
+    .widget-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .widget-title { font-size: 16px; font-weight: 600; color: var(--text-main); }
+    .stat-number { font-size: 28px; font-weight: 700; margin-top: 10px; color: var(--text-main); }
+    .stat-trend { font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 5px; }
+    .trend-up { color: var(--success); }
+    .text-muted { color: var(--text-muted); font-size: 13px; }
+    .chart-container { position: relative; height: 300px; width: 100%; }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}<span data-i18n="nav_dashboard">Boshqaruv paneli</span>{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid">
+
+    <!-- Today Revenue -->
+    <div class="widget span-3">
+        <div class="widget-header">
+            <div class="widget-title" data-i18n="today_revenue">Bugungi daromad</div>
+            <i class="fa-solid fa-money-bill-wave" style="color: var(--primary);"></i>
+        </div>
+        <div class="stat-number">{{ today_revenue|default:"0.00" }} UZS</div>
+        <div class="stat-trend trend-up">
+            <i class="fa-solid fa-arrow-trend-up"></i>
+            <span data-i18n="from_yesterday">Kechadan</span>
+        </div>
+    </div>
+
+    <!-- Products Produced -->
+    <div class="widget span-3">
+        <div class="widget-header">
+            <div class="widget-title" data-i18n="products_produced">Ishlab chiqarilgan</div>
+            <i class="fa-solid fa-bread-slice" style="color: var(--secondary);"></i>
+        </div>
+        <div class="stat-number">{{ today_production|default:"0" }}</div>
+        <div class="text-muted">
+            <span data-i18n="yesterday_label">Kecha</span>: {{ yesterday_production|default:"0" }}
+        </div>
+    </div>
+
+    <!-- Total Sales -->
+    <div class="widget span-3">
+        <div class="widget-header">
+            <div class="widget-title" data-i18n="total_sales">Jami sotuv</div>
+            <i class="fa-solid fa-cart-shopping" style="color: var(--info);"></i>
+        </div>
+        <div class="stat-number">{{ today_sales|default:"0" }}</div>
+        <div class="text-muted" data-i18n="completed_transactions">Bajarilgan operatsiyalar</div>
+    </div>
+
+    <!-- On Shift -->
+    <div class="widget span-3">
+        <div class="widget-header">
+            <div class="widget-title" data-i18n="on_shift">Bugun smenada</div>
+            <i class="fa-solid fa-users" style="color: var(--warning);"></i>
+        </div>
+        <div class="stat-number">{{ employees_on_shift|default:"0" }}</div>
+        <div class="text-muted" data-i18n="active_employees">Faol xodimlar</div>
+    </div>
+
+    <!-- Revenue Chart -->
+    <div class="widget span-8">
+        <div class="widget-header">
+            <div class="widget-title" data-i18n="revenue_expenses">Daromad va xarajatlar (oylik)</div>
+        </div>
+        <div class="chart-container">
+            <canvas id="revenueChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Financial Summary -->
+    <div class="widget span-4">
+        <div class="widget-header">
+            <div class="widget-title" data-i18n="financial_summary">Moliyaviy xulosa</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            <div>
+                <div class="text-muted" data-i18n="total_cash">Jami kassa qoldig'i</div>
+                <div class="stat-number" style="font-size: 22px;">{{ cash_balances|default:"0.00" }} UZS</div>
+            </div>
+            <div>
+                <div class="text-muted" data-i18n="debtors">Qarzdorlar</div>
+                <div class="stat-number" style="font-size: 22px; color: var(--success);">{{ debtors|default:"0.00" }} UZS</div>
+            </div>
+            <div>
+                <div class="text-muted" data-i18n="creditors">Kreditorlar</div>
+                <div class="stat-number" style="font-size: 22px; color: var(--danger);">{{ creditors|default:"0.00" }} UZS</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Products -->
+    <div class="widget span-6">
+        <div class="widget-header">
+            <div class="widget-title" data-i18n="top_products">Eng ko'p sotiladigan mahsulotlar</div>
+        </div>
+        <div class="chart-container" style="height: 250px;">
+            <canvas id="topProductsChart"></canvas>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Chart labels are also translated
+    function buildCharts() {
+        const ctxRevenue = document.getElementById('revenueChart').getContext('2d');
+        new Chart(ctxRevenue, {
+            type: 'line',
+            data: {
+                labels: [t('week_1'), t('week_2'), t('week_3'), t('week_4')],
+                datasets: [{
+                    label: t('income'),
+                    data: [12000, 19000, 15000, 25000],
+                    borderColor: '#D4A373',
+                    backgroundColor: 'rgba(212, 163, 115, 0.1)',
+                    tension: 0.4, fill: true
+                }, {
+                    label: t('expense'),
+                    data: [8000, 10000, 11000, 13000],
+                    borderColor: '#dc3545',
+                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                    tension: 0.4, fill: true
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } }
+        });
+
+        const ctxProducts = document.getElementById('topProductsChart').getContext('2d');
+        new Chart(ctxProducts, {
+            type: 'bar',
+            data: {
+                labels: ['Obinon', 'Patir', 'Bukhara Bread', 'Sweet Bun'],
+                datasets: [{
+                    label: t('units_sold'),
+                    data: [450, 320, 210, 150],
+                    backgroundColor: ['#D4A373', '#CCD5AE', '#E9EDC9', '#FEFAE0'],
+                    borderRadius: 4
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+    }
+
+    // Build charts after i18n is ready
+    document.addEventListener('DOMContentLoaded', buildCharts);
+</script>
+{% endblock %}

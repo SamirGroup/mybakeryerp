@@ -1,0 +1,396 @@
+<!-- {% extends 'base.html' %}
+
+{% block breadcrumb %}<span data-i18n="accounting_title">Buxgalteriya va moliya</span>{% endblock %}
+
+{% block extra_head %}
+<style>
+    .delete-btn {
+        background: none;
+        border: 1px solid var(--danger);
+        color: var(--danger);
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .delete-btn:hover {
+        background: var(--danger);
+        color: white;
+    }
+
+    .setup-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+
+    @media(max-width:900px) {
+        .setup-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="nav-tabs">
+    <button class="tab-btn active" onclick="showTab('tab-ops', this)">
+        <i class="fa-solid fa-wallet"></i> <span data-i18n="accounting_title">Operatsiyalar</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('tab-ledger', this)">
+        <i class="fa-solid fa-book"></i> <span data-i18n="recent_ledger">Jurnal</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('tab-setup', this)">
+        <i class="fa-solid fa-gear"></i> <span data-i18n="setup">Sozlamalar</span>
+        {% if not registers %}<span
+            style="background:var(--danger);color:white;border-radius:20px;padding:2px 8px;font-size:11px;margin-left:6px;">!</span>{%
+        endif %}
+    </button>
+</div>
+
+
+<div id="tab-ops" class="tab-content active">
+
+    
+    <div style="display:flex; gap:16px; margin-bottom:24px; overflow-x:auto; padding-bottom:8px;">
+        {% for reg in registers %}
+        <div class="card" style="min-width:220px; flex-shrink:0; border-left:5px solid var(--primary);">
+            <div
+                style="color:var(--text-muted); font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:6px;">
+                {{ reg.name }}</div>
+            <div style="font-size:26px; font-weight:800; color:var(--text-main);">{{ reg.balance|floatformat:0 }} <span
+                    style="font-size:14px;font-weight:400;">UZS</span></div>
+            <div style="color:var(--success); font-size:12px; margin-top:8px;">
+                <i class="fa-solid fa-circle" style="font-size:7px;"></i>
+                <span data-i18n="status_active">Faol</span>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card" style="width:100%; text-align:center; color:var(--danger); padding:20px;">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span data-i18n="no_registers_hint"> Avval "Sozlamalar" bo'limida kassa qo'shing!</span>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="grid-2">
+        
+        <div class="card">
+            <h3 style="margin-bottom:20px;">
+                <i class="fa-solid fa-file-invoice-dollar" style="color:var(--danger)"></i>
+                <span data-i18n="record_expense">Xarajatni qayd etish</span>
+            </h3>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="add_expense" value="1">
+
+                <div class="form-group">
+                    <label data-i18n="amount">Summa</label>
+                    <input type="number" step="0.01" name="amount" required class="form-control"
+                        style="font-size:20px;">
+                </div>
+
+                <div style="display:flex; gap:14px;">
+                    <div class="form-group" style="flex:1;">
+                        <label data-i18n="from_register">Kassadan</label>
+                        <select name="register" required class="form-control">
+                            <option value="" data-i18n="opt_select">-- Tanlang --</option>
+                            {% for reg in registers %}
+                            <option value="{{ reg.id }}">{{ reg.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label data-i18n="category">Kategoriya</label>
+                        <select name="category" required class="form-control">
+                            <option value="" data-i18n="opt_select">-- Tanlang --</option>
+                            {% for cat in expense_cats %}
+                            <option value="{{ cat.id }}">{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="description">Tavsif</label>
+                    <input type="text" name="description" class="form-control"
+                        data-i18n-placeholder="expense_placeholder">
+                </div>
+
+                <button type="submit" class="btn"
+                    style="width:100%; background:var(--danger); color:white; justify-content:center; padding:13px;">
+                    <i class="fa-solid fa-minus-circle"></i>
+                    <span data-i18n="record_expense">Xarajatni qayd etish</span>
+                </button>
+            </form>
+        </div>
+
+        
+        <div class="card">
+            <h3 style="margin-bottom:20px;">
+                <i class="fa-solid fa-money-bill-transfer" style="color:var(--primary)"></i>
+                <span data-i18n="transfer_funds">Mablag' o'tkazish</span>
+            </h3>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="transfer_funds" value="1">
+
+                <div class="form-group">
+                    <label data-i18n="amount">Summa</label>
+                    <input type="number" step="0.01" name="amount" required class="form-control"
+                        style="font-size:20px;">
+                </div>
+
+                <div style="display:flex; gap:10px; align-items:flex-end; margin-bottom:16px;">
+                    <div style="flex:1;">
+                        <label class="form-group" data-i18n="from">Dan</label>
+                        <select name="from_register" required class="form-control">
+                            <option value="" data-i18n="opt_select">-- Tanlang --</option>
+                            {% for reg in registers %}
+                            <option value="{{ reg.id }}">{{ reg.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div style="font-size:22px; color:var(--primary); padding:0 4px 10px;">
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                    <div style="flex:1;">
+                        <label class="form-group" data-i18n="to">Ga</label>
+                        <select name="to_register" required class="form-control">
+                            <option value="" data-i18n="opt_select">-- Tanlang --</option>
+                            {% for reg in registers %}
+                            <option value="{{ reg.id }}">{{ reg.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:13px;">
+                    <i class="fa-solid fa-shuffle"></i>
+                    <span data-i18n="execute_transfer">O'tkazmani bajarish</span>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="tab-ledger" class="tab-content">
+    <div class="card">
+        <h3 style="margin-bottom:20px;">
+            <i class="fa-solid fa-book" style="color:var(--primary)"></i>
+            <span data-i18n="recent_ledger">So'nggi operatsiyalar</span>
+        </h3>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th data-i18n="date">Sana</th>
+                    <th data-i18n="type">Tur</th>
+                    <th data-i18n="description">Tavsif</th>
+                    <th data-i18n="register">Kassa</th>
+                    <th style="text-align:right;" data-i18n="amount">Summa</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in recent_transactions %}
+                <tr>
+                    <td style="color:var(--text-muted); font-size:13px;">{{ t.date|date:"d M Y H:i" }}</td>
+                    <td>
+                        {% if t.transaction_type == 'income' %}
+                        <span class="badge badge-success"><i class="fa-solid fa-arrow-down"></i> <span
+                                data-i18n="income">Daromad</span></span>
+                        {% elif t.transaction_type == 'expense' %}
+                        <span class="badge badge-danger"><i class="fa-solid fa-arrow-up"></i> <span
+                                data-i18n="expense">Xarajat</span></span>
+                        {% elif t.transaction_type == 'transfer' %}
+                        <span class="badge badge-info"><i class="fa-solid fa-arrows-turn-right"></i> <span
+                                data-i18n="transfer">O'tkazma</span></span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size:14px;">{{ t.description|default:"—" }}</td>
+                    <td style="font-size:13px;">{{ t.cash_register.name }}</td>
+                    <td style="text-align:right; font-weight:700;
+                        {% if t.transaction_type == 'income' %}color:var(--success);
+                        {% elif t.transaction_type == 'expense' %}color:var(--danger);{% endif %}">
+                        {% if t.transaction_type == 'expense' %}−{% elif t.transaction_type == 'income' %}+{% endif %}{{
+                        t.amount|floatformat:0 }} UZS
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted);">
+                        <i class="fa-solid fa-inbox"
+                            style="font-size:32px; display:block; margin-bottom:10px; opacity:0.25;"></i>
+                        <span data-i18n="no_transactions">So'nggi operatsiyalar yo'q</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="tab-setup" class="tab-content">
+    <div class="setup-grid">
+
+     
+        <div class="card">
+            <h3 style="margin-bottom:18px; color:var(--primary);">
+                <i class="fa-solid fa-cash-register"></i>
+                <span data-i18n="add_register">Yangi kassa qo'shish</span>
+            </h3>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_register">
+                <div class="form-group">
+                    <label data-i18n="register_name">Kassa nomi</label>
+                    <input type="text" name="name" class="form-control" required
+                        data-i18n-placeholder="register_name_placeholder">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="initial_balance">Boshlang'ich qoldiq (UZS)</label>
+                    <input type="number" step="0.01" name="initial_balance" class="form-control" value="0">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">
+                    <i class="fa-solid fa-plus"></i> <span data-i18n="add_register">Kassa qo'shish</span>
+                </button>
+            </form>
+
+            <hr style="margin:18px 0;">
+            <h4 style="margin-bottom:10px; color:var(--text-muted); font-size:13px; text-transform:uppercase;"
+                data-i18n="existing">Mavjud kassalar</h4>
+            {% for reg in registers %}
+            <div
+                style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #f0f0f0;">
+                <div>
+                    <strong>{{ reg.name }}</strong>
+                    <span style="color:var(--text-muted); font-size:13px; margin-left:8px;">{{ reg.balance|floatformat:0
+                        }} UZS</span>
+                </div>
+                <form method="POST" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete_register">
+                    <input type="hidden" name="register_id" value="{{ reg.id }}">
+                    <button type="submit" class="delete-btn" onclick="return confirm('O\'chirasizmi?')">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </form>
+            </div>
+            {% empty %}
+            <p style="color:var(--text-muted); font-size:13px; text-align:center; padding:10px;">
+                <span data-i18n="no_registers">Kassalar yo'q</span>
+            </p>
+            {% endfor %}
+        </div>
+
+        
+        <div class="card">
+            <h3 style="margin-bottom:18px; color:var(--danger);">
+                <i class="fa-solid fa-tags"></i>
+                <span data-i18n="add_category">Xarajat kategoriyasi</span>
+            </h3>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_category">
+                <div class="form-group">
+                    <label data-i18n="category_name">Kategoriya nomi</label>
+                    <input type="text" name="name" class="form-control" required
+                        data-i18n-placeholder="category_placeholder">
+                </div>
+                <button type="submit" class="btn"
+                    style="width:100%; justify-content:center; background:var(--danger); color:white;">
+                    <i class="fa-solid fa-plus"></i> <span data-i18n="add_category">Kategoriya qo'shish</span>
+                </button>
+            </form>
+
+            <hr style="margin:18px 0;">
+            <h4 style="margin-bottom:10px; color:var(--text-muted); font-size:13px; text-transform:uppercase;"
+                data-i18n="existing">Kategoriyalar</h4>
+            {% for cat in expense_cats %}
+            <div
+                style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #f0f0f0;">
+                <strong>{{ cat.name }}</strong>
+                <form method="POST" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete_category">
+                    <input type="hidden" name="category_id" value="{{ cat.id }}">
+                    <button type="submit" class="delete-btn" onclick="return confirm('O\'chirasizmi?')">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </form>
+            </div>
+            {% empty %}
+            <p style="color:var(--text-muted); font-size:13px; text-align:center; padding:10px;">
+                <span data-i18n="no_categories">Kategoriyalar yo'q</span>
+            </p>
+            {% endfor %}
+        </div>
+
+        
+        <div class="card">
+            <h3 style="margin-bottom:18px; color:var(--secondary);">
+                <i class="fa-solid fa-truck-field"></i>
+                <span data-i18n="add_supplier">Ta'minotchi qo'shish</span>
+            </h3>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_supplier">
+                <div class="form-group">
+                    <label data-i18n="supplier_name">Ta'minotchi nomi</label>
+                    <input type="text" name="name" class="form-control" required
+                        data-i18n-placeholder="supplier_placeholder">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="contact_info">Aloqa ma'lumotlari</label>
+                    <input type="text" name="contact" class="form-control" data-i18n-placeholder="contact_placeholder">
+                </div>
+                <button type="submit" class="btn"
+                    style="width:100%; justify-content:center; background:var(--secondary); color:white;">
+                    <i class="fa-solid fa-plus"></i> <span data-i18n="add_supplier">Ta'minotchi qo'shish</span>
+                </button>
+            </form>
+
+            <hr style="margin:18px 0;">
+            <h4 style="margin-bottom:10px; color:var(--text-muted); font-size:13px; text-transform:uppercase;"
+                data-i18n="suppliers">Ta'minotchilar</h4>
+            {% for sup in suppliers %}
+            <div
+                style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #f0f0f0;">
+                <div>
+                    <strong>{{ sup.name }}</strong>
+                    {% if sup.contact_info %}
+                    <br><small style="color:var(--text-muted);">{{ sup.contact_info }}</small>
+                    {% endif %}
+                </div>
+                <form method="POST" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete_supplier">
+                    <input type="hidden" name="supplier_id" value="{{ sup.id }}">
+                    <button type="submit" class="delete-btn" onclick="return confirm('O\'chirasizmi?')">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </form>
+            </div>
+            {% empty %}
+            <p style="color:var(--text-muted); font-size:13px; text-align:center; padding:10px;">
+                <span data-i18n="no_suppliers">Ta'minotchilar yo'q</span>
+            </p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function showTab(tabId, btn) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btn.classList.add('active');
+    }
+</script>
+{% endblock %} -->

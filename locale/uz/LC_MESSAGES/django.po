@@ -1,0 +1,380 @@
+# UZBEK LATIN translation file
+# Bakery ERP System
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: uz\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+# Navigation
+msgid "Dashboard"
+msgstr "Boshqaruv paneli"
+
+msgid "Production"
+msgstr "Ishlab chiqarish"
+
+msgid "Sales"
+msgstr "Sotuv"
+
+msgid "Branches"
+msgstr "Filiallar"
+
+msgid "Accounting"
+msgstr "Buxgalteriya"
+
+msgid "HR Dept"
+msgstr "HR Bo'limi"
+
+msgid "Admin"
+msgstr "Admin"
+
+msgid "Products"
+msgstr "Mahsulotlar"
+
+# Dashboard
+msgid "Dashboard Overview"
+msgstr "Umumiy ko'rinish"
+
+msgid "Today's Revenue"
+msgstr "Bugungi daromad"
+
+msgid "Products Produced"
+msgstr "Ishlab chiqarilgan mahsulotlar"
+
+msgid "Total Sales"
+msgstr "Jami sotuv"
+
+msgid "On Shift Today"
+msgstr "Bugun smenada"
+
+msgid "Completed Transactions"
+msgstr "Bajarilgan operatsiyalar"
+
+msgid "Active employees"
+msgstr "Faol xodimlar"
+
+msgid "Revenue & Expenses (Monthly)"
+msgstr "Daromad va xarajatlar (oylik)"
+
+msgid "Financial Summary"
+msgstr "Moliyaviy xulosа"
+
+msgid "Total Cash Balances"
+msgstr "Jami kassa qoldig'i"
+
+msgid "Debtors (Owe Us)"
+msgstr "Qarzdorlar (bizga qarashlilар)"
+
+msgid "Creditors (We Owe)"
+msgstr "Kreditorlar (biz qarzdormiz)"
+
+msgid "Top Selling Products"
+msgstr "Eng ko'p sotiladigan mahsulotlar"
+
+# Production
+msgid "Production & Warehouse"
+msgstr "Ishlab chiqarish va ombor"
+
+msgid "Daily Production"
+msgstr "Kunlik ishlab chiqarish"
+
+msgid "Raw Materials Warehouse"
+msgstr "Xom ashyo ombori"
+
+msgid "Finished Goods"
+msgstr "Tayyor mahsulotlar"
+
+msgid "Log New Production"
+msgstr "Yangi ishlab chiqarishni qayd etish"
+
+msgid "Select Product"
+msgstr "Mahsulotni tanlang"
+
+msgid "Quantity (Pieces/Loaves)"
+msgstr "Miqdori (dona/non)"
+
+msgid "Baker Name (Shift)"
+msgstr "Novvoy ismi (smena)"
+
+msgid "Save Production Log"
+msgstr "Ishlab chiqarishni saqlash"
+
+msgid "Recent Production Logs"
+msgstr "So'nggi ishlab chiqarish qaydlari"
+
+msgid "Date"
+msgstr "Sana"
+
+msgid "Baker"
+msgstr "Novvoy"
+
+msgid "No recent logs"
+msgstr "So'nggi qaydlar yo'q"
+
+msgid "Raw Materials Stock"
+msgstr "Xom ashyo qoldig'i"
+
+msgid "Material"
+msgstr "Xom ashyo"
+
+msgid "Stock Left"
+msgstr "Qolgan miqdor"
+
+msgid "Unit"
+msgstr "O'lchov birligi"
+
+msgid "Status"
+msgstr "Holat"
+
+msgid "Low Stock"
+msgstr "Oz qoldi"
+
+msgid "Good"
+msgstr "Yaxshi"
+
+msgid "Finished Goods Inventory (Ostatka)"
+msgstr "Tayyor mahsulotlar (Qoldiq)"
+
+msgid "Current Stock"
+msgstr "Joriy qoldiq"
+
+msgid "No finished goods in inventory"
+msgstr "Omborida tayyor mahsulotlar yo'q"
+
+# Product Management
+msgid "Product Management"
+msgstr "Mahsulotlarni boshqarish"
+
+msgid "Add New Product"
+msgstr "Yangi mahsulot qo'shish"
+
+msgid "Add Raw Material"
+msgstr "Yangi xom ashyo qo'shish"
+
+msgid "Add Recipe"
+msgstr "Retsept qo'shish"
+
+msgid "Product Name"
+msgstr "Mahsulot nomi"
+
+msgid "Selling Price"
+msgstr "Sotuv narxi"
+
+msgid "Material Name"
+msgstr "Xom ashyo nomi"
+
+msgid "Measurement Unit"
+msgstr "O'lchov birligi"
+
+msgid "Initial Stock"
+msgstr "Boshlang'ich qoldiq"
+
+msgid "Select Product for Recipe"
+msgstr "Retsept uchun mahsulot tanlang"
+
+msgid "Batch Size"
+msgstr "Partiya hajmi"
+
+msgid "Ingredient"
+msgstr "Ingredient"
+
+msgid "Amount Needed"
+msgstr "Zarur miqdor"
+
+msgid "Add Ingredient"
+msgstr "Ingredient qo'shish"
+
+msgid "Save Recipe"
+msgstr "Retseptni saqlash"
+
+msgid "All Products"
+msgstr "Barcha mahsulotlar"
+
+msgid "All Raw Materials"
+msgstr "Barcha xom ashyolar"
+
+msgid "Price"
+msgstr "Narx"
+
+msgid "In Stock"
+msgstr "Qoldiq"
+
+# Sales
+msgid "Point of Sale (POS)"
+msgstr "Sotuv nuqtasi (POS)"
+
+msgid "Quick Sale"
+msgstr "Tezkor sotuv"
+
+msgid "Select Product"
+msgstr "Mahsulot tanlang"
+
+msgid "Quantity"
+msgstr "Miqdori"
+
+msgid "Payment Method"
+msgstr "To'lov usuli"
+
+msgid "Cash"
+msgstr "Naqd pul"
+
+msgid "Terminal"
+msgstr "Terminal"
+
+msgid "Complete Sale"
+msgstr "Sotuvni yakunlash"
+
+msgid "Returns / Brak"
+msgstr "Qaytarish / Brak"
+
+msgid "Submit Return"
+msgstr "Qaytarishni saqlash"
+
+msgid "Available Stock"
+msgstr "Mavjud qoldiq"
+
+msgid "Nasiya (Loan) is strictly prohibited."
+msgstr "Nasiya (qarz) qat'iyan taqiqlanadi."
+
+# Branches
+msgid "Branches (Points of Sale)"
+msgstr "Filiallar (Sotuv nuqtalari)"
+
+msgid "Send to Branch (Nakladnaya)"
+msgstr "Filiаlga yuborish (Nakладная)"
+
+msgid "Select Branch"
+msgstr "Filialni tanlang"
+
+msgid "Create Waybill (Transfer)"
+msgstr "Yo'l varaqasi yaratish"
+
+msgid "Recent Transfers"
+msgstr "So'nggi o'tkazmalar"
+
+msgid "Branch"
+msgstr "Filial"
+
+msgid "In Transit"
+msgstr "Yo'lda"
+
+msgid "Received"
+msgstr "Qabul qilindi"
+
+msgid "Receive"
+msgstr "Qabul qilish"
+
+msgid "No transfers yet"
+msgstr "O'tkazmalar yo'q"
+
+msgid "Branch Inventories (Ostatka)"
+msgstr "Filial qoldiqlari (Ostatka)"
+
+# Accounting
+msgid "Accounting & Finance"
+msgstr "Buxgalteriya va moliya"
+
+msgid "Record Expense"
+msgstr "Xarajatni qayd etish"
+
+msgid "Amount"
+msgstr "Summa"
+
+msgid "From Cash Register"
+msgstr "Kassadan"
+
+msgid "Category"
+msgstr "Kategoriya"
+
+msgid "Description"
+msgstr "Tavsif"
+
+msgid "Transfer Funds"
+msgstr "Mablag' o'tkazish"
+
+msgid "From"
+msgstr "Dan"
+
+msgid "To"
+msgstr "Ga"
+
+msgid "Execute Transfer"
+msgstr "O'tkazmani bajarish"
+
+msgid "Recent Transactions Ledger"
+msgstr "So'nggi operatsiyalar"
+
+msgid "Income"
+msgstr "Daromad"
+
+msgid "Expense"
+msgstr "Xarajat"
+
+msgid "Transfer"
+msgstr "O'tkazma"
+
+msgid "Register"
+msgstr "Kassa"
+
+msgid "No recent transactions"
+msgstr "So'nggi operatsiyalar yo'q"
+
+# HR
+msgid "Human Resources"
+msgstr "Kadrlar bo'limi"
+
+msgid "Active Employees"
+msgstr "Faol xodimlar"
+
+msgid "Today"
+msgstr "Bugun"
+
+msgid "Employee Roster"
+msgstr "Xodimlar ro'yxati"
+
+msgid "Name"
+msgstr "Ismi"
+
+msgid "Position"
+msgstr "Lavozimi"
+
+msgid "Type"
+msgstr "Tur"
+
+msgid "Piecework"
+msgstr "Ishbay"
+
+msgid "Fixed Salary"
+msgstr "Oylik maosh"
+
+msgid "Issue Advance Payment"
+msgstr "Avans berish"
+
+msgid "Employee"
+msgstr "Xodim"
+
+msgid "Give Advance"
+msgstr "Avans berish"
+
+msgid "Recent Advances"
+msgstr "So'nggi avanslar"
+
+msgid "No employees in database"
+msgstr "Ma'lumotlar bazasida xodimlar yo'q"
+
+msgid "No recent advances"
+msgstr "So'nggi avanslar yo'q"
+
+# Language switcher
+msgid "Language"
+msgstr "Til"
+
+msgid "Uzbek (Latin)"
+msgstr "O'zbek (Lotin)"
+
+msgid "Uzbek (Kirill)"
+msgstr "O'zbek (Kirill)"
+
+msgid "Russian"
+msgstr "Rus tili"

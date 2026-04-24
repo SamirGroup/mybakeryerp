@@ -1,0 +1,316 @@
+{% extends 'base.html' %}
+
+{% block breadcrumb %}<span data-i18n="hr_title">Kadrlar bo'limi</span>{% endblock %}
+
+{% block extra_head %}
+<style>
+.delete-btn { background:none; border:1px solid var(--danger); color:var(--danger); padding:4px 10px; border-radius:6px; font-size:12px; cursor:pointer; transition:var(--transition); }
+.delete-btn:hover { background:var(--danger); color:white; }
+.emp-card { border:1px solid #eee; border-radius:10px; padding:16px 20px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; transition:box-shadow 0.2s; }
+.emp-card:hover { box-shadow:0 4px 12px rgba(0,0,0,0.07); }
+.emp-avatar { width:42px; height:42px; border-radius:50%; background:var(--primary-light); color:var(--primary-dark); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; flex-shrink:0; margin-right:14px; }
+.emp-info { display:flex; align-items:center; }
+.emp-name { font-weight:700; font-size:15px; }
+.emp-meta { font-size:13px; color:var(--text-muted); }
+.emp-actions { display:flex; gap:8px; align-items:center; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Summary Stats -->
+<div class="grid-4" style="margin-bottom:24px;">
+    <div class="card stat-card">
+        <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+        <div class="stat-details">
+            <h3 data-i18n="active_emps">Faol xodimlar</h3>
+            <div class="value">{{ active_employees.count }}</div>
+        </div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-icon" style="background:var(--info);color:white;">
+            <i class="fa-solid fa-user-group"></i>
+        </div>
+        <div class="stat-details">
+            <h3 data-i18n="total_staff">Jami xodimlar</h3>
+            <div class="value">{{ employees.count }}</div>
+        </div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-icon" style="background:var(--warning);color:white;">
+            <i class="fa-solid fa-calendar-day"></i>
+        </div>
+        <div class="stat-details">
+            <h3 data-i18n="today">Bugun</h3>
+            <div class="value" style="font-size:16px; margin-top:4px;">{{ today|date:"d M Y" }}</div>
+        </div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-icon" style="background:var(--danger);color:white;">
+            <i class="fa-solid fa-hand-holding-dollar"></i>
+        </div>
+        <div class="stat-details">
+            <h3 data-i18n="recent_advances">So'nggi avanslar</h3>
+            <div class="value">{{ advances.count }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="nav-tabs">
+    <button class="tab-btn active" onclick="showTab('tab-roster', this)">
+        <i class="fa-solid fa-users"></i> <span data-i18n="emp_roster">Xodimlar ro'yxati</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('tab-advances', this)">
+        <i class="fa-solid fa-hand-holding-dollar"></i> <span data-i18n="recent_advances">Avanslar</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('tab-add', this)">
+        <i class="fa-solid fa-user-plus"></i> <span data-i18n="add_employee">Yangi xodim qo'shish</span>
+    </button>
+</div>
+
+<!-- ═══════ TAB: ROSTER ═══════ -->
+<div id="tab-roster" class="tab-content active">
+    <div class="grid-2">
+
+        <!-- Employee Cards -->
+        <div class="card">
+            <h3 style="margin-bottom:18px;">
+                <i class="fa-solid fa-users" style="color:var(--primary)"></i>
+                <span data-i18n="emp_roster">Xodimlar ro'yxati</span>
+                <span class="pill" style="margin-left:8px;">{{ employees.count }}</span>
+            </h3>
+            {% for emp in employees %}
+            <div class="emp-card">
+                <div class="emp-info">
+                    <div class="emp-avatar">{{ emp.name|first|upper }}</div>
+                    <div>
+                        <div class="emp-name">{{ emp.name }}</div>
+                        <div class="emp-meta">
+                            {{ emp.position }} &nbsp;|&nbsp;
+                            <i class="fa-solid fa-phone" style="font-size:11px;"></i> {{ emp.phone }}
+                        </div>
+                        <div style="margin-top:5px;">
+                            {% if emp.status == 'active' %}
+                                <span class="badge badge-success"><span data-i18n="status_active">Faol</span></span>
+                            {% elif emp.status == 'vacation' %}
+                                <span class="badge badge-warning"><span data-i18n="status_vacation">Ta'tilda</span></span>
+                            {% else %}
+                                <span class="badge badge-danger"><span data-i18n="status_left">Ketgan</span></span>
+                            {% endif %}
+                            {% if emp.is_piecework %}
+                                <span class="badge badge-info" style="margin-left:4px;" data-i18n="piecework">Ishbay</span>
+                            {% else %}
+                                <span class="badge badge-info" style="margin-left:4px;" data-i18n="fixed_salary">Oylik</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="emp-actions">
+                    <!-- Status change -->
+                    <form method="POST" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="change_status">
+                        <input type="hidden" name="employee_id" value="{{ emp.id }}">
+                        <select name="new_status" class="form-control"
+                                style="padding:5px 8px; font-size:12px; min-width:100px;"
+                                onchange="this.form.submit()">
+                            <option value="active" {% if emp.status == 'active' %}selected{% endif %} data-i18n="status_active">Faol</option>
+                            <option value="vacation" {% if emp.status == 'vacation' %}selected{% endif %} data-i18n="status_vacation">Ta'tilda</option>
+                            <option value="left" {% if emp.status == 'left' %}selected{% endif %} data-i18n="status_left">Ketgan</option>
+                        </select>
+                    </form>
+                    <form method="POST" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="delete_employee">
+                        <input type="hidden" name="employee_id" value="{{ emp.id }}">
+                        <button type="submit" class="delete-btn"
+                                onclick="return confirm('Xodimni o\'chirasizmi?')">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% empty %}
+            <div style="text-align:center; padding:40px; color:var(--text-muted);">
+                <i class="fa-solid fa-users" style="font-size:40px; opacity:0.2; display:block; margin-bottom:12px;"></i>
+                <span data-i18n="no_employees">Ma'lumotlar bazasida xodimlar yo'q</span>
+                <br><small>3-tab orqali xodim qo'shing</small>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Give Advance -->
+        <div class="card" style="align-self:start;">
+            <h3 style="margin-bottom:18px;">
+                <i class="fa-solid fa-hand-holding-dollar" style="color:var(--warning)"></i>
+                <span data-i18n="issue_advance">Avans berish</span>
+            </h3>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="give_advance" value="1">
+
+                <div class="form-group">
+                    <label data-i18n="employee">Xodim</label>
+                    <select name="employee" required class="form-control">
+                        <option value="" data-i18n="opt_select_employee">-- Xodimni tanlang --</option>
+                        {% for emp in active_employees %}
+                            <option value="{{ emp.id }}">{{ emp.name }} ({{ emp.position }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="amount">Summa (UZS)</label>
+                    <input type="number" step="1000" name="amount" required class="form-control"
+                           style="font-size:20px;">
+                </div>
+
+                <button type="submit" class="btn"
+                        style="width:100%; justify-content:center; background:var(--warning); color:#333; padding:13px; font-weight:700;">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                    <span data-i18n="give_advance">Avans berish</span>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════ TAB: ADVANCES ═══════ -->
+<div id="tab-advances" class="tab-content">
+    <div class="card">
+        <h3 style="margin-bottom:20px;">
+            <i class="fa-solid fa-clock-rotate-left" style="color:var(--primary)"></i>
+            <span data-i18n="recent_advances">So'nggi avanslar</span>
+        </h3>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th data-i18n="date">Sana</th>
+                    <th data-i18n="employee">Xodim</th>
+                    <th data-i18n="position">Lavozimi</th>
+                    <th style="text-align:right;" data-i18n="amount">Summa</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for adv in advances %}
+                <tr>
+                    <td style="color:var(--text-muted); font-size:13px;">{{ adv.date|date:"d M Y" }}</td>
+                    <td><strong>{{ adv.employee.name }}</strong></td>
+                    <td style="font-size:13px;">{{ adv.employee.position }}</td>
+                    <td style="text-align:right; color:var(--danger); font-weight:700;">
+                        −{{ adv.amount|floatformat:0 }} UZS
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align:center; padding:30px; color:var(--text-muted);">
+                        <i class="fa-solid fa-inbox" style="font-size:30px; display:block; margin-bottom:8px; opacity:0.3;"></i>
+                        <span data-i18n="no_advances">So'nggi avanslar yo'q</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ═══════ TAB: ADD EMPLOYEE ═══════ -->
+<div id="tab-add" class="tab-content">
+    <div style="max-width:620px; margin:0 auto;">
+        <div class="card">
+            <div style="background:linear-gradient(135deg, var(--primary), var(--primary-dark)); color:white; padding:20px 24px; border-radius:10px 10px 0 0; margin:-24px -24px 24px -24px;">
+                <h3 style="margin:0; color:white;">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span data-i18n="add_employee">Yangi xodim qo'shish</span>
+                </h3>
+            </div>
+
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_employee">
+
+                <div style="display:flex; gap:16px;">
+                    <div class="form-group" style="flex:2;">
+                        <label data-i18n="name">To'liq ismi</label>
+                        <input type="text" name="name" class="form-control" required
+                               data-i18n-placeholder="full_name_placeholder">
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label data-i18n="phone_label">Telefon</label>
+                        <input type="text" name="phone" class="form-control"
+                               placeholder="+998 90 000 00 00">
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:16px;">
+                    <div class="form-group" style="flex:2;">
+                        <label data-i18n="position">Lavozimi</label>
+                        <select name="position" class="form-control" required>
+                            <option value="" data-i18n="opt_select">-- Tanlang --</option>
+                            <option value="Novvoy" data-i18n="pos_baker">Novvoy</option>
+                            <option value="Sotuvchi" data-i18n="pos_seller">Sotuvchi</option>
+                            <option value="Haydovchi" data-i18n="pos_driver">Haydovchi</option>
+                            <option value="Qorovul" data-i18n="pos_guard">Qorovul</option>
+                            <option value="Boshqaruvchi" data-i18n="pos_manager">Boshqaruvchi</option>
+                            <option value="Oshpaz" data-i18n="pos_cook">Oshpaz</option>
+                            <option value="Buxgalter" data-i18n="pos_accountant">Buxgalter</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label data-i18n="date_joined">Qo'shilgan sana</label>
+                        <input type="date" name="date_joined" class="form-control" required>
+                    </div>
+                </div>
+
+                <!-- Salary type -->
+                <div class="form-group">
+                    <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                        <input type="checkbox" name="is_piecework" id="isPiecework"
+                               style="width:18px; height:18px; cursor:pointer;"
+                               onchange="toggleSalaryFields(this)">
+                        <span data-i18n="is_piecework_label">Ishbay to'lov (novvoylar uchun)</span>
+                    </label>
+                </div>
+
+                <div id="fixed-salary-row" style="display:flex; gap:16px;">
+                    <div class="form-group" style="flex:1;">
+                        <label data-i18n="base_salary">Oylik maosh (UZS)</label>
+                        <input type="number" step="1000" name="base_salary" class="form-control" value="0">
+                    </div>
+                    <div class="form-group" style="flex:1;" id="piecework-rate-group" style="display:none;">
+                        <label data-i18n="piecework_rate">Bir dona uchun to'lov (UZS)</label>
+                        <input type="number" step="10" name="piecework_rate" class="form-control" value="0">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary"
+                        style="width:100%; justify-content:center; padding:14px; margin-top:8px;">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span data-i18n="add_employee">Xodim qo'shish</span>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function showTab(tabId, btn) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btn.classList.add('active');
+    }
+
+    function toggleSalaryFields(checkbox) {
+        const pieceworkGroup = document.getElementById('piecework-rate-group');
+        if (checkbox.checked) {
+            pieceworkGroup.style.display = 'block';
+        } else {
+            pieceworkGroup.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

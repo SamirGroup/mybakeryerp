@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block extra_head %}
+<style>
+    .sales-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+    .pos-card { background: white; border-radius: var(--border-radius); padding: 30px; box-shadow: var(--card-shadow); border-top: 5px solid var(--primary); }
+    .payment-methods { display: flex; gap: 15px; margin-bottom: 20px; }
+    .payment-btn { flex: 1; padding: 15px; border: 2px solid #eee; border-radius: var(--border-radius-sm); background: white; cursor: pointer; font-size: 16px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--text-muted); transition: var(--transition); }
+    .payment-btn.selected { border-color: var(--primary); background-color: var(--primary-light); color: var(--primary-dark); }
+    .payment-btn i { font-size: 24px; }
+    .btn-sell { width: 100%; padding: 15px; font-size: 18px; background-color: var(--success); color: white; border-radius: var(--border-radius-sm); border: none; cursor: pointer; font-weight: 700; transition: background-color 0.3s; }
+    .btn-sell:hover { background-color: #218838; }
+    .nasiya-warning { background: #fff3cd; border: 2px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; color: #856404; font-weight: 700; }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}<span data-i18n="pos_title">Sotuv nuqtasi (POS)</span>{% endblock %}
+
+{% block content %}
+<div class="sales-grid">
+
+    <!-- Quick Sale POS -->
+    <div class="pos-card">
+        <h2 style="margin-bottom: 25px;">
+            <i class="fa-solid fa-cash-register"></i>
+            <span data-i18n="quick_sale">Tezkor sotuv</span>
+        </h2>
+
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="quick_sale" value="1">
+            <input type="hidden" name="payment_method" id="selected_payment" value="cash">
+
+            <div class="form-group">
+                <label data-i18n="select_product">Mahsulot tanlang</label>
+                <select name="product" class="form-control" required>
+                    <option value="" data-i18n="opt_select_product">-- Mahsulotni tanlang --</option>
+                    {% for p in products %}
+                        <option value="{{ p.id }}">{{ p.name }} — {{ p.price }} UZS</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label data-i18n="quantity">Miqdori</label>
+                <input type="number" name="quantity" class="form-control" required min="1" value="1"
+                       style="font-size: 24px; text-align: center;">
+            </div>
+
+            <label data-i18n="payment_method">To'lov usuli</label>
+            <div class="payment-methods">
+                <div class="payment-btn selected" id="pay-cash" onclick="selectPayment(this, 'cash')">
+                    <i class="fa-solid fa-money-bill"></i>
+                    <span data-i18n="cash">Naqd pul</span>
+                </div>
+                <div class="payment-btn" id="pay-terminal" onclick="selectPayment(this, 'terminal')">
+                    <i class="fa-solid fa-credit-card"></i>
+                    <span data-i18n="terminal">Terminal</span>
+                </div>
+                <div class="payment-btn" id="pay-electronic" onclick="selectPayment(this, 'electronic')">
+                    <i class="fa-solid fa-mobile-screen"></i>
+                    <span data-i18n="click_payme">Click/Payme</span>
+                </div>
+            </div>
+
+            <div class="nasiya-warning">
+                <i class="fa-solid fa-ban"></i>
+                <span data-i18n="nasiya_prohibited">Nasiya (qarz) qat'iyan taqiqlanadi.</span>
+            </div>
+
+            <button type="submit" class="btn-sell">
+                <i class="fa-solid fa-check"></i>
+                <span data-i18n="complete_sale">Sotuvni yakunlash</span>
+            </button>
+        </form>
+    </div>
+
+    <!-- Right Column -->
+    <div>
+        <!-- Returns / Brak -->
+        <div class="card" style="margin-bottom: 24px; border-top: 4px solid var(--warning);">
+            <h3>
+                <i class="fa-solid fa-rotate-left"></i>
+                <span data-i18n="returns_brak">Qaytarish / Brak</span>
+            </h3>
+            <form method="POST" style="margin-top: 15px;">
+                {% csrf_token %}
+                <input type="hidden" name="add_return" value="1">
+
+                <div class="form-group">
+                    <select name="product" class="form-control" required>
+                        <option value="" data-i18n="opt_select_product">-- Mahsulotni tanlang --</option>
+                        {% for p in products %}
+                            <option value="{{ p.id }}">{{ p.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input type="number" name="quantity" class="form-control" required min="1"
+                           data-i18n-placeholder="quantity">
+                </div>
+                <div class="form-group">
+                    <select name="reason" class="form-control" required>
+                        <option value="brak" data-i18n="reason_brak">Brak (Yaramas)</option>
+                        <option value="unsold" data-i18n="reason_unsold">Sotilmagan</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn" style="width: 100%; background: var(--warning); color: #333; justify-content: center;">
+                    <span data-i18n="submit_return">Qaytarishni saqlash</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Available Stock -->
+        <div class="card">
+            <h3 style="margin-bottom: 15px;">
+                <i class="fa-solid fa-boxes-stacked"></i>
+                <span data-i18n="available_stock">Mavjud qoldiq</span>
+            </h3>
+            <table class="data-table">
+                {% for fg in finished_goods %}
+                <tr>
+                    <td>{{ fg.product.name }}</td>
+                    <td style="font-weight: 700; text-align: right;">
+                        {{ fg.stock }} <span data-i18n="pieces">dona</span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="2" style="text-align: center; padding: 15px; color: var(--text-muted);"
+                        data-i18n="no_stock">Qoldiq yo'q</td></tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function selectPayment(element, method) {
+        document.querySelectorAll('.payment-btn').forEach(btn => btn.classList.remove('selected'));
+        element.classList.add('selected');
+        document.getElementById('selected_payment').value = method;
+    }
+</script>
+{% endblock %}

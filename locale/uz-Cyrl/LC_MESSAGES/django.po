@@ -1,0 +1,367 @@
+# UZBEK CYRILLIC translation file
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: uz-Cyrl\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Dashboard"
+msgstr "Бошқарув панели"
+
+msgid "Production"
+msgstr "Ишлаб чиқариш"
+
+msgid "Sales"
+msgstr "Сотув"
+
+msgid "Branches"
+msgstr "Филиаллар"
+
+msgid "Accounting"
+msgstr "Бухгалтерия"
+
+msgid "HR Dept"
+msgstr "Кадрлар бўлими"
+
+msgid "Admin"
+msgstr "Админ"
+
+msgid "Products"
+msgstr "Маҳсулотлар"
+
+msgid "Dashboard Overview"
+msgstr "Умумий кўриниш"
+
+msgid "Today's Revenue"
+msgstr "Бугунги даромад"
+
+msgid "Products Produced"
+msgstr "Ишлаб чиқарилган маҳсулотлар"
+
+msgid "Total Sales"
+msgstr "Жами сотув"
+
+msgid "On Shift Today"
+msgstr "Бугун сменада"
+
+msgid "Completed Transactions"
+msgstr "Бажарилган операциялар"
+
+msgid "Active employees"
+msgstr "Фаол ходимлар"
+
+msgid "Revenue & Expenses (Monthly)"
+msgstr "Даромад ва харажатлар (ойлик)"
+
+msgid "Financial Summary"
+msgstr "Молиявий хулоса"
+
+msgid "Total Cash Balances"
+msgstr "Жами касса қолдиғи"
+
+msgid "Debtors (Owe Us)"
+msgstr "Қарздорлар"
+
+msgid "Creditors (We Owe)"
+msgstr "Кредиторлар"
+
+msgid "Top Selling Products"
+msgstr "Энг кўп сотиладиган маҳсулотлар"
+
+msgid "Production & Warehouse"
+msgstr "Ишлаб чиқариш ва омбор"
+
+msgid "Daily Production"
+msgstr "Кунлик ишлаб чиқариш"
+
+msgid "Raw Materials Warehouse"
+msgstr "Хом ашё омбори"
+
+msgid "Finished Goods"
+msgstr "Тайёр маҳсулотлар"
+
+msgid "Log New Production"
+msgstr "Янги ишлаб чиқаришни қайд этиш"
+
+msgid "Select Product"
+msgstr "Маҳсулотни танланг"
+
+msgid "Quantity (Pieces/Loaves)"
+msgstr "Миқдори (дона/нон)"
+
+msgid "Baker Name (Shift)"
+msgstr "Новвой исми (смена)"
+
+msgid "Save Production Log"
+msgstr "Ишлаб чиқаришни сақлаш"
+
+msgid "Recent Production Logs"
+msgstr "Сўнгги ишлаб чиқариш қайдлари"
+
+msgid "Date"
+msgstr "Сана"
+
+msgid "Baker"
+msgstr "Новвой"
+
+msgid "No recent logs"
+msgstr "Сўнгги қайдлар йўқ"
+
+msgid "Raw Materials Stock"
+msgstr "Хом ашё қолдиғи"
+
+msgid "Material"
+msgstr "Хом ашё"
+
+msgid "Stock Left"
+msgstr "Қолган миқдор"
+
+msgid "Unit"
+msgstr "Ўлчов бирлиги"
+
+msgid "Status"
+msgstr "Ҳолат"
+
+msgid "Low Stock"
+msgstr "Оз қолди"
+
+msgid "Good"
+msgstr "Яхши"
+
+msgid "Finished Goods Inventory (Ostatka)"
+msgstr "Тайёр маҳсулотлар (Қолдиқ)"
+
+msgid "Current Stock"
+msgstr "Жорий қолдиқ"
+
+msgid "No finished goods in inventory"
+msgstr "Омборида тайёр маҳсулотлар йўқ"
+
+msgid "Product Management"
+msgstr "Маҳсулотларни бошқариш"
+
+msgid "Add New Product"
+msgstr "Янги маҳсулот қўшиш"
+
+msgid "Add Raw Material"
+msgstr "Янги хом ашё қўшиш"
+
+msgid "Add Recipe"
+msgstr "Рецепт қўшиш"
+
+msgid "Product Name"
+msgstr "Маҳсулот номи"
+
+msgid "Selling Price"
+msgstr "Сотув нархи"
+
+msgid "Material Name"
+msgstr "Хом ашё номи"
+
+msgid "Measurement Unit"
+msgstr "Ўлчов бирлиги"
+
+msgid "Initial Stock"
+msgstr "Бошланғич қолдиқ"
+
+msgid "Select Product for Recipe"
+msgstr "Рецепт учун маҳсулот танланг"
+
+msgid "Batch Size"
+msgstr "Партия ҳажми"
+
+msgid "Ingredient"
+msgstr "Ингредиент"
+
+msgid "Amount Needed"
+msgstr "Зарур миқдор"
+
+msgid "Add Ingredient"
+msgstr "Ингредиент қўшиш"
+
+msgid "Save Recipe"
+msgstr "Рецептни сақлаш"
+
+msgid "All Products"
+msgstr "Барча маҳсулотлар"
+
+msgid "All Raw Materials"
+msgstr "Барча хом ашёлар"
+
+msgid "Price"
+msgstr "Нарх"
+
+msgid "In Stock"
+msgstr "Қолдиқ"
+
+msgid "Point of Sale (POS)"
+msgstr "Сотув нуқтаси (POS)"
+
+msgid "Quick Sale"
+msgstr "Тезкор сотув"
+
+msgid "Quantity"
+msgstr "Миқдори"
+
+msgid "Payment Method"
+msgstr "Тўлов усули"
+
+msgid "Cash"
+msgstr "Нақд пул"
+
+msgid "Terminal"
+msgstr "Терминал"
+
+msgid "Complete Sale"
+msgstr "Сотувни якунлаш"
+
+msgid "Returns / Brak"
+msgstr "Қайтариш / Брак"
+
+msgid "Submit Return"
+msgstr "Қайтаришни сақлаш"
+
+msgid "Available Stock"
+msgstr "Мавжуд қолдиқ"
+
+msgid "Nasiya (Loan) is strictly prohibited."
+msgstr "Насия (қарз) қатъиян тақиқланади."
+
+msgid "Branches (Points of Sale)"
+msgstr "Филиаллар (Сотув нуқталари)"
+
+msgid "Send to Branch (Nakladnaya)"
+msgstr "Филиалга юбориш (Накладная)"
+
+msgid "Select Branch"
+msgstr "Филиални танланг"
+
+msgid "Create Waybill (Transfer)"
+msgstr "Йўл варақаси яратиш"
+
+msgid "Recent Transfers"
+msgstr "Сўнгги ўтказмалар"
+
+msgid "Branch"
+msgstr "Филиал"
+
+msgid "In Transit"
+msgstr "Йўлда"
+
+msgid "Received"
+msgstr "Қабул қилинди"
+
+msgid "Receive"
+msgstr "Қабул қилиш"
+
+msgid "No transfers yet"
+msgstr "Ўтказмалар йўқ"
+
+msgid "Branch Inventories (Ostatka)"
+msgstr "Филиал қолдиқлари (Остатка)"
+
+msgid "Accounting & Finance"
+msgstr "Бухгалтерия ва молия"
+
+msgid "Record Expense"
+msgstr "Харажатни қайд этиш"
+
+msgid "Amount"
+msgstr "Сумма"
+
+msgid "From Cash Register"
+msgstr "Кассадан"
+
+msgid "Category"
+msgstr "Категория"
+
+msgid "Description"
+msgstr "Тавсиф"
+
+msgid "Transfer Funds"
+msgstr "Маблағ ўтказиш"
+
+msgid "From"
+msgstr "Дан"
+
+msgid "To"
+msgstr "Га"
+
+msgid "Execute Transfer"
+msgstr "Ўтказмани бажариш"
+
+msgid "Recent Transactions Ledger"
+msgstr "Сўнгги операциялар"
+
+msgid "Income"
+msgstr "Даромад"
+
+msgid "Expense"
+msgstr "Харажат"
+
+msgid "Transfer"
+msgstr "Ўтказма"
+
+msgid "Register"
+msgstr "Касса"
+
+msgid "No recent transactions"
+msgstr "Сўнгги операциялар йўқ"
+
+msgid "Human Resources"
+msgstr "Кадрлар бўлими"
+
+msgid "Active Employees"
+msgstr "Фаол ходимлар"
+
+msgid "Today"
+msgstr "Бугун"
+
+msgid "Employee Roster"
+msgstr "Ходимлар рўйхати"
+
+msgid "Name"
+msgstr "Исми"
+
+msgid "Position"
+msgstr "Лавозими"
+
+msgid "Type"
+msgstr "Тур"
+
+msgid "Piecework"
+msgstr "Ишбай"
+
+msgid "Fixed Salary"
+msgstr "Ойлик маош"
+
+msgid "Issue Advance Payment"
+msgstr "Аванс бериш"
+
+msgid "Employee"
+msgstr "Ходим"
+
+msgid "Give Advance"
+msgstr "Аванс бериш"
+
+msgid "Recent Advances"
+msgstr "Сўнгги авансlar"
+
+msgid "No employees in database"
+msgstr "Маълумотлар базасида ходимлар йўқ"
+
+msgid "No recent advances"
+msgstr "Сўнгги авансlar йўқ"
+
+msgid "Language"
+msgstr "Тил"
+
+msgid "Uzbek (Latin)"
+msgstr "Ўзбек (Лотин)"
+
+msgid "Uzbek (Kirill)"
+msgstr "Ўзбек (Кирилл)"
+
+msgid "Russian"
+msgstr "Рус тили"

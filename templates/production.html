@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block breadcrumb %}<span data-i18n="production_warehouse">Ishlab chiqarish va ombor</span>{% endblock %}
+
+{% block content %}
+<div class="nav-tabs">
+    <button class="tab-btn active" onclick="showTab('daily', this)">
+        <span data-i18n="daily_production">Kunlik ishlab chiqarish</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('warehouse', this)">
+        <span data-i18n="raw_materials_wh">Xom ashyo ombori</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('finished', this)">
+        <span data-i18n="finished_goods">Tayyor mahsulotlar</span>
+    </button>
+</div>
+
+<!-- ═══ Daily Production Tab ═══ -->
+<div id="daily" class="tab-content active">
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+        <div class="card">
+            <h3 style="margin-bottom: 20px;" data-i18n="log_new_production">Yangi ishlab chiqarishni qayd etish</h3>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="add_production" value="1">
+
+                <div class="form-group">
+                    <label data-i18n="select_product">Mahsulotni tanlang</label>
+                    <select name="product" class="form-control" required>
+                        <option value="" data-i18n="opt_select_product">-- Mahsulotni tanlang --</option>
+                        {% for p in products %}
+                            <option value="{{ p.id }}">{{ p.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="quantity_pieces">Miqdori (dona/non)</label>
+                    <input type="number" name="quantity" class="form-control" required min="1">
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="baker_name">Novvoy ismi (smena)</label>
+                    <input type="text" name="baker_name" class="form-control"
+                           data-i18n-placeholder="baker_placeholder">
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;">
+                    <i class="fa-solid fa-plus"></i>
+                    <span data-i18n="save_log">Ishlab chiqarishni saqlash</span>
+                </button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3 data-i18n="recent_logs">So'nggi ishlab chiqarish qaydlari</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th data-i18n="date">Sana</th>
+                        <th data-i18n="select_product">Mahsulot</th>
+                        <th data-i18n="quantity">Miqdori</th>
+                        <th data-i18n="baker">Novvoy</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in recent_logs %}
+                    <tr>
+                        <td>{{ log.date|date:"d M Y, H:i" }}</td>
+                        <td><strong>{{ log.product.name }}</strong></td>
+                        <td>{{ log.quantity }}</td>
+                        <td>{{ log.baker_name|default:"-" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" style="text-align: center; padding: 20px; color: var(--text-muted);"
+                            data-i18n="no_recent_logs">So'nggi qaydlar yo'q</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Warehouse Tab ═══ -->
+<div id="warehouse" class="tab-content">
+    <div class="card">
+        <h3 data-i18n="raw_materials_stock">Xom ashyo qoldig'i</h3>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th data-i18n="material">Xom ashyo</th>
+                    <th data-i18n="stock_left">Qolgan miqdor</th>
+                    <th data-i18n="unit">O'lchov birligi</th>
+                    <th data-i18n="status">Holat</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mat in raw_materials %}
+                <tr>
+                    <td>{{ mat.name }}</td>
+                    <td><strong>{{ mat.stock }}</strong></td>
+                    <td>{{ mat.unit }}</td>
+                    <td>
+                        {% if mat.stock < 10 %}
+                            <span class="badge badge-danger">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                <span data-i18n="low_stock">Oz qoldi</span>
+                            </span>
+                        {% else %}
+                            <span class="badge badge-success">
+                                <i class="fa-solid fa-circle-check"></i>
+                                <span data-i18n="good">Yaxshi</span>
+                            </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" style="text-align: center; padding: 20px; color: var(--text-muted);"
+                        data-i18n="no_materials">Xom ashyolar yo'q</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ═══ Finished Goods Tab ═══ -->
+<div id="finished" class="tab-content">
+    <div class="card">
+        <h3 data-i18n="fg_inventory">Tayyor mahsulotlar (Qoldiq)</h3>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th data-i18n="select_product">Mahsulot</th>
+                    <th data-i18n="current_stock">Joriy qoldiq</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fg in finished_goods %}
+                <tr>
+                    <td>{{ fg.product.name }}</td>
+                    <td style="font-size: 18px; font-weight: 700;">
+                        {{ fg.stock }} <span data-i18n="pieces">dona</span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="2" style="text-align: center; padding: 20px; color: var(--text-muted);"
+                        data-i18n="no_finished">Omborida tayyor mahsulotlar yo'q</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function showTab(tabId, btn) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btn.classList.add('active');
+    }
+</script>
+{% endblock %}

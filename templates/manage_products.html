@@ -1,0 +1,606 @@
+{% extends 'base.html' %}
+
+{% block extra_head %}
+<style>
+    .mgmt-grid {
+        display: grid;
+        grid-template-columns: 380px 1fr;
+        gap: 28px;
+        align-items: start;
+    }
+
+    .form-panel {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+    }
+
+    .form-panel-header {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: white;
+        padding: 18px 24px;
+        font-size: 15px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .form-panel-body {
+        padding: 24px;
+    }
+
+    .ingredient-row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+        animation: slideIn 0.2s ease;
+    }
+
+    .ingredient-row select,
+    .ingredient-row input {
+        flex: 1;
+        padding: 9px 12px;
+        border: 2px solid #eee;
+        border-radius: var(--border-radius-sm);
+        font-family: inherit;
+        font-size: 14px;
+    }
+
+    .ingredient-row select:focus,
+    .ingredient-row input:focus {
+        border-color: var(--primary);
+        outline: none;
+    }
+
+    .remove-ing-btn {
+        background: none;
+        border: none;
+        color: var(--danger);
+        cursor: pointer;
+        font-size: 18px;
+        padding: 4px;
+        transition: transform 0.2s;
+    }
+
+    .remove-ing-btn:hover { transform: scale(1.2); }
+
+    .table-card {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+    }
+
+    .table-card-header {
+        padding: 18px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 2px solid #f8f9fa;
+    }
+
+    .table-card-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    .pill {
+        background: var(--primary-light);
+        color: var(--primary-dark);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .recipe-card {
+        border: 1px solid #eee;
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 12px;
+        transition: box-shadow 0.2s;
+    }
+
+    .recipe-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    .recipe-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text-main);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .ingredient-tag {
+        display: inline-block;
+        background: var(--accent);
+        color: var(--text-main);
+        padding: 3px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        margin: 3px 2px;
+    }
+
+    .action-form { display: inline; }
+
+    .btn-danger-sm {
+        background: none;
+        border: 1px solid var(--danger);
+        color: var(--danger);
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-danger-sm:hover {
+        background: var(--danger);
+        color: white;
+    }
+
+    .receive-form {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .receive-form input {
+        width: 80px;
+        padding: 6px 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 13px;
+    }
+
+    .btn-receive {
+        background: var(--success);
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background 0.2s;
+    }
+
+    .btn-receive:hover { background: #218838; }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}<span data-i18n="product_mgmt">Mahsulotlarni boshqarish</span>{% endblock %}
+
+{% block content %}
+<!-- Tab Navigation -->
+<div class="nav-tabs">
+    <button class="tab-btn active" onclick="showTab('tab-products', this)">
+        <i class="fa-solid fa-bread-slice"></i> <span data-i18n="all_products">Barcha mahsulotlar</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('tab-materials', this)">
+        <i class="fa-solid fa-boxes-stacked"></i> <span data-i18n="all_raw_materials">Barcha xom ashyolar</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('tab-recipes', this)">
+        <i class="fa-solid fa-scroll"></i> <span>Retseptlar</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('tab-add-product', this)">
+        <i class="fa-solid fa-plus"></i> <span data-i18n="add_new_product">Yangi mahsulot qo'shish</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('tab-add-material', this)">
+        <i class="fa-solid fa-plus"></i> <span data-i18n="add_raw_material">Yangi xom ashyo qo'shish</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('tab-add-recipe', this)">
+        <i class="fa-solid fa-plus"></i> <span data-i18n="add_recipe">Retsept qo'shish</span>
+    </button>
+</div>
+
+<!-- ═══════════════ PRODUCTS LIST ═══════════════ -->
+<div id="tab-products" class="tab-content active">
+    <div class="table-card">
+        <div class="table-card-header">
+            <span class="table-card-title"><i class="fa-solid fa-bread-slice" style="color:var(--primary)"></i> &nbsp;<span data-i18n="all_products">Barcha mahsulotlar</span></span>
+            <span class="pill">{{ products.count }} ta</span>
+        </div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th data-i18n="product_name">Mahsulot nomi</th>
+                    <th data-i18n="price">Narx</th>
+                    <th data-i18n="in_stock">Qoldiq</th>
+                    <th>Retsept</th>
+                    <th data-i18n="actions">Amallar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in products %}
+                <tr>
+                    <td style="color:var(--text-muted)">{{ forloop.counter }}</td>
+                    <td><strong>{{ p.name }}</strong></td>
+                    <td>{{ p.price }} UZS</td>
+                    <td>
+                        {% if p.inventory %}
+                            <span class="{% if p.inventory.stock > 0 %}badge badge-success{% else %}badge badge-danger{% endif %}">
+                                {{ p.inventory.stock }} dona
+                            </span>
+                        {% else %}
+                            <span class="badge badge-warning">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if p.recipe %}
+                            <span class="badge badge-info">{{ p.recipe.batch_size }} donaga</span>
+                        {% else %}
+                            <span style="color:var(--text-muted); font-size:13px;">Yo'q</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form class="action-form" method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_product">
+                            <input type="hidden" name="product_id" value="{{ p.id }}">
+                            <button type="submit" class="btn-danger-sm" onclick="return confirm('O\'chirishni tasdiqlaysizmi?')">
+                                <i class="fa-solid fa-trash"></i> <span data-i18n="delete">O'chirish</span>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="text-align:center; padding:30px; color:var(--text-muted)">
+                    <i class="fa-solid fa-inbox" style="font-size:30px; margin-bottom:10px; display:block;"></i>
+                    Mahsulotlar yo'q
+                </td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ═══════════════ RAW MATERIALS LIST ═══════════════ -->
+<div id="tab-materials" class="tab-content">
+    <div class="table-card">
+        <div class="table-card-header">
+            <span class="table-card-title"><i class="fa-solid fa-boxes-stacked" style="color:var(--secondary)"></i> &nbsp;<span data-i18n="all_raw_materials">Barcha xom ashyolar</span></span>
+            <span class="pill">{{ raw_materials.count }} ta</span>
+        </div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th data-i18n="material_name">Xom ashyo nomi</th>
+                    <th data-i18n="in_stock">Qoldiq</th>
+                    <th data-i18n="unit">O'lchov</th>
+                    <th data-i18n="status">Holat</th>
+                    <th data-i18n="receive_material">Qabul qilish</th>
+                    <th data-i18n="actions">Amallar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mat in raw_materials %}
+                <tr>
+                    <td style="color:var(--text-muted)">{{ forloop.counter }}</td>
+                    <td><strong>{{ mat.name }}</strong></td>
+                    <td>{{ mat.stock }}</td>
+                    <td>{{ mat.unit }}</td>
+                    <td>
+                        {% if mat.stock < 10 %}
+                            <span class="badge badge-danger"><i class="fa-solid fa-triangle-exclamation"></i> <span data-i18n="low_stock">Oz qoldi</span></span>
+                        {% else %}
+                            <span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> <span data-i18n="good">Yaxshi</span></span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form class="action-form" method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="receive_material">
+                            <input type="hidden" name="material_id" value="{{ mat.id }}">
+                            <div class="receive-form">
+                                <input type="number" name="qty" step="0.01" min="0.01" placeholder="{{ mat.unit }}" required>
+                                <button type="submit" class="btn-receive">+ <span data-i18n="receive_material">Qabul</span></button>
+                            </div>
+                        </form>
+                    </td>
+                    <td>
+                        <form class="action-form" method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_material">
+                            <input type="hidden" name="material_id" value="{{ mat.id }}">
+                            <button type="submit" class="btn-danger-sm" onclick="return confirm('O\'chirishni tasdiqlaysizmi?')">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted)">
+                    <i class="fa-solid fa-inbox" style="font-size:30px; margin-bottom:10px; display:block;"></i>
+                    Xom ashyolar yo'q
+                </td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ═══════════════ RECIPES LIST ═══════════════ -->
+<div id="tab-recipes" class="tab-content">
+    <div class="table-card">
+        <div class="table-card-header">
+            <span class="table-card-title"><i class="fa-solid fa-scroll" style="color:#9b6b3a"></i> &nbsp;Retseptlar (Texnologik xarita)</span>
+            <span class="pill">{{ recipes.count }} ta</span>
+        </div>
+        <div style="padding: 24px;">
+            {% for recipe in recipes %}
+            <div class="recipe-card">
+                <div class="recipe-title">
+                    <i class="fa-solid fa-bread-slice" style="color:var(--primary)"></i>
+                    {{ recipe.product.name }}
+                    <span class="badge badge-info">{{ recipe.batch_size }} donaga</span>
+                    <span style="font-size:13px; color:var(--text-muted); font-weight:400; margin-left:5px;">= narx: {{ recipe.product.price }} UZS</span>
+                </div>
+                <div>
+                    {% for item in recipe.items.all %}
+                        <span class="ingredient-tag">
+                            <i class="fa-solid fa-circle-dot" style="font-size:8px;"></i>
+                            {{ item.raw_material.name }}: <strong>{{ item.quantity }} {{ item.raw_material.unit }}</strong>
+                        </span>
+                    {% empty %}
+                        <span style="color:var(--text-muted); font-size:13px;">Ingredientlar kiritilmagan</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% empty %}
+            <div style="text-align:center; padding:40px; color:var(--text-muted)">
+                <i class="fa-solid fa-scroll" style="font-size:40px; margin-bottom:15px; display:block; opacity:0.3;"></i>
+                Retseptlar yo'q. Avval mahsulot va xom ashyo qo'shing.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════ ADD PRODUCT FORM ═══════════════ -->
+<div id="tab-add-product" class="tab-content">
+    <div class="mgmt-grid">
+        <div class="form-panel">
+            <div class="form-panel-header">
+                <i class="fa-solid fa-bread-slice"></i>
+                <span data-i18n="add_new_product">Yangi mahsulot qo'shish</span>
+            </div>
+            <div class="form-panel-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_product">
+
+                    <div class="form-group">
+                        <label data-i18n="product_name">Mahsulot nomi</label>
+                        <input type="text" name="name" class="form-control" required placeholder="Masalan: Obinon, Patir, Bukhara noni...">
+                    </div>
+
+                    <div class="form-group">
+                        <label data-i18n="selling_price">Sotuv narxi (UZS)</label>
+                        <input type="number" name="price" step="0.01" class="form-control" required placeholder="0.00">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding: 14px;">
+                        <i class="fa-solid fa-plus"></i> <span data-i18n="add_new_product">Mahsulot qo'shish</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="table-card">
+            <div class="table-card-header">
+                <span class="table-card-title" data-i18n="all_products">Barcha mahsulotlar</span>
+                <span class="pill">{{ products.count }}</span>
+            </div>
+            <table class="data-table">
+                <thead><tr>
+                    <th data-i18n="product_name">Nomi</th>
+                    <th data-i18n="price">Narxi</th>
+                    <th data-i18n="in_stock">Qoldiq</th>
+                </tr></thead>
+                <tbody>
+                    {% for p in products %}
+                    <tr>
+                        <td><strong>{{ p.name }}</strong></td>
+                        <td>{{ p.price }} UZS</td>
+                        <td>{% if p.inventory %}{{ p.inventory.stock }}{% else %}—{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════ ADD RAW MATERIAL FORM ═══════════════ -->
+<div id="tab-add-material" class="tab-content">
+    <div class="mgmt-grid">
+        <div class="form-panel">
+            <div class="form-panel-header">
+                <i class="fa-solid fa-boxes-stacked"></i>
+                <span data-i18n="add_raw_material">Yangi xom ashyo qo'shish</span>
+            </div>
+            <div class="form-panel-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_material">
+
+                    <div class="form-group">
+                        <label data-i18n="material_name">Xom ashyo nomi</label>
+                        <input type="text" name="name" class="form-control" required placeholder="Masalan: Un, Yog', Xamirturush...">
+                    </div>
+
+                    <div class="form-group">
+                        <label data-i18n="measurement_unit">O'lchov birligi</label>
+                        <select name="unit" class="form-control" required>
+                            <option value="kg">kg (kilogram)</option>
+                            <option value="g">g (gramm)</option>
+                            <option value="litr">litr</option>
+                            <option value="ml">ml (millilitr)</option>
+                            <option value="dona">dona (pcs)</option>
+                            <option value="qop">qop (meshok)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label data-i18n="initial_stock">Boshlang'ich qoldiq</label>
+                        <input type="number" name="stock" step="0.01" class="form-control" value="0" min="0">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:14px;">
+                        <i class="fa-solid fa-plus"></i> <span data-i18n="add_raw_material">Xom ashyo qo'shish</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="table-card">
+            <div class="table-card-header">
+                <span class="table-card-title" data-i18n="all_raw_materials">Barcha xom ashyolar</span>
+                <span class="pill">{{ raw_materials.count }}</span>
+            </div>
+            <table class="data-table">
+                <thead><tr>
+                    <th data-i18n="material_name">Nomi</th>
+                    <th data-i18n="in_stock">Qoldiq</th>
+                    <th data-i18n="unit">O'lchov</th>
+                </tr></thead>
+                <tbody>
+                    {% for m in raw_materials %}
+                    <tr>
+                        <td><strong>{{ m.name }}</strong></td>
+                        <td>{{ m.stock }}</td>
+                        <td>{{ m.unit }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════ ADD RECIPE FORM ═══════════════ -->
+<div id="tab-add-recipe" class="tab-content">
+    <div class="mgmt-grid">
+        <div class="form-panel" style="max-width:100%;">
+            <div class="form-panel-header">
+                <i class="fa-solid fa-scroll"></i>
+                <span data-i18n="add_recipe">Retsept qo'shish / yangilash</span>
+            </div>
+            <div class="form-panel-body">
+                <form method="POST" id="recipe-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_recipe">
+
+                    <div class="form-group">
+                        <label data-i18n="select_product_recipe">Mahsulot tanlang</label>
+                        <select name="recipe_product" class="form-control" required>
+                            <option value="">-- Mahsulot --</option>
+                            {% for p in products %}
+                                <option value="{{ p.id }}">{{ p.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label data-i18n="batch_size">Partiya hajmi (necha donaga)</label>
+                        <input type="number" name="batch_size" class="form-control" required min="1" placeholder="Masalan: 100">
+                        <small style="color:var(--text-muted)">Quyidagi ingredientlar shu dona uchun kerak bo'ladi</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label data-i18n="ingredient">Ingredientlar (Xom ashyolar)</label>
+                        <div id="ingredients-container">
+                            <!-- JS will add rows here -->
+                        </div>
+                        <button type="button" class="btn" style="background:var(--accent); color:var(--text-main); margin-top:10px;" onclick="addIngredientRow()">
+                            <i class="fa-solid fa-plus"></i> <span data-i18n="add_ingredient">Ingredient qo'shish</span>
+                        </button>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:14px; margin-top:10px;">
+                        <i class="fa-solid fa-floppy-disk"></i> <span data-i18n="save_recipe">Retseptni saqlash</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="table-card" style="align-self: start;">
+            <div class="table-card-header">
+                <span class="table-card-title">Mavjud retseptlar</span>
+                <span class="pill">{{ recipes.count }}</span>
+            </div>
+            <div style="padding: 20px;">
+                {% for recipe in recipes %}
+                <div class="recipe-card">
+                    <div class="recipe-title">
+                        <i class="fa-solid fa-bread-slice" style="color:var(--primary)"></i>
+                        {{ recipe.product.name }}
+                        <span class="badge badge-info">{{ recipe.batch_size }} donaga</span>
+                    </div>
+                    {% for item in recipe.items.all %}
+                        <span class="ingredient-tag">{{ item.raw_material.name }}: {{ item.quantity }} {{ item.raw_material.unit }}</span>
+                    {% endfor %}
+                </div>
+                {% empty %}
+                <p style="color:var(--text-muted); text-align:center; padding: 20px;">Retseptlar yo'q</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Pass raw_materials list from Django to JS
+    const RAW_MATERIALS = [
+        {% for m in raw_materials %}
+        { id: {{ m.id }}, name: "{{ m.name }}", unit: "{{ m.unit }}" }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    function addIngredientRow() {
+        const container = document.getElementById('ingredients-container');
+        const row = document.createElement('div');
+        row.className = 'ingredient-row';
+
+        let selectHTML = `<select name="ingredient_id" required>
+            <option value="">-- Xom ashyo --</option>`;
+        RAW_MATERIALS.forEach(m => {
+            selectHTML += `<option value="${m.id}">${m.name} (${m.unit})</option>`;
+        });
+        selectHTML += `</select>`;
+
+        row.innerHTML = `
+            ${selectHTML}
+            <input type="number" name="ingredient_qty" step="0.001" min="0.001" placeholder="Miqdori" required>
+            <button type="button" class="remove-ing-btn" onclick="this.parentElement.remove()">
+                <i class="fa-solid fa-circle-xmark"></i>
+            </button>
+        `;
+        container.appendChild(row);
+    }
+
+    // Add first row automatically
+    addIngredientRow();
+
+    function showTab(tabId, btn) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btn.classList.add('active');
+    }
+</script>
+{% endblock %}

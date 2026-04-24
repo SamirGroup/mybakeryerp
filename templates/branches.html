@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+
+{% block breadcrumb %}<span data-i18n="branches_title">Filiallar</span>{% endblock %}
+
+{% block extra_head %}
+<style>
+.delete-btn { background:none; border:1px solid var(--danger); color:var(--danger); padding:5px 10px; border-radius:6px; font-size:12px; cursor:pointer; transition:var(--transition); }
+.delete-btn:hover { background:var(--danger); color:white; }
+.branch-card { border:1px solid #eee; border-radius:10px; padding:16px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; transition:box-shadow 0.2s; }
+.branch-card:hover { box-shadow:0 4px 12px rgba(0,0,0,0.07); }
+.branch-info { display:flex; flex-direction:column; gap:4px; }
+.branch-name { font-size:16px; font-weight:700; color:var(--text-main); }
+.branch-meta { font-size:13px; color:var(--text-muted); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="nav-tabs">
+    <button class="tab-btn active" onclick="showTab('tab-transfers', this)">
+        <i class="fa-solid fa-truck"></i> <span data-i18n="send_to_branch">Filialga yuborish</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('tab-list', this)">
+        <i class="fa-solid fa-store"></i> <span data-i18n="branch_inventories">Filiallar</span>
+        <span class="pill" style="margin-left:6px; font-size:11px;">{{ branches.count }}</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('tab-add', this)">
+        <i class="fa-solid fa-plus"></i> <span data-i18n="add_branch">Yangi filial qo'shish</span>
+    </button>
+</div>
+
+<!-- ═══════ TAB: SEND TRANSFER + TRANSFER LOG ═══════ -->
+<div id="tab-transfers" class="tab-content active">
+    <div class="grid-2">
+
+        <!-- Nakladnaya Form -->
+        <div class="card">
+            <h3 style="margin-bottom:20px;">
+                <i class="fa-solid fa-truck" style="color:var(--primary)"></i>
+                <span data-i18n="send_to_branch">Filiалга юбориш (Накладная)</span>
+            </h3>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="create_transfer" value="1">
+
+                <div class="form-group">
+                    <label data-i18n="select_branch">Filialni tanlang</label>
+                    <select name="branch" class="form-control" required>
+                        <option value="" data-i18n="opt_select_branch">-- Filialni tanlang --</option>
+                        {% for b in branches %}
+                            <option value="{{ b.id }}">{{ b.name }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if not branches %}
+                    <small style="color:var(--danger);">
+                        ⚠ <span data-i18n="no_branches_hint">Avval filial qo'shing (3-tab)</span>
+                    </small>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="select_product">Mahsulot</label>
+                    <select name="product" class="form-control" required>
+                        <option value="" data-i18n="opt_select_product">-- Mahsulotni tanlang --</option>
+                        {% for p in products %}
+                            <option value="{{ p.id }}">
+                                {{ p.name }}
+                                {% if p.inventory %}({{ p.inventory.stock }} dona){% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="quantity">Miqdori</label>
+                    <input type="number" name="quantity" required min="1" class="form-control"
+                           style="font-size:20px; text-align:center;">
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:13px;">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span data-i18n="create_waybill">Yo'l varaqasi yaratish</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Transfer Log -->
+        <div class="card">
+            <h3 style="margin-bottom:20px;">
+                <i class="fa-solid fa-list-check" style="color:var(--secondary)"></i>
+                <span data-i18n="recent_transfers">So'nggi o'tkazmalar</span>
+            </h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th data-i18n="date">Sana</th>
+                        <th data-i18n="branch">Filial</th>
+                        <th data-i18n="quantity">Miqdori</th>
+                        <th data-i18n="status">Holat</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in transfers %}
+                    <tr>
+                        <td style="color:var(--text-muted); font-size:13px;">{{ t.date_sent|date:"d M Y" }}</td>
+                        <td><strong>{{ t.branch.name }}</strong></td>
+                        <td>
+                            {% for item in t.items.all %}
+                                {{ item.product.name }}: {{ item.quantity }}
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% if t.status == 'in_transit' %}
+                                <span class="badge badge-warning">
+                                    <i class="fa-solid fa-truck-moving"></i>
+                                    <span data-i18n="in_transit">Yo'lda</span>
+                                </span>
+                            {% else %}
+                                <span class="badge badge-success">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                    <span data-i18n="received">Qabul qilindi</span>
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if t.status == 'in_transit' %}
+                            <form method="POST" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="receive_transfer" value="1">
+                                <input type="hidden" name="transfer_id" value="{{ t.id }}">
+                                <button type="submit" class="btn btn-primary"
+                                        style="padding:5px 12px; font-size:12px;">
+                                    <span data-i18n="receive">Qabul</span>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align:center; padding:24px; color:var(--text-muted);">
+                            <i class="fa-solid fa-inbox" style="font-size:28px; display:block; margin-bottom:8px; opacity:0.3;"></i>
+                            <span data-i18n="no_transfers">O'tkazmalar yo'q</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════ TAB: BRANCH LIST + INVENTORIES ═══════ -->
+<div id="tab-list" class="tab-content">
+
+    <!-- Branch cards -->
+    <div class="card" style="margin-bottom:24px;">
+        <h3 style="margin-bottom:20px;">
+            <i class="fa-solid fa-store" style="color:var(--primary)"></i>
+            <span data-i18n="branches_title">Filiallar</span>
+            <span class="pill" style="margin-left:10px;">{{ branches.count }} ta</span>
+        </h3>
+        {% for b in branches %}
+        <div class="branch-card">
+            <div class="branch-info">
+                <div class="branch-name">🏪 {{ b.name }}</div>
+                <div class="branch-meta">
+                    <i class="fa-solid fa-map-pin"></i> {{ b.address|default:"—" }} &nbsp;|&nbsp;
+                    <i class="fa-solid fa-user-tie"></i> {{ b.responsible_person|default:"—" }}
+                </div>
+            </div>
+            <form method="POST" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete_branch">
+                <input type="hidden" name="branch_id" value="{{ b.id }}">
+                <button type="submit" class="delete-btn"
+                        onclick="return confirm('O\'chirishni tasdiqlaysizmi?')">
+                    <i class="fa-solid fa-trash"></i> <span data-i18n="delete">O'chirish</span>
+                </button>
+            </form>
+        </div>
+        {% empty %}
+        <div style="text-align:center; padding:30px; color:var(--text-muted);">
+            <i class="fa-solid fa-store" style="font-size:36px; opacity:0.2; display:block; margin-bottom:10px;"></i>
+            <span data-i18n="no_branches">Filiallar yo'q — quyida yangi filial qo'shing</span>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Inventory grid -->
+    {% if branches %}
+    <div class="card">
+        <h3 style="margin-bottom:16px;">
+            <i class="fa-solid fa-warehouse" style="color:var(--secondary)"></i>
+            <span data-i18n="branch_inventories">Filial qoldiqlari (Ostatka)</span>
+        </h3>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th data-i18n="branch">Filial</th>
+                    {% for p in products %}
+                        <th style="text-align:center;">{{ p.name }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in branches %}
+                <tr>
+                    <td>
+                        <strong>{{ b.name }}</strong><br>
+                        <small style="color:#888;">{{ b.responsible_person }}</small>
+                    </td>
+                    {% for p in products %}
+                        <td style="text-align:center; font-weight:700;">
+                            {% with stock=0 %}
+                            {% for inv in b.inventory.all %}
+                                {% if inv.product.id == p.id %}
+                                    <span class="badge {% if inv.stock > 0 %}badge-success{% else %}badge-danger{% endif %}">
+                                        {{ inv.stock }}
+                                    </span>
+                                {% endif %}
+                            {% endfor %}
+                            {% endwith %}
+                        </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ═══════ TAB: ADD BRANCH ═══════ -->
+<div id="tab-add" class="tab-content">
+    <div style="max-width:550px; margin:0 auto;">
+        <div class="card">
+            <div style="background:linear-gradient(135deg, var(--primary), var(--primary-dark)); color:white; padding:20px 24px; border-radius:10px 10px 0 0; margin:-24px -24px 24px -24px;">
+                <h3 style="margin:0; color:white;">
+                    <i class="fa-solid fa-store-plus"></i>
+                    <span data-i18n="add_branch">Yangi filial qo'shish</span>
+                </h3>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_branch">
+
+                <div class="form-group">
+                    <label data-i18n="branch_name">Filial nomi</label>
+                    <input type="text" name="name" class="form-control" required
+                           data-i18n-placeholder="branch_name_placeholder">
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="branch_address">Manzil</label>
+                    <input type="text" name="address" class="form-control"
+                           data-i18n-placeholder="branch_address_placeholder">
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="responsible_person">Mas'ul shaxs</label>
+                    <input type="text" name="responsible_person" class="form-control"
+                           data-i18n-placeholder="responsible_placeholder">
+                </div>
+
+                <button type="submit" class="btn btn-primary"
+                        style="width:100%; justify-content:center; padding:14px;">
+                    <i class="fa-solid fa-plus"></i>
+                    <span data-i18n="add_branch">Filial qo'shish</span>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function showTab(tabId, btn) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btn.classList.add('active');
+    }
+</script>
+{% endblock %}

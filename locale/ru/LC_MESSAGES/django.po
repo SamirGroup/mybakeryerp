@@ -1,0 +1,367 @@
+# RUSSIAN translation file
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ru\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "Dashboard"
+msgstr "Панель управления"
+
+msgid "Production"
+msgstr "Производство"
+
+msgid "Sales"
+msgstr "Продажи"
+
+msgid "Branches"
+msgstr "Филиалы"
+
+msgid "Accounting"
+msgstr "Бухгалтерия"
+
+msgid "HR Dept"
+msgstr "Отдел кадров"
+
+msgid "Admin"
+msgstr "Администратор"
+
+msgid "Products"
+msgstr "Продукты"
+
+msgid "Dashboard Overview"
+msgstr "Обзор панели управления"
+
+msgid "Today's Revenue"
+msgstr "Выручка за сегодня"
+
+msgid "Products Produced"
+msgstr "Произведено продуктов"
+
+msgid "Total Sales"
+msgstr "Всего продаж"
+
+msgid "On Shift Today"
+msgstr "На смене сегодня"
+
+msgid "Completed Transactions"
+msgstr "Завершённые операции"
+
+msgid "Active employees"
+msgstr "Активные сотрудники"
+
+msgid "Revenue & Expenses (Monthly)"
+msgstr "Доходы и расходы (ежемесячно)"
+
+msgid "Financial Summary"
+msgstr "Финансовая сводка"
+
+msgid "Total Cash Balances"
+msgstr "Общий остаток по кассам"
+
+msgid "Debtors (Owe Us)"
+msgstr "Дебиторы (нам должны)"
+
+msgid "Creditors (We Owe)"
+msgstr "Кредиторы (мы должны)"
+
+msgid "Top Selling Products"
+msgstr "Лучшие продукты по продажам"
+
+msgid "Production & Warehouse"
+msgstr "Производство и склад"
+
+msgid "Daily Production"
+msgstr "Ежедневное производство"
+
+msgid "Raw Materials Warehouse"
+msgstr "Склад сырья"
+
+msgid "Finished Goods"
+msgstr "Готовая продукция"
+
+msgid "Log New Production"
+msgstr "Записать новое производство"
+
+msgid "Select Product"
+msgstr "Выберите продукт"
+
+msgid "Quantity (Pieces/Loaves)"
+msgstr "Количество (штук/буханок)"
+
+msgid "Baker Name (Shift)"
+msgstr "Имя пекаря (смена)"
+
+msgid "Save Production Log"
+msgstr "Сохранить журнал производства"
+
+msgid "Recent Production Logs"
+msgstr "Последние записи производства"
+
+msgid "Date"
+msgstr "Дата"
+
+msgid "Baker"
+msgstr "Пекарь"
+
+msgid "No recent logs"
+msgstr "Последних записей нет"
+
+msgid "Raw Materials Stock"
+msgstr "Запасы сырья"
+
+msgid "Material"
+msgstr "Материал"
+
+msgid "Stock Left"
+msgstr "Остаток на складе"
+
+msgid "Unit"
+msgstr "Единица измерения"
+
+msgid "Status"
+msgstr "Статус"
+
+msgid "Low Stock"
+msgstr "Мало запасов"
+
+msgid "Good"
+msgstr "Хорошо"
+
+msgid "Finished Goods Inventory (Ostatka)"
+msgstr "Склад готовой продукции (Остаток)"
+
+msgid "Current Stock"
+msgstr "Текущий остаток"
+
+msgid "No finished goods in inventory"
+msgstr "Готовой продукции на складе нет"
+
+msgid "Product Management"
+msgstr "Управление продуктами"
+
+msgid "Add New Product"
+msgstr "Добавить новый продукт"
+
+msgid "Add Raw Material"
+msgstr "Добавить сырьё"
+
+msgid "Add Recipe"
+msgstr "Добавить рецепт"
+
+msgid "Product Name"
+msgstr "Название продукта"
+
+msgid "Selling Price"
+msgstr "Цена продажи"
+
+msgid "Material Name"
+msgstr "Название материала"
+
+msgid "Measurement Unit"
+msgstr "Единица измерения"
+
+msgid "Initial Stock"
+msgstr "Начальный остаток"
+
+msgid "Select Product for Recipe"
+msgstr "Выберите продукт для рецепта"
+
+msgid "Batch Size"
+msgstr "Размер партии"
+
+msgid "Ingredient"
+msgstr "Ингредиент"
+
+msgid "Amount Needed"
+msgstr "Необходимое количество"
+
+msgid "Add Ingredient"
+msgstr "Добавить ингредиент"
+
+msgid "Save Recipe"
+msgstr "Сохранить рецепт"
+
+msgid "All Products"
+msgstr "Все продукты"
+
+msgid "All Raw Materials"
+msgstr "Всё сырьё"
+
+msgid "Price"
+msgstr "Цена"
+
+msgid "In Stock"
+msgstr "Остаток"
+
+msgid "Point of Sale (POS)"
+msgstr "Кассовый терминал (POS)"
+
+msgid "Quick Sale"
+msgstr "Быстрая продажа"
+
+msgid "Quantity"
+msgstr "Количество"
+
+msgid "Payment Method"
+msgstr "Способ оплаты"
+
+msgid "Cash"
+msgstr "Наличные"
+
+msgid "Terminal"
+msgstr "Терминал"
+
+msgid "Complete Sale"
+msgstr "Завершить продажу"
+
+msgid "Returns / Brak"
+msgstr "Возврат / Брак"
+
+msgid "Submit Return"
+msgstr "Оформить возврат"
+
+msgid "Available Stock"
+msgstr "Доступный остаток"
+
+msgid "Nasiya (Loan) is strictly prohibited."
+msgstr "Продажа в кредит (Насия) строго запрещена."
+
+msgid "Branches (Points of Sale)"
+msgstr "Филиалы (Точки продаж)"
+
+msgid "Send to Branch (Nakladnaya)"
+msgstr "Отправить в филиал (Накладная)"
+
+msgid "Select Branch"
+msgstr "Выберите филиал"
+
+msgid "Create Waybill (Transfer)"
+msgstr "Создать накладную (Перемещение)"
+
+msgid "Recent Transfers"
+msgstr "Последние перемещения"
+
+msgid "Branch"
+msgstr "Филиал"
+
+msgid "In Transit"
+msgstr "В пути"
+
+msgid "Received"
+msgstr "Получено"
+
+msgid "Receive"
+msgstr "Принять"
+
+msgid "No transfers yet"
+msgstr "Перемещений нет"
+
+msgid "Branch Inventories (Ostatka)"
+msgstr "Остатки по филиалам"
+
+msgid "Accounting & Finance"
+msgstr "Бухгалтерия и финансы"
+
+msgid "Record Expense"
+msgstr "Записать расход"
+
+msgid "Amount"
+msgstr "Сумма"
+
+msgid "From Cash Register"
+msgstr "Из кассы"
+
+msgid "Category"
+msgstr "Категория"
+
+msgid "Description"
+msgstr "Описание"
+
+msgid "Transfer Funds"
+msgstr "Перевод средств"
+
+msgid "From"
+msgstr "Откуда"
+
+msgid "To"
+msgstr "Куда"
+
+msgid "Execute Transfer"
+msgstr "Выполнить перевод"
+
+msgid "Recent Transactions Ledger"
+msgstr "Последние операции"
+
+msgid "Income"
+msgstr "Доход"
+
+msgid "Expense"
+msgstr "Расход"
+
+msgid "Transfer"
+msgstr "Перевод"
+
+msgid "Register"
+msgstr "Касса"
+
+msgid "No recent transactions"
+msgstr "Последних операций нет"
+
+msgid "Human Resources"
+msgstr "Управление персоналом"
+
+msgid "Active Employees"
+msgstr "Активные сотрудники"
+
+msgid "Today"
+msgstr "Сегодня"
+
+msgid "Employee Roster"
+msgstr "Список сотрудников"
+
+msgid "Name"
+msgstr "Имя"
+
+msgid "Position"
+msgstr "Должность"
+
+msgid "Type"
+msgstr "Тип"
+
+msgid "Piecework"
+msgstr "Сдельная оплата"
+
+msgid "Fixed Salary"
+msgstr "Фиксированная зарплата"
+
+msgid "Issue Advance Payment"
+msgstr "Выдать аванс"
+
+msgid "Employee"
+msgstr "Сотрудник"
+
+msgid "Give Advance"
+msgstr "Выдать аванс"
+
+msgid "Recent Advances"
+msgstr "Последние авансы"
+
+msgid "No employees in database"
+msgstr "Сотрудников в базе нет"
+
+msgid "No recent advances"
+msgstr "Последних авансов нет"
+
+msgid "Language"
+msgstr "Язык"
+
+msgid "Uzbek (Latin)"
+msgstr "Узбекский (Латиница)"
+
+msgid "Uzbek (Kirill)"
+msgstr "Узбекский (Кириллица)"
+
+msgid "Russian"
+msgstr "Русский"
