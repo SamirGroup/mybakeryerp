@@ -1,1 +1,1 @@
-web: gunicorn 'bakery_erp.wsgi'
+web: gunicorn bakery_erp.wsgi --log-file -
