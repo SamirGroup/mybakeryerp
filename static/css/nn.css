@@ -1,11 +1,9 @@
-/* style.css - sizning to'liq kodingiz + responsive media queries */
-
 :root {
     /* Colors */
-    --primary: #D4A373;
+    --primary: #D4A373; /* Warm bread color */
     --primary-dark: #b88656;
     --primary-light: #FAEDCD;
-    --secondary: #CCD5AE;
+    --secondary: #CCD5AE; /* Soft green */
     --accent: #E9EDC9;
     --bg-color: #F8F9FA;
     --sidebar-bg: #FEFAE0;
@@ -63,7 +61,6 @@ ul {
     flex-direction: column;
     box-shadow: 2px 0 10px rgba(0,0,0,0.03);
     z-index: 10;
-    transition: var(--transition);
 }
 
 .sidebar-header {
@@ -458,7 +455,7 @@ ul {
 .badge-danger   { background: #f8d7da; color: #721c24; }
 .badge-info     { background: #d1ecf1; color: #0c5460; }
 
-/* Pill counter */
+/* Pill counter (used in tab buttons) */
 .pill {
     display: inline-flex;
     align-items: center;
@@ -474,14 +471,18 @@ ul {
     vertical-align: middle;
 }
 
-/* Setup grid */
+/* Setup grid (3-column) */
 .setup-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 20px;
 }
+@media (max-width: 960px) {
+    .setup-grid { grid-template-columns: 1fr; }
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
 
-/* Delete button */
+/* Delete button (inline destructive) */
 .delete-btn {
     background: none;
     border: 1px solid var(--danger);
@@ -493,13 +494,12 @@ ul {
     transition: var(--transition);
     white-space: nowrap;
 }
-
 .delete-btn:hover {
     background: var(--danger);
     color: white;
 }
 
-/* Employee avatar */
+/* Employee card */
 .emp-avatar {
     width: 42px;
     height: 42px;
@@ -513,253 +513,4 @@ ul {
     font-weight: 700;
     flex-shrink: 0;
     margin-right: 14px;
-}
-
-/* ============================================ */
-/* ========== RESPONSIVE MEDIA QUERIES ========= */
-/* ============================================ */
-
-/* Tablet (768px - 1024px) */
-@media (max-width: 1024px) {
-    .grid-4 {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 20px;
-    }
-    
-    .content-wrapper {
-        padding: 24px;
-    }
-    
-    .topbar {
-        padding: 0 24px;
-    }
-}
-
-/* Mobile L (640px - 768px) */
-@media (max-width: 768px) {
-    .sidebar {
-        width: 80px;
-        position: relative;
-    }
-    
-    .sidebar-header h2,
-    .nav-links a span,
-    .sidebar-footer .lang-label span,
-    .lang-btn {
-        display: none;
-    }
-    
-    .sidebar-header {
-        justify-content: center;
-        padding: 20px 0;
-    }
-    
-    .logo-icon {
-        font-size: 28px;
-    }
-    
-    .nav-links a {
-        justify-content: center;
-        padding: 12px;
-    }
-    
-    .nav-links a i {
-        font-size: 22px;
-        width: auto;
-    }
-    
-    .sidebar-footer .lang-label {
-        justify-content: center;
-    }
-    
-    .sidebar-footer .lang-label i {
-        font-size: 20px;
-        margin: 0 auto;
-    }
-    
-    .lang-switcher {
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    .lang-btn {
-        padding: 4px;
-        font-size: 10px;
-        width: 40px;
-    }
-    
-    /* Hover da sidebar kengayadi */
-    .sidebar:hover {
-        width: 260px;
-        position: absolute;
-        height: 100vh;
-        box-shadow: 2px 0 20px rgba(0,0,0,0.1);
-    }
-    
-    .sidebar:hover .sidebar-header h2,
-    .sidebar:hover .nav-links a span,
-    .sidebar:hover .sidebar-footer .lang-label span,
-    .sidebar:hover .lang-btn {
-        display: inline-block;
-    }
-    
-    .sidebar:hover .sidebar-header {
-        justify-content: flex-start;
-        padding: 30px 20px;
-    }
-    
-    .sidebar:hover .nav-links a {
-        justify-content: flex-start;
-        padding: 12px 20px;
-    }
-    
-    .sidebar:hover .nav-links a i {
-        font-size: 18px;
-        width: 20px;
-    }
-    
-    .sidebar:hover .lang-switcher {
-        flex-direction: row;
-    }
-    
-    .topbar {
-        padding: 0 16px;
-        height: 70px;
-    }
-    
-    .breadcrumb {
-        font-size: 18px;
-    }
-    
-    .user-profile span {
-        display: none;
-    }
-    
-    .content-wrapper {
-        padding: 20px;
-    }
-    
-    .stat-card {
-        gap: 12px;
-    }
-    
-    .stat-icon {
-        width: 48px;
-        height: 48px;
-        font-size: 20px;
-    }
-    
-    .stat-details .value {
-        font-size: 20px;
-    }
-    
-    .data-table th,
-    .data-table td {
-        padding: 8px;
-        font-size: 13px;
-    }
-    
-    .btn {
-        padding: 8px 16px;
-        font-size: 13px;
-    }
-    
-    .card {
-        padding: 16px;
-    }
-}
-
-/* Mobile S (up to 640px) */
-@media (max-width: 640px) {
-    .grid-4 {
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
-    
-    .grid-2 {
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
-    
-    .setup-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .data-table {
-        display: block;
-        overflow-x: auto;
-        white-space: nowrap;
-    }
-    
-    .data-table th,
-    .data-table td {
-        padding: 10px 12px;
-    }
-    
-    .stat-card {
-        flex-direction: row;
-        text-align: left;
-    }
-    
-    .topbar {
-        flex-direction: column;
-        height: auto;
-        padding: 12px 16px;
-        gap: 10px;
-    }
-    
-    .topbar-actions {
-        justify-content: space-between;
-        width: 100%;
-    }
-    
-    .breadcrumb {
-        width: 100%;
-        text-align: left;
-    }
-    
-    .nav-tabs {
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-    
-    .tab-btn {
-        padding: 8px 12px;
-        font-size: 13px;
-    }
-}
-
-/* Very small devices (up to 480px) */
-@media (max-width: 480px) {
-    .content-wrapper {
-        padding: 16px;
-    }
-    
-    .card {
-        padding: 14px;
-    }
-    
-    .stat-icon {
-        width: 44px;
-        height: 44px;
-    }
-    
-    .stat-details .value {
-        font-size: 18px;
-    }
-    
-    .stat-details h3 {
-        font-size: 12px;
-    }
-    
-    .btn {
-        padding: 6px 12px;
-        font-size: 12px;
-    }
-    
-    .data-table th,
-    .data-table td {
-        padding: 6px 10px;
-        font-size: 12px;
-    }
 }
