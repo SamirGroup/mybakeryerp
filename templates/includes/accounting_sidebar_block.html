@@ -1,0 +1,52 @@
+<li>
+    <a href="/accounting/" class="{% if '/accounting/' in request.path %}active{% endif %}">
+        <i class="fa-solid fa-calculator"></i>
+        <span data-i18n="nav_accounting">Buxgalteriya</span>
+    </a>
+</li>
+<li class="nav-group nav-group--accounting nav-group--no-head">
+    <ul class="nav-sub nav-accounting-sub" aria-label="Buxgalteriya bo'limlari" style="padding-left:16px; list-style:none; margin:0;">
+        <li>
+            <a href="/accounting/#overview" data-acc-tab="overview" style="font-size:12px; padding:5px 10px; display:flex; align-items:center; gap:7px; color:#7a6e62; border-radius:8px;" class="{% if '/accounting/' in request.path %}acc-sub-active{% endif %}">
+                <i class="fa-solid fa-chart-pie" style="font-size:11px;"></i>
+                <span data-i18n="acc_overview">Ko'rinish</span>
+            </a>
+        </li>
+        <li>
+            <a href="/accounting/#cash" data-acc-tab="cash" style="font-size:12px; padding:5px 10px; display:flex; align-items:center; gap:7px; color:#7a6e62; border-radius:8px;">
+                <i class="fa-solid fa-money-bill-wave" style="font-size:11px;"></i>
+                <span data-i18n="acc_cash">Kassa</span>
+            </a>
+        </li>
+        <li>
+            <a href="/accounting/#ledger" data-acc-tab="ledger" style="font-size:12px; padding:5px 10px; display:flex; align-items:center; gap:7px; color:#7a6e62; border-radius:8px;">
+                <i class="fa-solid fa-book-journal-whills" style="font-size:11px;"></i>
+                <span data-i18n="acc_ledger">Jurnal</span>
+            </a>
+        </li>
+        <li>
+            <a href="/accounting/#balance" data-acc-tab="balance" style="font-size:12px; padding:5px 10px; display:flex; align-items:center; gap:7px; color:#7a6e62; border-radius:8px;">
+                <i class="fa-solid fa-scale-balanced" style="font-size:11px;"></i>
+                <span data-i18n="acc_balance">Sinov balansi</span>
+            </a>
+        </li>
+        <li>
+            <a href="/accounting/#coa" data-acc-tab="coa" style="font-size:12px; padding:5px 10px; display:flex; align-items:center; gap:7px; color:#7a6e62; border-radius:8px;">
+                <i class="fa-solid fa-sitemap" style="font-size:11px;"></i>
+                <span data-i18n="acc_coa">Hisoblar rejasi</span>
+            </a>
+        </li>
+        <li>
+            <a href="/accounting/#manual" data-acc-tab="manual" style="font-size:12px; padding:5px 10px; display:flex; align-items:center; gap:7px; color:#7a6e62; border-radius:8px;">
+                <i class="fa-solid fa-pen-to-square" style="font-size:11px;"></i>
+                <span data-i18n="acc_manual">Qo'lda jurnal</span>
+            </a>
+        </li>
+        <li>
+            <a href="/accounting/#settings" data-acc-tab="settings" style="font-size:12px; padding:5px 10px; display:flex; align-items:center; gap:7px; color:#7a6e62; border-radius:8px;">
+                <i class="fa-solid fa-sliders" style="font-size:11px;"></i>
+                <span data-i18n="acc_settings">Sozlamalar</span>
+            </a>
+        </li>
+    </ul>
+</li>

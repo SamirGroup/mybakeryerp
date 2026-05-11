@@ -1,288 +1,566 @@
 {% extends 'base.html' %}
 
-{% block breadcrumb %}<span data-i18n="branches_title">Filiallar</span>{% endblock %}
-
 {% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-.delete-btn { background:none; border:1px solid var(--danger); color:var(--danger); padding:5px 10px; border-radius:6px; font-size:12px; cursor:pointer; transition:var(--transition); }
-.delete-btn:hover { background:var(--danger); color:white; }
-.branch-card { border:1px solid #eee; border-radius:10px; padding:16px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; transition:box-shadow 0.2s; }
-.branch-card:hover { box-shadow:0 4px 12px rgba(0,0,0,0.07); }
-.branch-info { display:flex; flex-direction:column; gap:4px; }
-.branch-name { font-size:16px; font-weight:700; color:var(--text-main); }
-.branch-meta { font-size:13px; color:var(--text-muted); }
+    .content-wrapper {
+        --paper: #fffdf7;
+        --ink: #2f2a25;
+        --muted-ink: #746a60;
+        --warm-1: #f2dcc2;
+        --warm-2: #d4a373;
+        --olive-1: #d7debc;
+        --olive-2: #a6b07f;
+        --line-soft: rgba(111, 89, 65, 0.15);
+        font-family: 'Manrope', sans-serif;
+        background:
+            radial-gradient(1100px 460px at -2% -5%, rgba(212, 163, 115, 0.2), transparent),
+            radial-gradient(900px 420px at 101% 12%, rgba(167, 176, 127, 0.18), transparent),
+            linear-gradient(180deg, #fffdf7 0%, #f9f8f3 100%);
+    }
+
+    .branches-shell {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 20px;
+    }
+
+    .panel {
+        border-radius: 22px;
+        border: 1px solid var(--line-soft);
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(8px);
+        box-shadow: 0 10px 30px rgba(78, 60, 41, 0.05);
+        padding: 22px;
+        animation: panelIn 400ms ease both;
+    }
+
+    .hero-section {
+        grid-column: span 12;
+        padding: 28px;
+        background: linear-gradient(110deg, #fffcf5 0%, #fcf9f0 100%);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero-title {
+        font-family: 'Lexend', sans-serif;
+        font-size: clamp(22px, 2.5vw, 30px);
+        color: var(--ink);
+        margin-bottom: 6px;
+    }
+
+    .hero-subtitle {
+        color: var(--muted-ink);
+        font-size: 14px;
+    }
+
+    .kpi { grid-column: span 4; }
+    .kpi-title {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--muted-ink);
+        margin-bottom: 6px;
+        font-weight: 700;
+    }
+    .kpi-value {
+        font-family: 'Lexend', sans-serif;
+        font-size: clamp(20px, 2vw, 26px);
+        color: var(--ink);
+        font-weight: 800;
+    }
+    .kpi-icon {
+        float: right;
+        font-size: 24px;
+        opacity: 0.2;
+        color: var(--warm-2);
+    }
+
+    .tab-nav {
+        grid-column: span 12;
+        display: flex;
+        gap: 12px;
+        margin-top: 10px;
+    }
+
+    .tab-link {
+        padding: 10px 18px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid var(--line-soft);
+        color: var(--muted-ink);
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 200ms ease;
+    }
+
+    .tab-link.active {
+        background: var(--warm-2);
+        color: white;
+        border-color: var(--warm-2);
+        box-shadow: 0 4px 12px rgba(212, 163, 115, 0.3);
+    }
+
+    .tab-pane {
+        grid-column: span 12;
+        display: none;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 20px;
+    }
+
+    .tab-pane.active { display: grid; }
+    .chart-panel { grid-column: span 8; }
+    .side-panel { grid-column: span 4; }
+    .half-panel { grid-column: span 6; }
+    .full-panel { grid-column: span 12; }
+
+    /* Branches Cards */
+    .branch-card {
+        grid-column: span 4;
+        background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(252,250,245,0.9));
+        border: 1px solid var(--line-soft);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .branch-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(78, 60, 41, 0.1);
+    }
+    .branch-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        border-bottom: 1px solid var(--line-soft);
+        padding-bottom: 10px;
+    }
+    .branch-name {
+        font-family: 'Lexend', sans-serif;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--ink);
+    }
+    .branch-meta {
+        font-size: 13px;
+        color: var(--muted-ink);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    /* Forms */
+    .form-group label {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted-ink);
+        margin-bottom: 6px;
+        text-transform: uppercase;
+    }
+    .form-control {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1.5px solid var(--line-soft);
+        background: rgba(255, 255, 255, 0.9);
+        font-family: inherit;
+        font-size: 14px;
+    }
+    .btn-submit {
+        width: 100%;
+        padding: 14px;
+        border-radius: 12px;
+        border: none;
+        background: var(--warm-2);
+        color: white;
+        font-weight: 800;
+        font-family: 'Lexend', sans-serif;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .btn-submit:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+    /* Inventory Grid Table */
+    .table-responsive {
+        overflow-x: auto;
+        border-radius: 15px;
+    }
+    .table-premium {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .table-premium th, .table-premium td {
+        padding: 12px 15px;
+        border-bottom: 1px solid var(--line-soft);
+        text-align: center;
+    }
+    .table-premium th {
+        font-size: 11px;
+        text-transform: uppercase;
+        color: var(--muted-ink);
+        background: rgba(212, 163, 115, 0.05);
+    }
+    .table-premium th:first-child, .table-premium td:first-child {
+        text-align: left;
+        position: sticky;
+        left: 0;
+        background: #fff;
+        z-index: 2;
+        border-right: 2px solid var(--line-soft);
+    }
+    .stock-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-weight: 800;
+        font-family: 'Lexend';
+        font-size: 12px;
+    }
+    .stock-ok { background: rgba(40, 167, 69, 0.1); color: #28a745; }
+    .stock-zero { background: rgba(220, 53, 69, 0.1); color: #dc3545; }
+
+    @keyframes panelIn {
+        from { opacity: 0; transform: translateY(12px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 1100px) {
+        .branch-card { grid-column: span 6; }
+        .kpi { grid-column: span 6; }
+    }
+    @media (max-width: 768px) {
+        .branch-card { grid-column: span 12; }
+        .kpi { grid-column: span 12; }
+        .hero-section { flex-direction: column; align-items: flex-start; }
+    }
 </style>
 {% endblock %}
 
+{% block breadcrumb %}<span data-i18n="branches_title">{% if is_branch_admin %}Filial kabineti{% else %}Filiallar boshqaruvi{% endif %}</span>{% endblock %}
+
 {% block content %}
+{% if is_branch_admin %}
+{% include "branches_staff_shell.html" %}
+{% else %}
+{{ branch_labels|json_script:"branch-labels" }}
+{{ branch_stock_data|json_script:"branch-stock-data" }}
 
-<div class="nav-tabs">
-    <button class="tab-btn active" onclick="showTab('tab-transfers', this)">
-        <i class="fa-solid fa-truck"></i> <span data-i18n="send_to_branch">Filialga yuborish</span>
-    </button>
-    <button class="tab-btn" onclick="showTab('tab-list', this)">
-        <i class="fa-solid fa-store"></i> <span data-i18n="branch_inventories">Filiallar</span>
-        <span class="pill" style="margin-left:6px; font-size:11px;">{{ branches.count }}</span>
-    </button>
-    <button class="tab-btn" onclick="showTab('tab-add', this)">
-        <i class="fa-solid fa-plus"></i> <span data-i18n="add_branch">Yangi filial qo'shish</span>
-    </button>
-</div>
+<div class="branches-shell">
+    <header class="panel hero-section">
+        <div>
+            <h1 class="hero-title" data-i18n="branches_title">Filiallar boshqaruvi</h1>
+            <p class="hero-subtitle">Filiallardagi qoldiqlar, mahsulot o'tkazmalari va umumiy nazorat markazi.</p>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <div class="panel" style="padding:10px 15px; border-radius:15px; background:rgba(255,255,255,0.6);">
+                <div class="kpi-title" data-i18n="total_branches">Filiallar</div>
+                <div class="kpi-value" style="font-size:18px;">{{ total_branches }}</div>
+            </div>
+        </div>
+    </header>
 
-<!-- ═══════ TAB: SEND TRANSFER + TRANSFER LOG ═══════ -->
-<div id="tab-transfers" class="tab-content active">
-    <div class="grid-2">
+    <div class="tab-nav">
+        <div class="tab-link active" onclick="switchTab('overview', this)">
+            <i class="fa-solid fa-chart-pie"></i> <span data-i18n="financial_summary">Xulosa</span>
+        </div>
+        <div class="tab-link" onclick="switchTab('list', this)">
+            <i class="fa-solid fa-store"></i> <span data-i18n="nav_branches">Filiallar</span>
+        </div>
+        <div class="tab-link" onclick="switchTab('transfers', this)">
+            <i class="fa-solid fa-truck-ramp-box"></i> <span data-i18n="tabx1">O'tkazmalar</span>
+            {% if in_transit_count > 0 %}<span style="background:var(--warm-2); color:white; border-radius:10px; padding:2px 6px; font-size:10px; margin-left:5px;">{{ in_transit_count }}</span>{% endif %}
+        </div>
+        <div class="tab-link" onclick="switchTab('inventory', this)">
+            <i class="fa-solid fa-table-cells"></i> <span data-i18n="tabx2">Qoldiqlar (Grid)</span>
+        </div>
+        <div class="tab-link" onclick="switchTab('settings', this)">
+            <i class="fa-solid fa-sliders"></i> <span data-i18n="setup">Sozlamalar</span>
+        </div>
+    </div>
 
-        <!-- Nakladnaya Form -->
-        <div class="card">
-            <h3 style="margin-bottom:20px;">
-                <i class="fa-solid fa-truck" style="color:var(--primary)"></i>
-                <span data-i18n="send_to_branch">Filiалга юбориш (Накладная)</span>
+    <!-- ══ TAB: OVERVIEW ══ -->
+    <section id="pane-overview" class="tab-pane active">
+        <article class="panel kpi">
+            <i class="fa-solid fa-store kpi-icon"></i>
+            <div class="kpi-title" data-i18n="total_branches">Filiallar soni</div>
+            <div class="kpi-value">{{ total_branches }}</div>
+        </article>
+
+        <article class="panel kpi">
+            <i class="fa-solid fa-truck kpi-icon" style="color:#f39c12"></i>
+            <div class="kpi-title" data-i18n="in_transit">Yo'ldagi yuklar</div>
+            <div class="kpi-value">{{ in_transit_count }}</div>
+        </article>
+
+        <article class="panel kpi">
+            <i class="fa-solid fa-boxes-stacked kpi-icon" style="color:#28a745"></i>
+            <div class="kpi-title" data-i18n="total_stock">Jami qoldiq (Filial)</div>
+            <div class="kpi-value">{{ total_stock }} <small>dona</small></div>
+        </article>
+
+        <article class="panel chart-panel">
+            <div class="kpi-title">Filiallar bo'yicha mahsulot taqsimoti</div>
+            <div style="height: 300px; position: relative;">
+                <canvas id="branchStockChart"></canvas>
+            </div>
+        </article>
+
+        <article class="panel side-panel">
+            <div class="kpi-title">Eng ko'p yuklanganlar</div>
+            <div style="display:flex; flex-direction:column; gap:12px; margin-top:15px;">
+                {% for b in branches|slice:":5" %}
+                <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:8px; border-bottom:1px dashed var(--line-soft);">
+                    <div style="font-weight:700; font-size:14px;">{{ b.name }}</div>
+                    <div style="font-family:'Lexend'; font-weight:700; color:var(--warm-2);">{{ b.inventory.count }} tur</div>
+                </div>
+                {% endfor %}
+            </div>
+        </article>
+    </section>
+
+    <!-- ══ TAB: LIST ══ -->
+    <section id="pane-list" class="tab-pane">
+        {% for b in branches %}
+        <article class="panel branch-card">
+            <div class="branch-head">
+                <div class="branch-name">{{ b.name }}</div>
+                <i class="fa-solid fa-store" style="color:var(--warm-2)"></i>
+            </div>
+            <div class="branch-meta">
+                <i class="fa-solid fa-location-dot"></i> {{ b.address|default:"Manzil yo'q" }}
+            </div>
+            <div class="branch-meta">
+                <i class="fa-solid fa-user-check"></i> {{ b.responsible_person|default:"Mas'ul yo'q" }}
+            </div>
+            <div style="margin-top:15px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-size:12px; font-weight:700; color:var(--muted-ink);">{{ b.inventory.count }} mahsulot tur</div>
+                <button class="btn-submit" style="padding:8px 15px; width:auto; font-size:12px;" onclick="switchTab('inventory', null); scrollToBranch('{{ b.id }}')">
+                    Qoldiqni ko'rish
+                </button>
+            </div>
+        </article>
+        {% endfor %}
+    </section>
+
+    <!-- ══ TAB: TRANSFERS ══ -->
+    <section id="pane-transfers" class="tab-pane">
+        <article class="panel side-panel" style="height: fit-content;">
+            <h3 style="margin-bottom:20px; font-family:'Lexend'; font-size:18px;">
+                <i class="fa-solid fa-paper-plane" style="color:var(--warm-2)"></i> <span data-i18n="new_transfer">Yuborish</span>
             </h3>
             <form method="POST">
                 {% csrf_token %}
                 <input type="hidden" name="create_transfer" value="1">
-
-                <div class="form-group">
-                    <label data-i18n="select_branch">Filialni tanlang</label>
-                    <select name="branch" class="form-control" required>
-                        <option value="" data-i18n="opt_select_branch">-- Filialni tanlang --</option>
-                        {% for b in branches %}
-                            <option value="{{ b.id }}">{{ b.name }}</option>
-                        {% endfor %}
+                <div class="form-group" style="margin-bottom:15px;">
+                    <label data-i18n="select_branch">Filial</label>
+                    <select name="branch" required class="form-control">
+                        {% for b in branches %}<option value="{{ b.id }}">{{ b.name }}</option>{% endfor %}
                     </select>
-                    {% if not branches %}
-                    <small style="color:var(--danger);">
-                        ⚠ <span data-i18n="no_branches_hint">Avval filial qo'shing (3-tab)</span>
-                    </small>
-                    {% endif %}
                 </div>
-
-                <div class="form-group">
+                <div class="form-group" style="margin-bottom:15px;">
                     <label data-i18n="select_product">Mahsulot</label>
-                    <select name="product" class="form-control" required>
-                        <option value="" data-i18n="opt_select_product">-- Mahsulotni tanlang --</option>
-                        {% for p in products %}
-                            <option value="{{ p.id }}">
-                                {{ p.name }}
-                                {% if p.inventory %}({{ p.inventory.stock }} dona){% endif %}
-                            </option>
-                        {% endfor %}
+                    <select name="product" required class="form-control">
+                        {% for p in products %}<option value="{{ p.id }}">{{ p.name }} (Ombor: {{ p.inventory.stock|default:0 }})</option>{% endfor %}
                     </select>
                 </div>
-
-                <div class="form-group">
-                    <label data-i18n="quantity">Miqdori</label>
-                    <input type="number" name="quantity" required min="1" class="form-control"
-                           style="font-size:20px; text-align:center;">
+                <div class="form-group" style="margin-bottom:20px;">
+                    <label data-i18n="quantity">Miqdor</label>
+                    <input type="number" name="quantity" required class="form-control" placeholder="0">
                 </div>
-
-                <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:13px;">
-                    <i class="fa-solid fa-paper-plane"></i>
-                    <span data-i18n="create_waybill">Yo'l varaqasi yaratish</span>
+                <button type="submit" class="btn-submit">
+                    <span data-i18n="save">Yuborish</span>
                 </button>
             </form>
-        </div>
+        </article>
 
-        <!-- Transfer Log -->
-        <div class="card">
-            <h3 style="margin-bottom:20px;">
-                <i class="fa-solid fa-list-check" style="color:var(--secondary)"></i>
-                <span data-i18n="recent_transfers">So'nggi o'tkazmalar</span>
+        <article class="panel chart-panel">
+            <h3 style="margin-bottom:20px; font-family:'Lexend'; font-size:18px;">
+                <i class="fa-solid fa-clock-rotate-left" style="color:var(--olive-2)"></i> <span data-i18n="transfer_history">Tarix</span>
             </h3>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th data-i18n="date">Sana</th>
-                        <th data-i18n="branch">Filial</th>
-                        <th data-i18n="quantity">Miqdori</th>
-                        <th data-i18n="status">Holat</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for t in transfers %}
-                    <tr>
-                        <td style="color:var(--text-muted); font-size:13px;">{{ t.date_sent|date:"d M Y" }}</td>
-                        <td><strong>{{ t.branch.name }}</strong></td>
-                        <td>
-                            {% for item in t.items.all %}
-                                {{ item.product.name }}: {{ item.quantity }}
-                            {% endfor %}
-                        </td>
-                        <td>
-                            {% if t.status == 'in_transit' %}
-                                <span class="badge badge-warning">
-                                    <i class="fa-solid fa-truck-moving"></i>
-                                    <span data-i18n="in_transit">Yo'lda</span>
-                                </span>
-                            {% else %}
-                                <span class="badge badge-success">
-                                    <i class="fa-solid fa-circle-check"></i>
-                                    <span data-i18n="received">Qabul qilindi</span>
-                                </span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if t.status == 'in_transit' %}
-                            <form method="POST" style="display:inline;">
-                                {% csrf_token %}
-                                <input type="hidden" name="receive_transfer" value="1">
-                                <input type="hidden" name="transfer_id" value="{{ t.id }}">
-                                <button type="submit" class="btn btn-primary"
-                                        style="padding:5px 12px; font-size:12px;">
-                                    <span data-i18n="receive">Qabul</span>
-                                </button>
-                            </form>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" style="text-align:center; padding:24px; color:var(--text-muted);">
-                            <i class="fa-solid fa-inbox" style="font-size:28px; display:block; margin-bottom:8px; opacity:0.3;"></i>
-                            <span data-i18n="no_transfers">O'tkazmalar yo'q</span>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<!-- ═══════ TAB: BRANCH LIST + INVENTORIES ═══════ -->
-<div id="tab-list" class="tab-content">
-
-    <!-- Branch cards -->
-    <div class="card" style="margin-bottom:24px;">
-        <h3 style="margin-bottom:20px;">
-            <i class="fa-solid fa-store" style="color:var(--primary)"></i>
-            <span data-i18n="branches_title">Filiallar</span>
-            <span class="pill" style="margin-left:10px;">{{ branches.count }} ta</span>
-        </h3>
-        {% for b in branches %}
-        <div class="branch-card">
-            <div class="branch-info">
-                <div class="branch-name">🏪 {{ b.name }}</div>
-                <div class="branch-meta">
-                    <i class="fa-solid fa-map-pin"></i> {{ b.address|default:"—" }} &nbsp;|&nbsp;
-                    <i class="fa-solid fa-user-tie"></i> {{ b.responsible_person|default:"—" }}
-                </div>
-            </div>
-            <form method="POST" style="display:inline;">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="delete_branch">
-                <input type="hidden" name="branch_id" value="{{ b.id }}">
-                <button type="submit" class="delete-btn"
-                        onclick="return confirm('O\'chirishni tasdiqlaysizmi?')">
-                    <i class="fa-solid fa-trash"></i> <span data-i18n="delete">O'chirish</span>
-                </button>
-            </form>
-        </div>
-        {% empty %}
-        <div style="text-align:center; padding:30px; color:var(--text-muted);">
-            <i class="fa-solid fa-store" style="font-size:36px; opacity:0.2; display:block; margin-bottom:10px;"></i>
-            <span data-i18n="no_branches">Filiallar yo'q — quyida yangi filial qo'shing</span>
-        </div>
-        {% endfor %}
-    </div>
-
-    <!-- Inventory grid -->
-    {% if branches %}
-    <div class="card">
-        <h3 style="margin-bottom:16px;">
-            <i class="fa-solid fa-warehouse" style="color:var(--secondary)"></i>
-            <span data-i18n="branch_inventories">Filial qoldiqlari (Ostatka)</span>
-        </h3>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th data-i18n="branch">Filial</th>
-                    {% for p in products %}
-                        <th style="text-align:center;">{{ p.name }}</th>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for b in branches %}
-                <tr>
-                    <td>
-                        <strong>{{ b.name }}</strong><br>
-                        <small style="color:#888;">{{ b.responsible_person }}</small>
-                    </td>
-                    {% for p in products %}
-                        <td style="text-align:center; font-weight:700;">
-                            {% with stock=0 %}
-                            {% for inv in b.inventory.all %}
-                                {% if inv.product.id == p.id %}
-                                    <span class="badge {% if inv.stock > 0 %}badge-success{% else %}badge-danger{% endif %}">
-                                        {{ inv.stock }}
-                                    </span>
+            <div class="table-responsive">
+                <table class="table-premium">
+                    <thead>
+                        <tr>
+                            <th data-i18n="date">Sana</th>
+                            <th data-i18n="branch">Filial</th>
+                            <th data-i18n="details">Mahsulot</th>
+                            <th data-i18n="status">Holat</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in transfers %}
+                        <tr>
+                            <td style="font-size:12px; color:var(--muted-ink);">{{ t.date_sent|date:"d.m.Y H:i" }}</td>
+                            <td style="font-weight:700;">{{ t.branch.name }}</td>
+                            <td>
+                                {% for item in t.items.all %}{{ item.product.name }}: {{ item.quantity }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                            </td>
+                            <td>
+                                {% if t.status == 'in_transit' %}
+                                    <span style="color:#f39c12; font-weight:700;"><i class="fa-solid fa-truck"></i> Yo'lda</span>
+                                {% else %}
+                                    <span style="color:#28a745; font-weight:700;"><i class="fa-solid fa-check"></i> OK</span>
                                 {% endif %}
-                            {% endfor %}
-                            {% endwith %}
-                        </td>
-                    {% endfor %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% endif %}
-</div>
-
-<!-- ═══════ TAB: ADD BRANCH ═══════ -->
-<div id="tab-add" class="tab-content">
-    <div style="max-width:550px; margin:0 auto;">
-        <div class="card">
-            <div style="background:linear-gradient(135deg, var(--primary), var(--primary-dark)); color:white; padding:20px 24px; border-radius:10px 10px 0 0; margin:-24px -24px 24px -24px;">
-                <h3 style="margin:0; color:white;">
-                    <i class="fa-solid fa-store-plus"></i>
-                    <span data-i18n="add_branch">Yangi filial qo'shish</span>
-                </h3>
+                            </td>
+                            <td>
+                                {% if t.status == 'in_transit' %}
+                                <form method="POST">{% csrf_token %}<input type="hidden" name="receive_transfer" value="1"><input type="hidden" name="transfer_id" value="{{ t.id }}"><button class="btn-submit" style="padding:5px 10px; width:auto; font-size:11px;">Qabul</button></form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-            <form method="POST">
+        </article>
+    </section>
+
+    <!-- ══ TAB: INVENTORY ══ -->
+    <section id="pane-inventory" class="tab-pane">
+        <article class="panel full-panel">
+            <div class="branch-head" style="border:none;">
+                <h3 style="font-family:'Lexend'; font-size:20px;">Filiallardagi qoldiqlar matritsasi</h3>
+                <button class="btn-submit" style="width:auto; padding:8px 15px; background:var(--olive-2);" onclick="window.print()">
+                    <i class="fa-solid fa-print"></i>
+                </button>
+            </div>
+            <div class="table-responsive" style="margin-top:15px;">
+                <table class="table-premium">
+                    <thead>
+                        <tr>
+                            <th>Filial</th>
+                            {% for p in products %}<th>{{ p.name }}</th>{% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in inventory_matrix %}
+                        <tr id="branch-row-{{ row.branch.id }}">
+                            <td style="font-weight:700;">{{ row.branch.name }}</td>
+                            {% for stock in row.stocks %}
+                            <td>
+                                <span class="stock-badge {% if stock > 0 %}stock-ok{% else %}stock-zero{% endif %}">
+                                    {{ stock }}
+                                </span>
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </section>
+
+    <!-- ══ TAB: SETTINGS ══ -->
+    <section id="pane-settings" class="tab-pane">
+        <article class="panel half-panel">
+            <h4 data-i18n="add_branch">Filial qo'shish</h4>
+            <form method="POST" style="margin-top:20px;">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="add_branch">
-
-                <div class="form-group">
-                    <label data-i18n="branch_name">Filial nomi</label>
-                    <input type="text" name="name" class="form-control" required
-                           data-i18n-placeholder="branch_name_placeholder">
+                <div class="form-group" style="margin-bottom:15px;">
+                    <label data-i18n="branch_name">Nomi</label>
+                    <input type="text" name="name" required class="form-control" data-i18n-placeholder="branch_name_placeholder">
                 </div>
-
-                <div class="form-group">
+                <div class="form-group" style="margin-bottom:15px;">
                     <label data-i18n="branch_address">Manzil</label>
-                    <input type="text" name="address" class="form-control"
-                           data-i18n-placeholder="branch_address_placeholder">
+                    <input type="text" name="address" class="form-control" data-i18n-placeholder="branch_address_placeholder">
                 </div>
-
-                <div class="form-group">
+                <div class="form-group" style="margin-bottom:20px;">
                     <label data-i18n="responsible_person">Mas'ul shaxs</label>
-                    <input type="text" name="responsible_person" class="form-control"
-                           data-i18n-placeholder="responsible_placeholder">
+                    <input type="text" name="responsible_person" class="form-control" data-i18n-placeholder="responsible_placeholder">
                 </div>
-
-                <button type="submit" class="btn btn-primary"
-                        style="width:100%; justify-content:center; padding:14px;">
-                    <i class="fa-solid fa-plus"></i>
-                    <span data-i18n="add_branch">Filial qo'shish</span>
-                </button>
+                <button type="submit" class="btn-submit">Saqlash</button>
             </form>
-        </div>
-    </div>
-</div>
+        </article>
 
+        <article class="panel half-panel">
+            <h4 style="color:#dc3545">Boshqaruv</h4>
+            <div style="margin-top:20px; display:flex; flex-direction:column; gap:12px;">
+                {% for b in branches %}
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:rgba(0,0,0,0.02); border-radius:12px;">
+                    <span style="font-weight:700;">{{ b.name }}</span>
+                    <form method="POST" onsubmit="return confirm('O\'chirilsinmi?')">{% csrf_token %}<input type="hidden" name="action" value="delete_branch"><input type="hidden" name="branch_id" value="{{ b.id }}"><button class="btn-submit" style="background:#dc3545; width:35px; height:35px; padding:0;"><i class="fa-solid fa-trash"></i></button></form>
+                </div>
+                {% endfor %}
+            </div>
+        </article>
+    </section>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_scripts %}
+{% if not is_branch_admin %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    function showTab(tabId, btn) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
-        btn.classList.add('active');
+    function switchTab(tabName, btn) {
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
+        document.getElementById('pane-' + tabName).classList.add('active');
+        if(btn) btn.classList.add('active');
+        else {
+            document.querySelectorAll('.tab-link').forEach(l => {
+                if(l.getAttribute('onclick').includes(tabName)) l.classList.add('active');
+            });
+        }
     }
+
+    function scrollToBranch(bid) {
+        setTimeout(() => {
+            const row = document.getElementById('branch-row-' + bid);
+            if(row) {
+                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                row.style.backgroundColor = 'rgba(212, 163, 115, 0.15)';
+                setTimeout(() => row.style.backgroundColor = '', 2000);
+            }
+        }, 100);
+    }
+
+    function initBranchCharts() {
+        const labels = JSON.parse(document.getElementById('branch-labels').textContent);
+        const data = JSON.parse(document.getElementById('branch-stock-data').textContent);
+
+        const ctx = document.getElementById('branchStockChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Jami qoldiq (dona)',
+                    data: data,
+                    backgroundColor: '#d4a373',
+                    borderRadius: 8,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', initBranchCharts);
 </script>
+{% endif %}
 {% endblock %}

@@ -1,164 +1,963 @@
 {% extends 'base.html' %}
 
+{% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    .production-shell {
+        --prod-ink: #2f2a25;
+        --prod-muted: #756a5f;
+        --prod-line: rgba(117, 95, 70, 0.2);
+        --prod-warm: #d4a373;
+        --prod-bg: #fffdf8;
+        font-family: 'Manrope', sans-serif;
+        display: grid;
+        gap: 18px;
+    }
+
+    .prod-hero {
+        border-radius: 22px;
+        border: 1px solid var(--prod-line);
+        background:
+            linear-gradient(120deg, rgba(255, 252, 245, 0.97), rgba(252, 244, 232, 0.92)),
+            radial-gradient(circle at right top, rgba(212, 163, 115, 0.28), transparent 45%);
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .prod-hero h2 {
+        font-family: 'Lexend', sans-serif;
+        font-size: clamp(22px, 2.4vw, 30px);
+        color: var(--prod-ink);
+        margin: 0 0 6px;
+    }
+
+    .prod-hero p {
+        color: var(--prod-muted);
+        margin: 0;
+        font-size: 14px;
+        max-width: 72ch;
+    }
+
+    .hero-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .hero-link {
+        border-radius: 10px;
+        padding: 9px 12px;
+        border: 1px solid rgba(127, 100, 73, 0.26);
+        background: rgba(255, 255, 255, 0.84);
+        font-size: 12px;
+        font-weight: 700;
+        color: #5e5247;
+    }
+
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .kpi-card {
+        border-radius: 18px;
+        border: 1px solid var(--prod-line);
+        background: linear-gradient(165deg, rgba(255, 255, 255, 0.98), rgba(251, 249, 244, 0.96));
+        padding: 16px;
+    }
+
+    .kpi-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #7a6d62;
+        margin-bottom: 8px;
+        font-weight: 700;
+    }
+
+    .kpi-value {
+        font-family: 'Lexend', sans-serif;
+        font-size: clamp(24px, 2.1vw, 30px);
+        line-height: 1;
+        font-weight: 800;
+        color: var(--prod-ink);
+    }
+
+    .kpi-sub {
+        margin-top: 8px;
+        color: #807367;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .prod-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 6px;
+    }
+
+    .prod-tab-btn {
+        border: 1px solid rgba(121, 96, 74, 0.24);
+        background: rgba(255, 255, 255, 0.72);
+        color: #5f5348;
+        border-radius: 999px;
+        padding: 10px 14px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .prod-tab-btn.active {
+        background: #d4a373;
+        color: #fff;
+        border-color: #d4a373;
+    }
+
+    .prod-tab-content {
+        display: none;
+        gap: 16px;
+    }
+
+    .prod-tab-content.active {
+        display: grid;
+    }
+
+    .two-col {
+        grid-template-columns: 1fr 1.45fr;
+        align-items: start;
+    }
+
+    .prod-card {
+        border-radius: 18px;
+        border: 1px solid var(--prod-line);
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 10px 26px rgba(92, 69, 48, 0.08);
+        padding: 16px;
+    }
+
+    .prod-card h3 {
+        margin: 0 0 12px;
+        font-family: 'Lexend', sans-serif;
+        font-size: 16px;
+        color: #3a312a;
+    }
+
+    .section-sub {
+        color: #887c70;
+        font-size: 12px;
+        margin-bottom: 10px;
+        font-weight: 600;
+    }
+
+    .prod-form-grid {
+        display: grid;
+        gap: 10px;
+    }
+
+    .submit-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 12px;
+        font-weight: 700;
+    }
+
+    .table-wrap {
+        overflow-x: auto;
+    }
+
+    .table-clean {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    .table-clean th,
+    .table-clean td {
+        border-bottom: 1px dashed rgba(123, 99, 77, 0.23);
+        padding: 10px 8px;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    .table-clean th {
+        color: #7a6e63;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 11px;
+    }
+
+    .stock-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 4px 9px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .stock-tag.ok {
+        background: rgba(40, 167, 69, 0.14);
+        color: #256f3a;
+    }
+
+    .stock-tag.low {
+        background: rgba(220, 53, 69, 0.14);
+        color: #a3333f;
+    }
+
+    .critical-list {
+        display: grid;
+        gap: 8px;
+        margin-top: 6px;
+    }
+
+    .critical-item {
+        border-radius: 10px;
+        padding: 10px 12px;
+        border: 1px solid rgba(220, 53, 69, 0.22);
+        background: rgba(248, 215, 218, 0.36);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .mix-chart {
+        height: 260px;
+    }
+
+    .log-list {
+        display: grid;
+        gap: 9px;
+        margin-top: 6px;
+    }
+
+    .log-item {
+        border-radius: 12px;
+        border: 1px solid rgba(121, 97, 74, 0.2);
+        padding: 10px 12px;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        background: #fff;
+    }
+
+    .log-main {
+        font-size: 13px;
+        font-weight: 700;
+        color: #3a312b;
+    }
+
+    .log-sub {
+        font-size: 12px;
+        color: #84786d;
+        margin-top: 2px;
+    }
+
+    .log-time {
+        font-size: 11px;
+        color: #7b6f64;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .empty-box {
+        border-radius: 12px;
+        border: 1px dashed rgba(132, 111, 88, 0.38);
+        color: #84786d;
+        text-align: center;
+        padding: 20px;
+        font-size: 13px;
+    }
+
+    @media (max-width: 1160px) {
+        .kpi-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .two-col {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 720px) {
+        .prod-hero {
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 16px;
+        }
+
+        .kpi-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .prod-tabs {
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            padding-bottom: 4px;
+        }
+
+        .prod-tab-btn {
+            flex-shrink: 0;
+        }
+    }
+
+    .prod-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: flex-end;
+        padding: 14px 16px;
+        border-radius: 16px;
+        border: 1px solid var(--prod-line);
+        background: rgba(255, 255, 255, 0.9);
+    }
+
+    .prod-toolbar label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #7a6e62;
+        font-weight: 700;
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .timer-line {
+        border-radius: 12px;
+        border: 1px dashed rgba(121, 97, 74, 0.35);
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        background: #fffdf9;
+    }
+
+    .timer-line strong {
+        color: #3a312b;
+        font-size: 13px;
+    }
+
+    .prod-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+    }
+
+    .prod-modal-overlay.active {
+        display: flex;
+    }
+
+    .prod-modal-card {
+        background: #fffdf9;
+        border-radius: 16px;
+        max-width: 460px;
+        width: 100%;
+        padding: 22px;
+        border: 1px solid var(--prod-line);
+        box-shadow: 0 20px 50px rgba(62, 48, 32, 0.18);
+    }
+
+    .prod-modal-card h3 {
+        margin: 0 0 8px;
+        font-family: 'Lexend', sans-serif;
+        font-size: 18px;
+        color: var(--prod-ink);
+    }
+</style>
+{% endblock %}
+
 {% block breadcrumb %}<span data-i18n="production_warehouse">Ishlab chiqarish va ombor</span>{% endblock %}
 
 {% block content %}
-<div class="nav-tabs">
-    <button class="tab-btn active" onclick="showTab('daily', this)">
-        <span data-i18n="daily_production">Kunlik ishlab chiqarish</span>
-    </button>
-    <button class="tab-btn" onclick="showTab('warehouse', this)">
-        <span data-i18n="raw_materials_wh">Xom ashyo ombori</span>
-    </button>
-    <button class="tab-btn" onclick="showTab('finished', this)">
-        <span data-i18n="finished_goods">Tayyor mahsulotlar</span>
-    </button>
-</div>
+{{ mix_labels|json_script:"production-mix-labels" }}
+{{ mix_data|json_script:"production-mix-data" }}
+{{ recipe_batches_payload|json_script:"recipe-batches-data" }}
+{{ active_logs_payload|json_script:"production-active-logs" }}
 
-<!-- ═══ Daily Production Tab ═══ -->
-<div id="daily" class="tab-content active">
-    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
-        <div class="card">
-            <h3 style="margin-bottom: 20px;" data-i18n="log_new_production">Yangi ishlab chiqarishni qayd etish</h3>
-            <form method="POST">
-                {% csrf_token %}
-                <input type="hidden" name="add_production" value="1">
+<section class="production-shell">
+    <div class="prod-hero">
+        <div>
+            <h2>Ishlab chiqarish markazi</h2>
+            <p>
+                Bir oynada ishlab chiqarish qaydi, xom ashyo holati, tayyor mahsulot qoldig'i va risk materiallar ko'rinadi.
+                Ma'lumotlar real vaqtga yaqin backenddan olinadi.
+            </p>
+        </div>
+        <div class="hero-actions">
+            <a class="hero-link" href="/production/manage/">Mahsulotlar va retseptlar</a>
+            <a class="hero-link" href="/sales/">Sotuv bo'limiga o'tish</a>
+        </div>
+    </div>
 
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-label">Umumiy ishlab chiqarish</div>
+            <div class="kpi-value">{{ today_total_production }}</div>
+            <div class="kpi-sub">So'nggi qaydlarga asoslangan dona</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Tayyor mahsulot qoldig'i</div>
+            <div class="kpi-value">{{ total_finished_stock }}</div>
+            <div class="kpi-sub">Ombordagi jami dona</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Risk xomashyolar</div>
+            <div class="kpi-value">{{ low_material_count }}</div>
+            <div class="kpi-sub">10 birlikdan past qolganlar</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Retsept qamrovi</div>
+            <div class="kpi-value">{{ recipe_coverage }}%</div>
+            <div class="kpi-sub">Retseptsiz mahsulot: {{ products_without_recipe }}</div>
+        </div>
+    </div>
+
+    <form method="get" class="prod-toolbar" style="margin-top: 4px;">
+        <input type="hidden" name="period" id="prodPeriodField" value="{{ period }}">
+        <div>
+            <label>Filtr</label>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button type="submit" name="period" value="today" class="hero-link" {% if period == 'today' %}style="border-color:#d4a373;background:#fff5ea;"{% endif %}>Bugun</button>
+                <button type="submit" name="period" value="week" class="hero-link" {% if period == 'week' %}style="border-color:#d4a373;background:#fff5ea;"{% endif %}>Haftalik</button>
+            </div>
+        </div>
+        <div>
+            <label>Tanlangan davr</label>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                <input type="date" name="date_from" value="{{ date_from|date:'Y-m-d' }}" class="form-control" style="width:auto; min-width:140px;">
+                <span style="font-weight:700; color:#75695d;">—</span>
+                <input type="date" name="date_to" value="{{ date_to|date:'Y-m-d' }}" class="form-control" style="width:auto; min-width:140px;">
+                <button type="submit" name="period" value="custom" class="btn btn-primary" style="padding:8px 14px;">Qo'llash</button>
+            </div>
+        </div>
+        <div style="margin-left:auto; display:flex; gap:8px; flex-wrap:wrap;">
+            <a href="?{% if period %}period={{ period }}&{% endif %}{% if period == 'custom' %}date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}&{% endif %}export=excel" class="hero-link">📊 Excel</a>
+            <button type="button" class="hero-link" onclick="window.print()">🖨️ Chop</button>
+        </div>
+    </form>
+
+    <div class="prod-tabs">
+        <button type="button" class="prod-tab-btn active" onclick="showProdTab('prod-daily', this)">Kunlik ishlab chiqarish</button>
+        <button type="button" class="prod-tab-btn" onclick="showProdTab('prod-process', this)">Jarayon / Timer</button>
+        <button type="button" class="prod-tab-btn" onclick="showProdTab('prod-warehouse', this)">Xom ashyo ombori</button>
+        <button type="button" class="prod-tab-btn" onclick="showProdTab('prod-finished', this)">Tayyor mahsulotlar</button>
+    </div>
+
+    <div id="prod-daily" class="prod-tab-content two-col active">
+        <div class="prod-card">
+            <h3>Yangi ishlab chiqarish</h3>
+            <div class="section-sub">
+                Kerakli mahsulot va dona sonini kiritib jarayonni boshlang. Barcha xom ashyo retseptga asosan ombordan yechib olinadi.
+            </div>
+            <button type="button" class="btn btn-primary submit-btn" onclick="openProductionModal()">
+                <i class="fa-solid fa-clock"></i>
+                Retsept asosida ishlab chiqarishni boshlash
+            </button>
+            <p class="section-sub" style="margin-top:12px;">
+                Filtr: {{ date_from|date:"d.m.Y" }} — {{ date_to|date:"d.m.Y" }}
+            </p>
+        </div>
+
+        <div class="prod-card">
+            <h3>Ishlab chiqarish dinamikasi</h3>
+            <div class="section-sub">Mahsulotlar bo'yicha umumiy ishlab chiqarilgan dona</div>
+            <div class="mix-chart">
+                <canvas id="productionMixChart"></canvas>
+            </div>
+
+            <h3 style="margin-top: 16px;">So'nggi ishlab chiqarish qaydlari</h3>
+            {% if recent_logs %}
+                <div class="log-list">
+                    {% for log in recent_logs %}
+                    <div class="log-item">
+                        <div>
+                            <div class="log-main">{{ log.product.name }} — {{ log.quantity }} dona</div>
+                            <div class="log-sub">
+                                Novvoy: {{ log.baker_name|default:"-" }}
+                                {% if log.timer_minutes %} | Timer: {{ log.timer_minutes }} min{% endif %}
+                                {% if log.is_done %} | Tayyor{% else %} | Jarayonda{% endif %}
+                            </div>
+                        </div>
+                        <div class="log-time">{{ log.date|date:"d M Y H:i" }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-box">Tanlangan davr uchun ishlab chiqarish qaydlari yo'q.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="prod-process" class="prod-tab-content">
+        <div class="prod-card">
+            <h3>Faol jarayonlar va taymerlar</h3>
+            <div class="section-sub">Vaqt tugaganda ovozli ogohlantirish chiqadi. Tayyor bo'lganda mahsulotni tasdiqlang.</div>
+            <div id="productionTimersHost"></div>
+            {% if not active_logs %}
+            <div class="empty-box" id="noTimersPlaceholder">Hozircha faol taymer yo'q.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="productionStartModal" class="prod-modal-overlay" role="dialog" aria-modal="true">
+        <div class="prod-modal-card">
+            <h3>Ishlab chiqarishni boshlash</h3>
+            <p class="section-sub">Timer (daqiqa) kiritilguncha tasdiqlash tugmasi ochilmaydi. Kiritilgan dona bo'yicha xom ashyo yechib olinadi.</p>
+            <div class="prod-form-grid" style="margin-top:12px;">
                 <div class="form-group">
-                    <label data-i18n="select_product">Mahsulotni tanlang</label>
-                    <select name="product" class="form-control" required>
-                        <option value="" data-i18n="opt_select_product">-- Mahsulotni tanlang --</option>
+                    <label>Mahsulot</label>
+                    <select id="modalProdSelect" class="form-control">
+                        <option value="">-- Tanlang --</option>
                         {% for p in products %}
                             <option value="{{ p.id }}">{{ p.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
-
                 <div class="form-group">
-                    <label data-i18n="quantity_pieces">Miqdori (dona/non)</label>
-                    <input type="number" name="quantity" class="form-control" required min="1">
+                    <label>Necha dona ishlab chiqarmoqchisiz?</label>
+                    <input type="number" id="modalBatches" name="batches" class="form-control" min="1" value="1">
                 </div>
-
+                <div class="form-group" style="display:none;">
+                    <label>Hisoblangan dona</label>
+                    <div id="modalQtyPreview" style="font-weight:800; font-size:18px; color:#3a312b;">—</div>
+                </div>
                 <div class="form-group">
-                    <label data-i18n="baker_name">Novvoy ismi (smena)</label>
-                    <input type="text" name="baker_name" class="form-control"
-                           data-i18n-placeholder="baker_placeholder">
+                    <label>Timer (daqiqa) — <span style="color:#d4a373;">0 kiritsangiz darhol omborga qo'shiladi</span></label>
+                    <input type="number" id="modalTimerMin" class="form-control" min="0" value="" placeholder="Masalan: 45 (0 = darhol tayyor)">
+                    <div id="timerHint" style="font-size:11px;color:#d4a373;font-weight:700;margin-top:4px;"></div>
                 </div>
-
-                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;">
-                    <i class="fa-solid fa-plus"></i>
-                    <span data-i18n="save_log">Ishlab chiqarishni saqlash</span>
-                </button>
-            </form>
-        </div>
-
-        <div class="card">
-            <h3 data-i18n="recent_logs">So'nggi ishlab chiqarish qaydlari</h3>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th data-i18n="date">Sana</th>
-                        <th data-i18n="select_product">Mahsulot</th>
-                        <th data-i18n="quantity">Miqdori</th>
-                        <th data-i18n="baker">Novvoy</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for log in recent_logs %}
-                    <tr>
-                        <td>{{ log.date|date:"d M Y, H:i" }}</td>
-                        <td><strong>{{ log.product.name }}</strong></td>
-                        <td>{{ log.quantity }}</td>
-                        <td>{{ log.baker_name|default:"-" }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="4" style="text-align: center; padding: 20px; color: var(--text-muted);"
-                            data-i18n="no_recent_logs">So'nggi qaydlar yo'q</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                <div class="form-group">
+                    <label>Novvoy / smena</label>
+                    <input type="text" id="modalBaker" class="form-control" placeholder="Masalan: Umar aka, 1-smena">
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px; flex-wrap:wrap;">
+                <button type="button" class="hero-link" onclick="closeProductionModal()">Bekor</button>
+                <button type="button" class="btn btn-primary" id="modalProdConfirmBtn" disabled onclick="confirmProductionStart()" style="opacity:.45;">Tasdiqlash va boshlash</button>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- ═══ Warehouse Tab ═══ -->
-<div id="warehouse" class="tab-content">
-    <div class="card">
-        <h3 data-i18n="raw_materials_stock">Xom ashyo qoldig'i</h3>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th data-i18n="material">Xom ashyo</th>
-                    <th data-i18n="stock_left">Qolgan miqdor</th>
-                    <th data-i18n="unit">O'lchov birligi</th>
-                    <th data-i18n="status">Holat</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for mat in raw_materials %}
-                <tr>
-                    <td>{{ mat.name }}</td>
-                    <td><strong>{{ mat.stock }}</strong></td>
-                    <td>{{ mat.unit }}</td>
-                    <td>
-                        {% if mat.stock < 10 %}
-                            <span class="badge badge-danger">
-                                <i class="fa-solid fa-triangle-exclamation"></i>
-                                <span data-i18n="low_stock">Oz qoldi</span>
-                            </span>
-                        {% else %}
-                            <span class="badge badge-success">
-                                <i class="fa-solid fa-circle-check"></i>
-                                <span data-i18n="good">Yaxshi</span>
-                            </span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="4" style="text-align: center; padding: 20px; color: var(--text-muted);"
-                        data-i18n="no_materials">Xom ashyolar yo'q</td></tr>
+    <form id="productionHiddenForm" method="POST" style="display:none;">
+        {% csrf_token %}
+        <input type="hidden" name="add_production" value="1">
+        <input type="hidden" name="preserve_query" value="{{ request.GET.urlencode }}">
+        <input type="hidden" name="product" id="hf_product">
+        <input type="hidden" name="batches" id="hf_batches">
+        <input type="hidden" name="timer_minutes" id="hf_timer">
+        <input type="hidden" name="baker_name" id="hf_baker">
+    </form>
+
+    <div id="prod-warehouse" class="prod-tab-content two-col">
+        <div class="prod-card">
+            <h3>Kritik xomashyo nazorati</h3>
+            <div class="section-sub">Tez buyurtma talab qiladigan pozitsiyalar</div>
+            {% if critical_materials %}
+            <div class="critical-list">
+                {% for mat in critical_materials %}
+                <div class="critical-item">
+                    <div>
+                        <strong>{{ mat.name }}</strong>
+                        <div class="log-sub">Qoldiq past darajada</div>
+                    </div>
+                    <div><strong>{{ mat.stock }} {{ mat.unit }}</strong></div>
+                </div>
                 {% endfor %}
-            </tbody>
-        </table>
+            </div>
+            {% else %}
+            <div class="empty-box">Kritik xomashyo yo'q. Hammasi me'yorda.</div>
+            {% endif %}
+        </div>
+
+        <div class="prod-card">
+            <h3>Xom ashyo ombori</h3>
+            <div class="table-wrap">
+                <table class="table-clean">
+                    <thead>
+                        <tr>
+                            <th>Xom ashyo</th>
+                            <th>Qoldiq</th>
+                            <th>Birlik</th>
+                            <th>Holat</th>
+                            <th>Amal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mat in raw_materials %}
+                        <tr>
+                            <td><strong>{{ mat.name }}</strong></td>
+                            <td>{{ mat.stock }}</td>
+                            <td>{{ mat.unit }}</td>
+                            <td>
+                                {% if mat.stock < 10 %}
+                                    <span class="stock-tag low"><i class="fa-solid fa-triangle-exclamation"></i> Oz qoldi</span>
+                                {% else %}
+                                    <span class="stock-tag ok"><i class="fa-solid fa-circle-check"></i> Me'yor</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button type="button" class="hero-link" onclick="openEditRawMatModal({{ mat.id }}, '{{ mat.name|escapejs }}', {{ mat.stock }})" style="padding:4px 8px;">
+                                    <i class="fa-solid fa-pen"></i> Tahrir
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4"><div class="empty-box">Xom ashyo mavjud emas.</div></td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="prod-finished" class="prod-tab-content two-col">
+        <div class="prod-card">
+            <h3>Tayyor mahsulotlar qiymati</h3>
+            <div class="kpi-label" style="margin-top:4px;">Joriy ombor qiymati</div>
+            <div class="kpi-value" style="margin-top: 6px;">{{ finished_stock_value|floatformat:0 }} UZS</div>
+            <div class="kpi-sub">Sotuv narxlari bo'yicha hisoblangan taxminiy qiymat</div>
+        </div>
+
+        <div class="prod-card">
+            <h3>Tayyor mahsulot qoldiqlari</h3>
+            <div class="table-wrap">
+                <table class="table-clean">
+                    <thead>
+                        <tr>
+                            <th>Mahsulot</th>
+                            <th>Tayyorlangan (davr)</th>
+                            <th>Qoldiq (dona)</th>
+                            <th>Sotuv narxi</th>
+                            <th>Jami qiymat</th>
+                            <th>Amal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in finished_rows %}
+                        <tr>
+                            <td><strong>{{ row.item.product.name }}</strong></td>
+                            <td>{{ row.produced_done }}</td>
+                            <td>{{ row.item.stock }}</td>
+                            <td>{{ row.item.product.price|floatformat:0 }} UZS</td>
+                            <td>{{ row.line_total|floatformat:0 }} UZS</td>
+                            <td>
+                                <button type="button" class="hero-link" onclick="openEditFgModal({{ row.item.id }}, '{{ row.item.product.name|escapejs }}', {{ row.item.stock }})" style="padding:4px 8px;">
+                                    <i class="fa-solid fa-pen"></i> Tahrir
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5"><div class="empty-box">Tayyor mahsulot qoldiqlari yo'q.</div></td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Edit Raw Material Modal -->
+<div id="editRawMatModal" class="prod-modal-overlay" role="dialog" aria-modal="true">
+    <div class="prod-modal-card">
+        <h3>Xom ashyo tahrirlash</h3>
+        <p class="section-sub" id="editRawMatName"></p>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="edit_raw_material" value="1">
+            <input type="hidden" name="mat_id" id="editRawMatId">
+            <div class="form-group" style="margin-top:12px;">
+                <label>Qoldiq miqdori</label>
+                <input type="number" step="0.01" name="stock" id="editRawMatStock" class="form-control" required>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+                <button type="button" class="hero-link" onclick="document.getElementById('editRawMatModal').classList.remove('active')">Bekor</button>
+                <button type="submit" class="btn btn-primary">Saqlash</button>
+            </div>
+        </form>
     </div>
 </div>
 
-<!-- ═══ Finished Goods Tab ═══ -->
-<div id="finished" class="tab-content">
-    <div class="card">
-        <h3 data-i18n="fg_inventory">Tayyor mahsulotlar (Qoldiq)</h3>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th data-i18n="select_product">Mahsulot</th>
-                    <th data-i18n="current_stock">Joriy qoldiq</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for fg in finished_goods %}
-                <tr>
-                    <td>{{ fg.product.name }}</td>
-                    <td style="font-size: 18px; font-weight: 700;">
-                        {{ fg.stock }} <span data-i18n="pieces">dona</span>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="2" style="text-align: center; padding: 20px; color: var(--text-muted);"
-                        data-i18n="no_finished">Omborida tayyor mahsulotlar yo'q</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<!-- Edit Finished Goods Modal -->
+<div id="editFgModal" class="prod-modal-overlay" role="dialog" aria-modal="true">
+    <div class="prod-modal-card">
+        <h3>Tayyor mahsulot tahrirlash</h3>
+        <p class="section-sub" id="editFgName"></p>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="edit_finished_good" value="1">
+            <input type="hidden" name="fg_id" id="editFgId">
+            <div class="form-group" style="margin-top:12px;">
+                <label>Ombor qoldig'i (dona)</label>
+                <input type="number" name="stock" id="editFgStock" class="form-control" required>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+                <button type="button" class="hero-link" onclick="document.getElementById('editFgModal').classList.remove('active')">Bekor</button>
+                <button type="submit" class="btn btn-primary">Saqlash</button>
+            </div>
+        </form>
     </div>
 </div>
+
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-    function showTab(tabId, btn) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    function showProdTab(tabId, btn) {
+        document.querySelectorAll('.prod-tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.prod-tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
         btn.classList.add('active');
+    }
+
+    function renderProductionMixChart() {
+        const labels = JSON.parse(document.getElementById('production-mix-labels').textContent);
+        const data = JSON.parse(document.getElementById('production-mix-data').textContent);
+
+        const chartLabels = labels.length ? labels : ['No Data'];
+        const chartData = data.length ? data : [0];
+
+        const ctx = document.getElementById('productionMixChart');
+        if (!ctx) return;
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    label: 'Ishlab chiqarish (dona)',
+                    data: chartData,
+                    backgroundColor: ['#D4A373', '#b88656', '#a6b07f', '#CCD5AE', '#E9EDC9', '#f2dcc2', '#c9b594', '#8f7b66'],
+                    borderRadius: 10,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    const RECIPE_BATCH_BY_ID = Object.fromEntries(
+        (JSON.parse(document.getElementById('recipe-batches-data').textContent) || []).map((r) => [String(r.id), 1])
+    );
+
+    function updateModalQtyPreview() {
+        const pid = document.getElementById('modalProdSelect').value;
+        const batches = parseInt(document.getElementById('modalBatches').value, 10) || 0;
+        const bs = RECIPE_BATCH_BY_ID[pid];
+        const el = document.getElementById('modalQtyPreview');
+        if (!pid) {
+            el.textContent = '—';
+            return;
+        }
+        if (bs == null) {
+            el.textContent = 'Retsept yo\'q';
+            return;
+        }
+        if (batches <= 0) {
+            el.textContent = '—';
+            return;
+        }
+        el.textContent = `${batches} dona`;
+    }
+
+    function refreshModalConfirmState() {
+        const pid = document.getElementById('modalProdSelect').value;
+        const batches = parseInt(document.getElementById('modalBatches').value, 10) || 0;
+        const timerRaw = document.getElementById('modalTimerMin').value;
+        const btn = document.getElementById('modalProdConfirmBtn');
+        const ok = pid && batches > 0 && RECIPE_BATCH_BY_ID[pid] && timerRaw !== '';
+        btn.disabled = !ok;
+        btn.style.opacity = ok ? '1' : '0.45';
+    }
+
+    function openProductionModal() {
+        document.getElementById('productionStartModal').classList.add('active');
+        updateModalQtyPreview();
+        refreshModalConfirmState();
+    }
+
+    function closeProductionModal() {
+        document.getElementById('productionStartModal').classList.remove('active');
+    }
+
+    function confirmProductionStart() {
+        const pid = document.getElementById('modalProdSelect').value;
+        const batches = parseInt(document.getElementById('modalBatches').value, 10);
+        const timerMin = parseInt(document.getElementById('modalTimerMin').value, 10);
+        const baker = document.getElementById('modalBaker').value.trim();
+        if (!pid || !(batches > 0) || RECIPE_BATCH_BY_ID[pid] == null) {
+            alert('Mahsulot va retseptni tekshiring.');
+            return;
+        }
+        if (document.getElementById('modalTimerMin').value === '') {
+            alert('Timer maydonini kiriting (0 — darhol tayyor).');
+            return;
+        }
+        const msg = timerMin === 0
+            ? `${batches} dona ${document.getElementById('modalProdSelect').options[document.getElementById('modalProdSelect').selectedIndex]?.text} darhol omborga qo'shilsinmi? Xom ashyo hoziroq yechiladi.`
+            : `${batches} dona ishlab chiqarish jarayoniga qo'shilsinmi (timer: ${timerMin} min)? Xom ashyo hoziroq yechiladi.`;
+        if (!confirm(msg)) return;
+        document.getElementById('hf_product').value = pid;
+        document.getElementById('hf_batches').value = batches;
+        document.getElementById('hf_timer').value = timerMin;
+        document.getElementById('hf_baker').value = baker;
+        document.getElementById('productionHiddenForm').submit();
+    }
+
+    function playFinishBell() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            [880, 1174].forEach((freq, i) => {
+                setTimeout(() => {
+                    const o = ctx.createOscillator();
+                    const g = ctx.createGain();
+                    o.connect(g);
+                    g.connect(ctx.destination);
+                    o.type = 'sine';
+                    o.frequency.value = freq;
+                    g.gain.value = 0.09;
+                    o.start();
+                    setTimeout(() => { o.stop(); }, 240);
+                }, i * 260);
+            });
+            setTimeout(() => { ctx.close(); }, 900);
+        } catch (e) {
+            console.warn(e);
+        }
+    }
+
+    const alarmPlayed = new Set();
+
+    function renderActiveTimers() {
+        const host = document.getElementById('productionTimersHost');
+        const placeholder = document.getElementById('noTimersPlaceholder');
+        if (!host) return;
+        let logs = [];
+        try {
+            logs = JSON.parse(document.getElementById('production-active-logs').textContent) || [];
+        } catch (e) {
+            logs = [];
+        }
+        host.innerHTML = '';
+        if (!logs.length) {
+            if (placeholder) placeholder.style.display = '';
+            return;
+        }
+        if (placeholder) placeholder.style.display = 'none';
+
+        const now = Date.now();
+        logs.forEach((log) => {
+            const line = document.createElement('div');
+            line.className = 'timer-line';
+            let left = '';
+            let done = false;
+            if (!log.started_iso || !log.timer_minutes) {
+                left = 'Vaqt kutilmoqda';
+            } else {
+                const end = new Date(log.started_iso).getTime() + log.timer_minutes * 60000;
+                const sec = Math.max(0, Math.floor((end - now) / 1000));
+                if (sec <= 0) done = true;
+                const m = Math.floor(sec / 60);
+                const s = sec % 60;
+                left = done ? '<strong style="color:#b88656;">Tayyor!</strong>' : `<strong>${m}:${String(s).padStart(2, '0')}</strong> qoldi`;
+            }
+            line.innerHTML = `
+                <div>
+                    <strong>${log.product}</strong>
+                    <div class="log-sub">${log.quantity} dona · ${log.batches} partiya · ${log.timer_minutes} min</div>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <span>${left}</span>
+                    <button type="button" class="btn btn-primary" style="padding:6px 12px; font-size:12px;">Tayyor deb belgilash</button>
+                </div>`;
+            const btn = line.querySelector('button');
+            btn.onclick = () => {
+                if (!confirm(`${log.product} tayyor bo'ldimi va bazaga qo'shilsinmi?`)) return;
+                fetch(`/production/done/${log.id}/`, {
+                    method: 'GET',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (data.ok) location.reload();
+                        else alert(data.error || 'Xato');
+                    })
+                    .catch(() => alert('Tarmoq xatosi'));
+            };
+            host.appendChild(line);
+
+            if (done && !alarmPlayed.has(log.id)) {
+                alarmPlayed.add(log.id);
+                playFinishBell();
+                try {
+                    const title = 'Tayyor bo\'ldi';
+                    new Notification(title, { body: log.product });
+                } catch (e) {}
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        renderProductionMixChart();
+        ['modalProdSelect', 'modalBatches'].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', () => { updateModalQtyPreview(); refreshModalConfirmState(); });
+        });
+        const tm = document.getElementById('modalTimerMin');
+        if (tm) {
+            tm.addEventListener('input', function() {
+                refreshModalConfirmState();
+                const hint = document.getElementById('timerHint');
+                if (hint) hint.textContent = this.value === '0' ? '⚡ Darhol omborga qo\'shiladi!' : '';
+            });
+        }
+
+        if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        renderActiveTimers();
+        setInterval(renderActiveTimers, 1000);
+    });
+
+    function openEditRawMatModal(id, name, stock) {
+        document.getElementById('editRawMatId').value = id;
+        document.getElementById('editRawMatName').textContent = name;
+        document.getElementById('editRawMatStock').value = stock;
+        document.getElementById('editRawMatModal').classList.add('active');
+    }
+
+    function openEditFgModal(id, name, stock) {
+        document.getElementById('editFgId').value = id;
+        document.getElementById('editFgName').textContent = name;
+        document.getElementById('editFgStock').value = stock;
+        document.getElementById('editFgModal').classList.add('active');
     }
 </script>
 {% endblock %}

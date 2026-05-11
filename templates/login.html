@@ -1,0 +1,717 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kirish | Bunyod NON CRM</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background:
+                radial-gradient(ellipse 70% 50% at 15% 10%, rgba(212, 163, 115, 0.25), transparent),
+                radial-gradient(ellipse 60% 45% at 85% 90%, rgba(166, 176, 127, 0.2), transparent),
+                linear-gradient(155deg, #fefae0 0%, #f5e8d0 45%, #ede0c4 100%);
+        }
+
+        .page {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* ── TOP BAR: logo + language ── */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 4px;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* PNG logo — place file at static/images/logo.png */
+        .logo-img {
+            height: 48px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        /* Fallback icon logo shown when PNG missing */
+        .logo-icon-wrap {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #D4A373, #b88656);
+            border-radius: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: white;
+            box-shadow: 0 6px 18px rgba(212, 163, 115, 0.4);
+            flex-shrink: 0;
+        }
+
+        .logo-text-wrap {
+            line-height: 1.15;
+        }
+
+        .logo-name {
+            font-size: 22px;
+            font-weight: 800;
+            color: #2f2a25;
+            letter-spacing: -0.3px;
+        }
+
+        .logo-name span {
+            color: #D4A373;
+        }
+
+        .logo-sub {
+            font-size: 11px;
+            color: #9a8a72;
+            font-weight: 500;
+        }
+
+        /* Language switcher */
+        .lang-bar {
+            display: flex;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(212, 163, 115, 0.25);
+            border-radius: 12px;
+            padding: 5px;
+            backdrop-filter: blur(6px);
+        }
+
+        .lang-btn {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            background: transparent;
+            color: #8a7a65;
+            transition: all 0.18s;
+            font-family: inherit;
+            letter-spacing: 0.3px;
+        }
+
+        .lang-btn:hover {
+            background: rgba(212, 163, 115, 0.15);
+            color: #5a4a35;
+        }
+
+        .lang-btn.active {
+            background: linear-gradient(135deg, #D4A373, #b88656);
+            color: white;
+            box-shadow: 0 3px 10px rgba(212, 163, 115, 0.4);
+        }
+
+        /* ── MAIN PANELS ── */
+        .panels {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 22px;
+            box-shadow:
+                0 2px 0 rgba(255, 255, 255, 0.8) inset,
+                0 20px 50px rgba(160, 120, 70, 0.12);
+            padding: 28px 26px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(212, 163, 115, 0.12);
+        }
+
+        /* ── LEFT: role cards ── */
+        .panel-label {
+            font-size: 10.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #b0a090;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .role-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 9px;
+            flex: 1;
+        }
+
+        .role-card {
+            border: 2px solid #f0ebe2;
+            border-radius: 14px;
+            padding: 13px 10px 11px;
+            cursor: pointer;
+            transition: border-color 0.15s, box-shadow 0.15s, transform 0.13s;
+            text-align: center;
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            background: #fdfcf9;
+        }
+
+        .role-card:hover {
+            border-color: #D4A373;
+            box-shadow: 0 4px 16px rgba(212, 163, 115, 0.2);
+            transform: translateY(-2px);
+            background: white;
+        }
+
+        .role-card.selected {
+            border-color: #D4A373;
+            background: linear-gradient(145deg, #fffdf7, #fef4e4);
+            box-shadow: 0 6px 20px rgba(212, 163, 115, 0.28);
+        }
+
+        .rc-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .role-card[data-role="superadmin"] .rc-icon {
+            background: #fde8d8;
+            color: #c0622a;
+        }
+
+        .role-card[data-role="accountant"] .rc-icon {
+            background: #d8f0e8;
+            color: #1e7a50;
+        }
+
+        .role-card[data-role="hr"] .rc-icon {
+            background: #dce8fd;
+            color: #2a5ec0;
+        }
+
+        .role-card[data-role="seller"] .rc-icon {
+            background: #f0ddf8;
+            color: #7a2ac0;
+        }
+
+        .role-card[data-role="production_manager"] .rc-icon {
+            background: #fff0cc;
+            color: #a07800;
+        }
+
+        .role-card[data-role="branch_admin"] .rc-icon {
+            background: #d8f5f0;
+            color: #1a7a6a;
+        }
+
+        .rc-title {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #2f2a25;
+            line-height: 1.2;
+        }
+
+        .rc-desc {
+            font-size: 9.5px;
+            color: #a09080;
+            line-height: 1.3;
+        }
+
+        .rc-check {
+            display: none;
+            font-size: 10px;
+            color: #D4A373;
+            font-weight: 700;
+        }
+
+        .role-card.selected .rc-check {
+            display: block;
+        }
+
+        /* ── RIGHT: login form ── */
+        .login-panel {
+            justify-content: center;
+            gap: 0;
+        }
+
+        .role-badge {
+            display: none;
+            align-items: center;
+            gap: 7px;
+            background: linear-gradient(90deg, #fef4e4, #fde8d8);
+            border: 1px solid rgba(212, 163, 115, 0.3);
+            border-radius: 10px;
+            padding: 9px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #7a5a30;
+            margin-bottom: 20px;
+        }
+
+        .role-badge.visible {
+            display: flex;
+        }
+
+        .field-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #8a7a65;
+            margin-bottom: 6px;
+        }
+
+        .inp-wrap {
+            position: relative;
+            margin-bottom: 14px;
+        }
+
+        .inp {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #ede8df;
+            border-radius: 12px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #2f2a25;
+            background: #fdfcf9;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .inp:focus {
+            border-color: #D4A373;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(212, 163, 115, 0.15);
+            background: white;
+        }
+
+        .inp-icon {
+            position: absolute;
+            left: 13px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #c0b0a0;
+            font-size: 14px;
+            pointer-events: none;
+        }
+
+        .inp.has-icon {
+            padding-left: 38px;
+        }
+
+        .eye-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #b0a090;
+            font-size: 14px;
+            padding: 2px;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #D4A373 0%, #b88656 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.18s, transform 0.14s;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 6px 20px rgba(212, 163, 115, 0.38);
+            font-family: inherit;
+        }
+
+        .btn-login:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .alert-error {
+            background: #fdf0f0;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+            padding: 10px 13px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hint {
+            text-align: center;
+            font-size: 11px;
+            color: #c0b0a0;
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #e8ddd0, transparent);
+            margin: 16px 0;
+        }
+
+        @media (max-width: 680px) {
+            .panels {
+                grid-template-columns: 1fr;
+            }
+
+            .role-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .login-panel {
+                order: -1;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .role-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+
+        <!-- ── Top bar: logo + language ── -->
+        <div class="top-bar">
+            <div class="logo-area">
+                <!-- Replace logo.png with your own file in static/images/ -->
+                <img src="{% static 'images/logo.png' %}" alt="Logo" class="logo-img"
+                    onerror="this.style.display='none';document.getElementById('logoFallback').style.display='flex';">
+                <div id="logoFallback" style="display:none;align-items:center;gap:10px;">
+                    <div class="logo-icon-wrap"><i class="fa-solid fa-wheat-awn"></i></div>
+                    <div class="logo-text-wrap">
+                        <div class="logo-name">Bunyod<span>NON</span></div>
+                        <div class="logo-sub">CRM · nonvoyxona boshqaruvi</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Language selector -->
+            <div class="lang-bar">
+                <button class="lang-btn" data-lang="uz" onclick="setLang('uz')">UZ</button>
+                <button class="lang-btn" data-lang="uz-cyrl" onclick="setLang('uz-cyrl')">УЗ</button>
+                <button class="lang-btn" data-lang="ru" onclick="setLang('ru')">RU</button>
+            </div>
+        </div>
+
+        <!-- ── Main panels ── -->
+        <div class="panels">
+
+            <!-- LEFT: role cards -->
+            <div class="panel">
+                <div class="panel-label">
+                    <i class="fa-solid fa-user-tag"></i>
+                    <span id="lbl_role">Rolni tanlang</span>
+                </div>
+                <div class="role-grid">
+
+                    <div class="role-card" data-role="superadmin" data-label-uz="SuperAdmin"
+                        data-label-uzcyrl="СуперАдмин" data-label-ru="СуперАдмин" onclick="selectRole(this)">
+                        <div class="rc-icon"><i class="fa-solid fa-user-shield"></i></div>
+                        <div class="rc-title" id="rt_superadmin">SuperAdmin</div>
+                        <div class="rc-desc" id="rd_superadmin">To'liq boshqaruv</div>
+                        <div class="rc-check"><i class="fa-solid fa-circle-check"></i> <span
+                                id="selected_txt">Tanlandi</span></div>
+                    </div>
+
+                    <div class="role-card" data-role="accountant" data-label-uz="Buxgalter"
+                        data-label-uzcyrl="Бухгалтер" data-label-ru="Бухгалтер" onclick="selectRole(this)">
+                        <div class="rc-icon"><i class="fa-solid fa-wallet"></i></div>
+                        <div class="rc-title" id="rt_accountant">Buxgalter</div>
+                        <div class="rc-desc" id="rd_accountant">Moliya & kassa</div>
+                        <div class="rc-check"><i class="fa-solid fa-circle-check"></i> <span>Tanlandi</span></div>
+                    </div>
+
+                    <div class="role-card" data-role="hr" data-label-uz="HR Xodim" data-label-uzcyrl="HR Ходим"
+                        data-label-ru="HR Сотрудник" onclick="selectRole(this)">
+                        <div class="rc-icon"><i class="fa-solid fa-users"></i></div>
+                        <div class="rc-title" id="rt_hr">HR Xodim</div>
+                        <div class="rc-desc" id="rd_hr">Xodimlar & ish haqi</div>
+                        <div class="rc-check"><i class="fa-solid fa-circle-check"></i> <span>Tanlandi</span></div>
+                    </div>
+
+                    <div class="role-card" data-role="seller" data-label-uz="Sotuvchi" data-label-uzcyrl="Сотувчи"
+                        data-label-ru="Продавец" onclick="selectRole(this)">
+                        <div class="rc-icon"><i class="fa-solid fa-cash-register"></i></div>
+                        <div class="rc-title" id="rt_seller">Sotuvchi</div>
+                        <div class="rc-desc" id="rd_seller">Sotuv & mahsulot</div>
+                        <div class="rc-check"><i class="fa-solid fa-circle-check"></i> <span>Tanlandi</span></div>
+                    </div>
+
+                    <div class="role-card" data-role="production_manager" data-label-uz="Ishlab chiqarish"
+                        data-label-uzcyrl="Ишлаб чиқариш" data-label-ru="Производство" onclick="selectRole(this)">
+                        <div class="rc-icon"><i class="fa-solid fa-industry"></i></div>
+                        <div class="rc-title" id="rt_production">Ishlab chiqarish</div>
+                        <div class="rc-desc" id="rd_production">Retsept & mahsulot</div>
+                        <div class="rc-check"><i class="fa-solid fa-circle-check"></i> <span>Tanlandi</span></div>
+                    </div>
+
+                    <div class="role-card" data-role="branch_admin" data-label-uz="Filial Admini"
+                        data-label-uzcyrl="Филиал Админи" data-label-ru="Администратор филиала"
+                        onclick="selectRole(this)">
+                        <div class="rc-icon"><i class="fa-solid fa-store"></i></div>
+                        <div class="rc-title" id="rt_branch">Filial Admini</div>
+                        <div class="rc-desc" id="rd_branch">O'z filiali</div>
+                        <div class="rc-check"><i class="fa-solid fa-circle-check"></i> <span>Tanlandi</span></div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- RIGHT: login form -->
+            <div class="panel login-panel">
+
+                <div class="role-badge" id="roleBadge">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span id="roleBadgeText"></span>
+                </div>
+
+                {% if form.errors %}
+                <div class="alert-error">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                    <span id="err_txt">Login yoki parol noto'g'ri.</span>
+                </div>
+                {% endif %}
+
+                <form method="post" id="loginForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ next }}">
+
+                    <label class="field-label" id="lbl_login">Login</label>
+                    <div class="inp-wrap">
+                        <i class="fa-solid fa-user inp-icon"></i>
+                        <input class="inp has-icon" type="text" name="username" id="usernameInput" autofocus
+                            placeholder="Foydalanuvchi nomi">
+                    </div>
+
+                    <label class="field-label" id="lbl_password">Parol</label>
+                    <div class="inp-wrap">
+                        <i class="fa-solid fa-lock inp-icon"></i>
+                        <input class="inp has-icon" type="password" name="password" id="passwordInput"
+                            placeholder="Parolni kiriting" style="padding-right:40px;">
+                        <button type="button" class="eye-btn" onclick="togglePass()">
+                            <i class="fa-solid fa-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+
+                    <button type="submit" class="btn-login">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        <span id="btnText">Tizimga kirish</span>
+                    </button>
+                </form>
+
+                <div class="divider"></div>
+                <div class="hint">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span id="hint_txt">Kirish uchun chap tarafdan rolni tanlang</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // ── i18n strings for login page ──────────────────────────────
+        const LOGIN_I18N = {
+            uz: {
+                lbl_role: "Rolni tanlang",
+                lbl_login: "Login",
+                lbl_password: "Parol",
+                btnText: "Tizimga kirish",
+                hint_txt: "Kirish uchun chap tarafdan rolni tanlang",
+                err_txt: "Login yoki parol noto'g'ri.",
+                selected_txt: "Tanlandi",
+                username_ph: "Foydalanuvchi nomi",
+                password_ph: "Parolni kiriting",
+                badge_suffix: " sifatida kirish",
+                rt_superadmin: "SuperAdmin", rd_superadmin: "To'liq boshqaruv",
+                rt_accountant: "Buxgalter", rd_accountant: "Moliya & kassa",
+                rt_hr: "HR Xodim", rd_hr: "Xodimlar & ish haqi",
+                rt_seller: "Sotuvchi", rd_seller: "Sotuv & mahsulot",
+                rt_production: "Ishlab chiqarish", rd_production: "Retsept & mahsulot",
+                rt_branch: "Filial Admini", rd_branch: "O'z filiali",
+            },
+            "uz-cyrl": {
+                lbl_role: "Ролни танланг",
+                lbl_login: "Логин",
+                lbl_password: "Парол",
+                btnText: "Тизимга кириш",
+                hint_txt: "Кириш учун чап тарафдан ролни танланг",
+                err_txt: "Логин ёки парол нотўғри.",
+                selected_txt: "Танланди",
+                username_ph: "Фойдаланувчи номи",
+                password_ph: "Паролни киритинг",
+                badge_suffix: " сифатида кириш",
+                rt_superadmin: "СуперАдмин", rd_superadmin: "Тўлиқ бошқарув",
+                rt_accountant: "Бухгалтер", rd_accountant: "Молия & касса",
+                rt_hr: "HR Ходим", rd_hr: "Ходимлар & иш ҳақи",
+                rt_seller: "Сотувчи", rd_seller: "Сотув & маҳсулот",
+                rt_production: "Ишлаб чиқариш", rd_production: "Рецепт & маҳсулот",
+                rt_branch: "Филиал Админи", rd_branch: "Ўз филиали",
+            },
+            ru: {
+                lbl_role: "Выберите роль",
+                lbl_login: "Логин",
+                lbl_password: "Пароль",
+                btnText: "Войти в систему",
+                hint_txt: "Выберите роль слева, затем введите данные",
+                err_txt: "Неверный логин или пароль.",
+                selected_txt: "Выбрано",
+                username_ph: "Имя пользователя",
+                password_ph: "Введите пароль",
+                badge_suffix: " — вход",
+                rt_superadmin: "СуперАдмин", rd_superadmin: "Полное управление",
+                rt_accountant: "Бухгалтер", rd_accountant: "Финансы & касса",
+                rt_hr: "HR Сотрудник", rd_hr: "Персонал & зарплата",
+                rt_seller: "Продавец", rd_seller: "Продажи & товары",
+                rt_production: "Производство", rd_production: "Рецепты & продукты",
+                rt_branch: "Администратор филиала", rd_branch: "Свой филиал",
+            }
+        };
+
+        let currentLang = localStorage.getItem('erp_lang') || 'uz';
+        let selectedLabel = '';
+
+        function setLang(lang) {
+            currentLang = lang;
+            localStorage.setItem('erp_lang', lang);
+            applyLang();
+        }
+
+        function applyLang() {
+            const s = LOGIN_I18N[currentLang] || LOGIN_I18N['uz'];
+
+            // Update all text elements
+            const ids = ['lbl_role', 'lbl_login', 'lbl_password', 'btnText', 'hint_txt', 'err_txt'];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = s[id];
+            });
+
+            // Role card titles & descs
+            ['superadmin', 'accountant', 'hr', 'seller', 'production', 'branch'].forEach(r => {
+                const t = document.getElementById('rt_' + r);
+                const d = document.getElementById('rd_' + r);
+                if (t) t.textContent = s['rt_' + r];
+                if (d) d.textContent = s['rd_' + r];
+            });
+
+            // All "Tanlandi" spans inside role cards
+            document.querySelectorAll('.rc-check span').forEach(el => {
+                el.textContent = s.selected_txt;
+            });
+
+            // Placeholders
+            const uInp = document.getElementById('usernameInput');
+            const pInp = document.getElementById('passwordInput');
+            if (uInp) uInp.placeholder = s.username_ph;
+            if (pInp) pInp.placeholder = s.password_ph;
+
+            // Badge text if role already selected
+            if (selectedLabel) {
+                document.getElementById('roleBadgeText').textContent = selectedLabel + s.badge_suffix;
+                document.getElementById('btnText').textContent = selectedLabel + s.badge_suffix;
+            }
+
+            // Active lang button
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === currentLang);
+            });
+
+            document.documentElement.lang = currentLang;
+        }
+
+        function selectRole(card) {
+            document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+
+            const langKey = currentLang === 'uz-cyrl' ? 'uzcyrl' : currentLang;
+            selectedLabel = card.dataset['label' + langKey.charAt(0).toUpperCase() + langKey.slice(1)]
+                || card.dataset['labelUz']
+                || card.querySelector('.rc-title').textContent;
+
+            const s = LOGIN_I18N[currentLang] || LOGIN_I18N['uz'];
+            const badge = document.getElementById('roleBadge');
+            document.getElementById('roleBadgeText').textContent = selectedLabel + s.badge_suffix;
+            badge.classList.add('visible');
+            document.getElementById('btnText').textContent = selectedLabel + s.badge_suffix;
+            document.getElementById('usernameInput').focus();
+        }
+
+        function togglePass() {
+            const inp = document.getElementById('passwordInput');
+            const icon = document.getElementById('eyeIcon');
+            const isPass = inp.type === 'password';
+            inp.type = isPass ? 'text' : 'password';
+            icon.className = isPass ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+        }
+
+        // Init on load
+        document.addEventListener('DOMContentLoaded', applyLang);
+    </script>
+
+</body>
+
+</html>

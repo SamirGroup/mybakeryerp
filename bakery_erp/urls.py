@@ -17,9 +17,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls.i18n import set_language
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('rosetta/', include('rosetta.urls')),
     path('i18n/setlang/', set_language, name='set_language'),
     path('', include('core.urls')),
     path('production/', include('production.urls')),
@@ -27,4 +30,4 @@ urlpatterns = [
     path('branches/', include('branches.urls')),
     path('accounting/', include('accounting.urls')),
     path('hr/', include('hr.urls')),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

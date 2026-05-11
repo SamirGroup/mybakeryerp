@@ -3,247 +3,375 @@
 {% block breadcrumb %}<span data-i18n="hr_title">Kadrlar bo'limi</span>{% endblock %}
 
 {% block extra_head %}
+<!-- High-end Dashboard Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
-.delete-btn { background:none; border:1px solid var(--danger); color:var(--danger); padding:4px 10px; border-radius:6px; font-size:12px; cursor:pointer; transition:var(--transition); }
-.delete-btn:hover { background:var(--danger); color:white; }
-.emp-card { border:1px solid #eee; border-radius:10px; padding:16px 20px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; transition:box-shadow 0.2s; }
-.emp-card:hover { box-shadow:0 4px 12px rgba(0,0,0,0.07); }
-.emp-avatar { width:42px; height:42px; border-radius:50%; background:var(--primary-light); color:var(--primary-dark); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; flex-shrink:0; margin-right:14px; }
-.emp-info { display:flex; align-items:center; }
-.emp-name { font-weight:700; font-size:15px; }
-.emp-meta { font-size:13px; color:var(--text-muted); }
-.emp-actions { display:flex; gap:8px; align-items:center; }
+    /* ─────────────────────────────────────────────────────────
+       DESIGN SYSTEM - Matches Dashboard.html exactly
+       ───────────────────────────────────────────────────────── */
+    .content-wrapper {
+        --paper: #fffdf7;
+        --ink: #2f2a25;
+        --muted-ink: #746a60;
+        --warm-1: #f2dcc2;
+        --warm-2: #d4a373;
+        --warm-3: #b8860b;
+        --olive-1: #d7debc;
+        --olive-2: #a6b07f;
+        --line-soft: rgba(111, 89, 65, 0.2);
+        --danger-soft: rgba(231, 76, 60, 0.1);
+        --success-soft: rgba(46, 204, 113, 0.1);
+        
+        font-family: 'Manrope', sans-serif;
+        background: 
+            radial-gradient(1100px 460px at -2% -5%, rgba(212, 163, 115, 0.22), transparent),
+            radial-gradient(900px 420px at 101% 12%, rgba(167, 176, 127, 0.2), transparent),
+            linear-gradient(180deg, #fffdf7 0%, #f7f6f1 62%, #f2f3ee 100%) !important;
+        min-height: calc(100vh - 70px);
+        padding: 24px !important;
+    }
+
+    .dashboard-shell {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 22px;
+    }
+
+    .panel {
+        border-radius: 22px;
+        border: 1px solid var(--line-soft);
+        background: linear-gradient(170deg, rgba(255, 255, 255, 0.95), rgba(252, 250, 245, 0.95));
+        box-shadow: 0 14px 36px rgba(78, 60, 41, 0.09);
+        padding: 24px;
+        animation: panelIn 380ms ease both;
+    }
+
+    @keyframes panelIn {
+        from { opacity: 0; transform: translateY(12px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─────────────────────────────────────────────────────────
+       HERO HEADER
+       ───────────────────────────────────────────────────────── */
+    .hero {
+        grid-column: span 12;
+        padding: 28px 32px;
+        background: 
+            linear-gradient(118deg, rgba(255, 252, 245, 0.97), rgba(250, 245, 236, 0.97)),
+            repeating-linear-gradient(45deg, rgba(212, 163, 115, 0.08) 0 2px, transparent 2px 12px);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .hero:before, .hero:after {
+        content: ""; position: absolute; border-radius: 999px; pointer-events: none;
+    }
+    .hero:before { width: 180px; height: 180px; right: -40px; top: -40px; background: radial-gradient(circle, rgba(212, 163, 115, 0.22), transparent 65%); }
+    .hero:after { width: 140px; height: 140px; right: 120px; bottom: -70px; background: radial-gradient(circle, rgba(166, 176, 127, 0.2), transparent 68%); }
+
+    .hero-title {
+        font-family: 'Lexend', sans-serif;
+        font-size: clamp(24px, 2.8vw, 32px);
+        line-height: 1.15;
+        color: var(--ink);
+        margin: 0 0 8px 0;
+        letter-spacing: -0.015em;
+        font-weight: 700;
+    }
+    .hero-subtitle { color: var(--muted-ink); font-size: 15px; margin: 0; }
+
+    /* ─────────────────────────────────────────────────────────
+       KPI CARDS
+       ───────────────────────────────────────────────────────── */
+    .kpi-card {
+        grid-column: span 3;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    @media(max-width: 1024px) { .kpi-card { grid-column: span 6; } }
+    @media(max-width: 600px) { .kpi-card { grid-column: span 12; } }
+
+    .kpi-label { font-size: 13px; font-weight: 600; color: var(--muted-ink); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    .kpi-value { font-family: 'Lexend', sans-serif; font-size: 28px; font-weight: 700; color: var(--ink); }
+    .kpi-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 12px; }
+
+    /* ─────────────────────────────────────────────────────────
+       TABS & NAVIGATION
+       ───────────────────────────────────────────────────────── */
+    .tab-nav-wrapper { grid-column: span 12; margin-bottom: 10px; }
+    .tab-links { display: flex; gap: 12px; }
+    .tab-link {
+        padding: 10px 20px; border-radius: 12px; border: 1px solid var(--line-soft); background: white;
+        color: var(--muted-ink); font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s ease;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .tab-link:hover { border-color: var(--warm-2); color: var(--warm-2); transform: translateY(-1px); }
+    .tab-link.active { background: var(--warm-2); color: white; border-color: var(--warm-2); box-shadow: 0 4px 12px rgba(212,163,115,0.25); }
+
+    /* ─────────────────────────────────────────────────────────
+       HR SPECIFIC LIST & FORMS
+       ───────────────────────────────────────────────────────── */
+    .emp-row {
+        background: white; border-radius: 16px; padding: 14px 18px; margin-bottom: 12px;
+        display: flex; align-items: center; justify-content: space-between;
+        border: 1px solid rgba(0,0,0,0.03); transition: all 0.25s ease;
+    }
+    .emp-row:hover { border-color: var(--warm-1); box-shadow: 0 6px 15px rgba(0,0,0,0.04); transform: translateX(4px); }
+    
+    .emp-avatar { width: 44px; height: 44px; border-radius: 12px; background: var(--warm-1); color: var(--warm-3); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; }
+    .emp-main { display: flex; align-items: center; gap: 15px; }
+    .emp-name { font-weight: 700; color: var(--ink); font-size: 16px; }
+    .emp-pos { font-size: 13px; color: var(--muted-ink); font-weight: 500; }
+
+    .status-pill { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .status-active { background: var(--success-soft); color: #27ae60; }
+    .status-vacation { background: #fff5e6; color: #d35400; }
+    .status-left { background: var(--danger-soft); color: #c0392b; }
+
+    .action-btn { width: 34px; height: 34px; border-radius: 8px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+    .btn-delete { background: var(--danger-soft); color: #e74c3c; }
+    .btn-delete:hover { background: #e74c3c; color: white; }
+
+    .premium-form .form-group { margin-bottom: 18px; }
+    .premium-form label { display: block; font-size: 13px; font-weight: 700; color: var(--muted-ink); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .premium-form .form-control {
+        width: 100%; padding: 12px 16px; border-radius: 12px; border: 1.5px solid var(--line-soft);
+        background: #fdfcf9; font-family: 'Manrope', sans-serif; font-weight: 600; color: var(--ink);
+        transition: all 0.2s;
+    }
+    .premium-form .form-control:focus { border-color: var(--warm-2); outline: none; box-shadow: 0 0 0 4px rgba(212,163,115,0.12); background: white; }
+
+    .submit-btn {
+        width: 100%; padding: 14px; border-radius: 12px; border: none; font-weight: 800; font-family: 'Lexend', sans-serif;
+        background: linear-gradient(135deg, var(--warm-2), var(--warm-3)); color: white;
+        cursor: pointer; transition: all 0.3s; box-shadow: 0 8px 20px rgba(184,134,11,0.2);
+        display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px;
+    }
+    .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(184,134,11,0.3); filter: brightness(1.1); }
 </style>
 {% endblock %}
 
 {% block content %}
+<div class="dashboard-shell">
+{{ employee_edit_payload|json_script:"hr-employee-edit-data" }}
+    
+    <!-- Hero Header -->
+    <header class="panel hero">
+        <div>
+            <h1 class="hero-title" data-i18n="hr_title">Kadrlar bo'limi</h1>
+            <p class="hero-subtitle">Xodimlar tarkibi, lavozimlar va moliyaviy hisob-kitoblar markazi.</p>
+            <p class="hero-subtitle" style="margin-top:10px;font-size:13px;">
+                <strong>Ishbay (sotuvdan avtomatik):</strong>
+                xodim kartasida <em>tizim foydalanuvchisi</em> bog‘langan, <em>ishbay</em> yoqilgan va <em>smena</em> tanlangan bo‘lsa,
+                POS dagi chek (smena nomi mos kelganda) <code>units_from_sales</code> ga qo‘shiladi.
+                Taxminiy summa: <strong>(qo‘lda nagruzka + sotuvdan) × bir dona stavkasi</strong>.
+            </p>
+        </div>
+        <div style="text-align:right;">
+            <div class="kpi-label" style="justify-content: flex-end;" data-i18n="today">Bugun</div>
+            <div class="kpi-value" style="font-size: 22px;">{{ today|date:"d F, Y" }}</div>
+        </div>
+    </header>
 
-<!-- Summary Stats -->
-<div class="grid-4" style="margin-bottom:24px;">
-    <div class="card stat-card">
-        <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
-        <div class="stat-details">
-            <h3 data-i18n="active_emps">Faol xodimlar</h3>
-            <div class="value">{{ active_employees.count }}</div>
+    <!-- KPI Row -->
+    <article class="panel kpi-card">
+        <div class="kpi-icon" style="background: var(--success-soft); color: #27ae60;"><i class="fa-solid fa-user-check"></i></div>
+        <div class="kpi-label" data-i18n="active_emps">Faol xodimlar</div>
+        <div class="kpi-value">{{ active_employees.count }}</div>
+    </article>
+
+    <article class="panel kpi-card">
+        <div class="kpi-icon" style="background: #eef2ff; color: #4f46e5;"><i class="fa-solid fa-users-rectangle"></i></div>
+        <div class="kpi-label" data-i18n="total_staff">Jami xodimlar</div>
+        <div class="kpi-value">{{ employees.count }}</div>
+    </article>
+
+    <article class="panel kpi-card">
+        <div class="kpi-icon" style="background: #fff5f5; color: #e53e3e;"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+        <div class="kpi-label" data-i18n="recent_advances">So'nggi avanslar</div>
+        <div class="kpi-value">{{ advances.count }}</div>
+    </article>
+
+    <article class="panel kpi-card" style="background: linear-gradient(135deg, var(--olive-1), var(--olive-2)); border: none;">
+        <div class="kpi-icon" style="background: rgba(255,255,255,0.3); color: white;"><i class="fa-solid fa-user-plus"></i></div>
+        <div class="kpi-label" style="color: rgba(255,255,255,0.9);" data-i18n="add_employee">Yangi xodim</div>
+        <div class="kpi-value" style="color: white; font-size: 18px;">Boshqaruv</div>
+    </article>
+
+    <!-- Navigation -->
+    <div class="tab-nav-wrapper">
+        <div class="tab-links">
+            <div class="tab-link active" onclick="switchTab('roster', this)">
+                <i class="fa-solid fa-id-badge"></i> <span data-i18n="emp_roster">Xodimlar ro'yxati</span>
+            </div>
+            <div class="tab-link" onclick="switchTab('advances', this)">
+                <i class="fa-solid fa-receipt"></i> <span data-i18n="recent_advances">Avanslar tarixi</span>
+            </div>
+            <div class="tab-link" onclick="switchTab('add', this)">
+                <i class="fa-solid fa-user-plus"></i> <span data-i18n="add_employee">Yangi qo'shish</span>
+            </div>
+            <div class="tab-link" onclick="switchTab('reports', this)">
+                <i class="fa-solid fa-clipboard-list"></i> <span>Smena va kunlik hisobot</span>
+            </div>
         </div>
     </div>
-    <div class="card stat-card">
-        <div class="stat-icon" style="background:var(--info);color:white;">
-            <i class="fa-solid fa-user-group"></i>
-        </div>
-        <div class="stat-details">
-            <h3 data-i18n="total_staff">Jami xodimlar</h3>
-            <div class="value">{{ employees.count }}</div>
-        </div>
-    </div>
-    <div class="card stat-card">
-        <div class="stat-icon" style="background:var(--warning);color:white;">
-            <i class="fa-solid fa-calendar-day"></i>
-        </div>
-        <div class="stat-details">
-            <h3 data-i18n="today">Bugun</h3>
-            <div class="value" style="font-size:16px; margin-top:4px;">{{ today|date:"d M Y" }}</div>
-        </div>
-    </div>
-    <div class="card stat-card">
-        <div class="stat-icon" style="background:var(--danger);color:white;">
-            <i class="fa-solid fa-hand-holding-dollar"></i>
-        </div>
-        <div class="stat-details">
-            <h3 data-i18n="recent_advances">So'nggi avanslar</h3>
-            <div class="value">{{ advances.count }}</div>
-        </div>
-    </div>
-</div>
 
-<div class="nav-tabs">
-    <button class="tab-btn active" onclick="showTab('tab-roster', this)">
-        <i class="fa-solid fa-users"></i> <span data-i18n="emp_roster">Xodimlar ro'yxati</span>
-    </button>
-    <button class="tab-btn" onclick="showTab('tab-advances', this)">
-        <i class="fa-solid fa-hand-holding-dollar"></i> <span data-i18n="recent_advances">Avanslar</span>
-    </button>
-    <button class="tab-btn" onclick="showTab('tab-add', this)">
-        <i class="fa-solid fa-user-plus"></i> <span data-i18n="add_employee">Yangi xodim qo'shish</span>
-    </button>
-</div>
+    <!-- ═══════ PANE: ROSTER ═══════ -->
+    <div id="pane-roster" class="tab-pane active" style="grid-column: span 12; display: grid; grid-template-columns: repeat(12, 1fr); gap: 22px;">
+        
+        <!-- Employee List Panel -->
+        <section class="panel" style="grid-column: span 8;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:22px;">
+                <h3 class="hero-title" style="font-size:20px; margin:0;" data-i18n="emp_roster">Xodimlar</h3>
+                <div class="kpi-label">{{ employees.count }} nafar</div>
+            </div>
 
-<!-- ═══════ TAB: ROSTER ═══════ -->
-<div id="tab-roster" class="tab-content active">
-    <div class="grid-2">
-
-        <!-- Employee Cards -->
-        <div class="card">
-            <h3 style="margin-bottom:18px;">
-                <i class="fa-solid fa-users" style="color:var(--primary)"></i>
-                <span data-i18n="emp_roster">Xodimlar ro'yxati</span>
-                <span class="pill" style="margin-left:8px;">{{ employees.count }}</span>
-            </h3>
-            {% for emp in employees %}
-            <div class="emp-card">
-                <div class="emp-info">
-                    <div class="emp-avatar">{{ emp.name|first|upper }}</div>
-                    <div>
-                        <div class="emp-name">{{ emp.name }}</div>
-                        <div class="emp-meta">
-                            {{ emp.position }} &nbsp;|&nbsp;
-                            <i class="fa-solid fa-phone" style="font-size:11px;"></i> {{ emp.phone }}
+            <div class="employees-list">
+                {% for emp in employees %}
+                <div class="emp-row">
+                    <div class="emp-main">
+                        {% if emp.photo %}
+                        <img src="{{ emp.photo.url }}" alt="" style="width:44px;height:44px;border-radius:12px;object-fit:cover;">
+                        {% else %}
+                        <div class="emp-avatar">{{ emp.name|first|upper }}</div>
+                        {% endif %}
+                        <div>
+                            <div class="emp-name">{{ emp.name }}</div>
+                            <div class="emp-pos">{{ emp.position }} • {{ emp.shift.name|default:"Smenasiz" }} • <span style="opacity:0.7;">{{ emp.phone }}</span></div>
                         </div>
-                        <div style="margin-top:5px;">
-                            {% if emp.status == 'active' %}
-                                <span class="badge badge-success"><span data-i18n="status_active">Faol</span></span>
-                            {% elif emp.status == 'vacation' %}
-                                <span class="badge badge-warning"><span data-i18n="status_vacation">Ta'tilda</span></span>
-                            {% else %}
-                                <span class="badge badge-danger"><span data-i18n="status_left">Ketgan</span></span>
-                            {% endif %}
-                            {% if emp.is_piecework %}
-                                <span class="badge badge-info" style="margin-left:4px;" data-i18n="piecework">Ishbay</span>
-                            {% else %}
-                                <span class="badge badge-info" style="margin-left:4px;" data-i18n="fixed_salary">Oylik</span>
-                            {% endif %}
+                    </div>
+                    <div style="display:flex; align-items:center; gap:20px;">
+                        {% if emp.status == 'active' %}
+                            <span class="status-pill status-active" data-i18n="status_active">Faol</span>
+                        {% elif emp.status == 'vacation' %}
+                            <span class="status-pill status-vacation" data-i18n="status_vacation">Ta'tilda</span>
+                        {% else %}
+                            <span class="status-pill status-left" data-i18n="status_left">Ketgan</span>
+                        {% endif %}
+
+                        <div style="width: 1px; height: 24px; background: var(--line-soft);"></div>
+
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <button type="button" class="action-btn" style="background:var(--warm-1);color:#5c4b3a;width:auto;padding:0 12px;font-weight:700;font-size:12px;" onclick="openEditEmployeeModal({{ emp.id }})">Tahrirlash</button>
+                            <form method="POST" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="change_status">
+                                <input type="hidden" name="employee_id" value="{{ emp.id }}">
+                                <select name="new_status" class="form-control" style="padding:4px 10px; font-size:12px; border-radius:8px; min-width:90px;" onchange="this.form.submit()">
+                                    <option value="active" {% if emp.status == 'active' %}selected{% endif %} data-i18n="status_active">Faol</option>
+                                    <option value="vacation" {% if emp.status == 'vacation' %}selected{% endif %} data-i18n="status_vacation">Ta'tilda</option>
+                                    <option value="left" {% if emp.status == 'left' %}selected{% endif %} data-i18n="status_left">Ketgan</option>
+                                </select>
+                            </form>
+                            <form method="POST" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="delete_employee">
+                                <input type="hidden" name="employee_id" value="{{ emp.id }}">
+                                <button type="submit" class="action-btn btn-delete" onclick="return confirm('Xodimni o\'chirasizmi?')">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
-                <div class="emp-actions">
-                    <!-- Status change -->
-                    <form method="POST" style="display:inline;">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="change_status">
-                        <input type="hidden" name="employee_id" value="{{ emp.id }}">
-                        <select name="new_status" class="form-control"
-                                style="padding:5px 8px; font-size:12px; min-width:100px;"
-                                onchange="this.form.submit()">
-                            <option value="active" {% if emp.status == 'active' %}selected{% endif %} data-i18n="status_active">Faol</option>
-                            <option value="vacation" {% if emp.status == 'vacation' %}selected{% endif %} data-i18n="status_vacation">Ta'tilda</option>
-                            <option value="left" {% if emp.status == 'left' %}selected{% endif %} data-i18n="status_left">Ketgan</option>
-                        </select>
-                    </form>
-                    <form method="POST" style="display:inline;">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="delete_employee">
-                        <input type="hidden" name="employee_id" value="{{ emp.id }}">
-                        <button type="submit" class="delete-btn"
-                                onclick="return confirm('Xodimni o\'chirasizmi?')">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </form>
+                {% empty %}
+                <div style="text-align:center; padding:60px 0;">
+                    <i class="fa-solid fa-user-slash" style="font-size:40px; color:var(--line-soft); margin-bottom:15px;"></i>
+                    <p style="color:var(--muted-ink);" data-i18n="no_employees">Hozircha xodimlar yo'q</p>
                 </div>
+                {% endfor %}
             </div>
-            {% empty %}
-            <div style="text-align:center; padding:40px; color:var(--text-muted);">
-                <i class="fa-solid fa-users" style="font-size:40px; opacity:0.2; display:block; margin-bottom:12px;"></i>
-                <span data-i18n="no_employees">Ma'lumotlar bazasida xodimlar yo'q</span>
-                <br><small>3-tab orqali xodim qo'shing</small>
-            </div>
-            {% endfor %}
-        </div>
+        </section>
 
-        <!-- Give Advance -->
-        <div class="card" style="align-self:start;">
-            <h3 style="margin-bottom:18px;">
-                <i class="fa-solid fa-hand-holding-dollar" style="color:var(--warning)"></i>
-                <span data-i18n="issue_advance">Avans berish</span>
-            </h3>
-            <form method="POST">
+        <!-- Quick Advance Panel -->
+        <section class="panel" style="grid-column: span 4; align-self: start;">
+            <h3 class="hero-title" style="font-size:20px; margin-bottom:20px;" data-i18n="issue_advance">Avans berish</h3>
+            
+            <form method="POST" class="premium-form">
                 {% csrf_token %}
                 <input type="hidden" name="give_advance" value="1">
 
                 <div class="form-group">
                     <label data-i18n="employee">Xodim</label>
                     <select name="employee" required class="form-control">
-                        <option value="" data-i18n="opt_select_employee">-- Xodimni tanlang --</option>
+                        <option value="" data-i18n="opt_select_employee">-- Tanlang --</option>
                         {% for emp in active_employees %}
-                            <option value="{{ emp.id }}">{{ emp.name }} ({{ emp.position }})</option>
+                            <option value="{{ emp.id }}">{{ emp.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
 
                 <div class="form-group">
                     <label data-i18n="amount">Summa (UZS)</label>
-                    <input type="number" step="1000" name="amount" required class="form-control"
-                           style="font-size:20px;">
+                    <input type="number" step="1000" name="amount" required class="form-control" placeholder="Masalan: 500,000">
                 </div>
 
-                <button type="submit" class="btn"
-                        style="width:100%; justify-content:center; background:var(--warning); color:#333; padding:13px; font-weight:700;">
-                    <i class="fa-solid fa-hand-holding-dollar"></i>
-                    <span data-i18n="give_advance">Avans berish</span>
+                <button type="submit" class="submit-btn">
+                    <i class="fa-solid fa-paper-plane"></i> <span data-i18n="give_advance">Avans berish</span>
                 </button>
             </form>
-        </div>
+        </section>
     </div>
-</div>
 
-<!-- ═══════ TAB: ADVANCES ═══════ -->
-<div id="tab-advances" class="tab-content">
-    <div class="card">
-        <h3 style="margin-bottom:20px;">
-            <i class="fa-solid fa-clock-rotate-left" style="color:var(--primary)"></i>
-            <span data-i18n="recent_advances">So'nggi avanslar</span>
-        </h3>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th data-i18n="date">Sana</th>
-                    <th data-i18n="employee">Xodim</th>
-                    <th data-i18n="position">Lavozimi</th>
-                    <th style="text-align:right;" data-i18n="amount">Summa</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for adv in advances %}
-                <tr>
-                    <td style="color:var(--text-muted); font-size:13px;">{{ adv.date|date:"d M Y" }}</td>
-                    <td><strong>{{ adv.employee.name }}</strong></td>
-                    <td style="font-size:13px;">{{ adv.employee.position }}</td>
-                    <td style="text-align:right; color:var(--danger); font-weight:700;">
-                        −{{ adv.amount|floatformat:0 }} UZS
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="4" style="text-align:center; padding:30px; color:var(--text-muted);">
-                        <i class="fa-solid fa-inbox" style="font-size:30px; display:block; margin-bottom:8px; opacity:0.3;"></i>
-                        <span data-i18n="no_advances">So'nggi avanslar yo'q</span>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- ═══════ TAB: ADD EMPLOYEE ═══════ -->
-<div id="tab-add" class="tab-content">
-    <div style="max-width:620px; margin:0 auto;">
-        <div class="card">
-            <div style="background:linear-gradient(135deg, var(--primary), var(--primary-dark)); color:white; padding:20px 24px; border-radius:10px 10px 0 0; margin:-24px -24px 24px -24px;">
-                <h3 style="margin:0; color:white;">
-                    <i class="fa-solid fa-user-plus"></i>
-                    <span data-i18n="add_employee">Yangi xodim qo'shish</span>
-                </h3>
+    <!-- ═══════ PANE: ADVANCES ═══════ -->
+    <div id="pane-advances" class="tab-pane" style="grid-column: span 12; display: none;">
+        <section class="panel">
+            <h3 class="hero-title" style="font-size:22px; margin-bottom:24px;" data-i18n="recent_advances">Avanslar tarixi</h3>
+            <div style="overflow-x: auto;">
+                <table style="width:100%; border-collapse: separate; border-spacing: 0 10px;">
+                    <thead>
+                        <tr style="text-align: left;">
+                            <th style="padding: 10px 20px; font-size: 12px; color: var(--muted-ink); text-transform: uppercase;" data-i18n="date">Sana</th>
+                            <th style="padding: 10px 20px; font-size: 12px; color: var(--muted-ink); text-transform: uppercase;" data-i18n="employee">Xodim</th>
+                            <th style="padding: 10px 20px; font-size: 12px; color: var(--muted-ink); text-transform: uppercase;" data-i18n="position">Lavozim</th>
+                            <th style="padding: 10px 20px; font-size: 12px; color: var(--muted-ink); text-transform: uppercase; text-align: right;" data-i18n="amount">Summa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for adv in advances %}
+                        <tr style="background: white; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                            <td style="padding: 16px 20px; border-radius: 12px 0 0 12px; font-weight: 600; color: var(--muted-ink);">{{ adv.date|date:"d M Y" }}</td>
+                            <td style="padding: 16px 20px; font-weight: 700; color: var(--ink);">{{ adv.employee.name }}</td>
+                            <td style="padding: 16px 20px;"><span class="status-pill" style="background:#f0f2f5; color:var(--ink);">{{ adv.employee.position }}</span></td>
+                            <td style="padding: 16px 20px; border-radius: 0 12px 12px 0; text-align: right; color: #e74c3c; font-weight: 800;">
+                                −{{ adv.amount|floatformat:0 }} UZS
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
+        </section>
+    </div>
 
-            <form method="POST">
+    <!-- ═══════ PANE: ADD ═══════ -->
+    <div id="pane-add" class="tab-pane" style="grid-column: span 12; display: none;">
+        <section class="panel" style="max-width: 800px; margin: 0 auto;">
+            <h3 class="hero-title" style="text-align: center; margin-bottom: 30px;" data-i18n="add_employee">Yangi xodim qo'shish</h3>
+            
+            <form method="POST" class="premium-form" enctype="multipart/form-data">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="add_employee">
 
-                <div style="display:flex; gap:16px;">
-                    <div class="form-group" style="flex:2;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
                         <label data-i18n="name">To'liq ismi</label>
-                        <input type="text" name="name" class="form-control" required
-                               data-i18n-placeholder="full_name_placeholder">
+                        <input type="text" name="name" class="form-control" required data-i18n-placeholder="full_name_placeholder">
                     </div>
-                    <div class="form-group" style="flex:1;">
+                    <div class="form-group">
                         <label data-i18n="phone_label">Telefon</label>
-                        <input type="text" name="phone" class="form-control"
-                               placeholder="+998 90 000 00 00">
+                        <input type="text" name="phone" class="form-control" placeholder="+998 90 000 00 00">
                     </div>
-                </div>
-
-                <div style="display:flex; gap:16px;">
-                    <div class="form-group" style="flex:2;">
+                    <div class="form-group">
                         <label data-i18n="position">Lavozimi</label>
                         <select name="position" class="form-control" required>
                             <option value="" data-i18n="opt_select">-- Tanlang --</option>
@@ -256,61 +384,385 @@
                             <option value="Buxgalter" data-i18n="pos_accountant">Buxgalter</option>
                         </select>
                     </div>
-                    <div class="form-group" style="flex:1;">
+                    <div class="form-group">
                         <label data-i18n="date_joined">Qo'shilgan sana</label>
                         <input type="date" name="date_joined" class="form-control" required>
                     </div>
-                </div>
-
-                <!-- Salary type -->
-                <div class="form-group">
-                    <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
-                        <input type="checkbox" name="is_piecework" id="isPiecework"
-                               style="width:18px; height:18px; cursor:pointer;"
-                               onchange="toggleSalaryFields(this)">
-                        <span data-i18n="is_piecework_label">Ishbay to'lov (novvoylar uchun)</span>
-                    </label>
-                </div>
-
-                <div id="fixed-salary-row" style="display:flex; gap:16px;">
-                    <div class="form-group" style="flex:1;">
-                        <label data-i18n="base_salary">Oylik maosh (UZS)</label>
-                        <input type="number" step="1000" name="base_salary" class="form-control" value="0">
+                    <div class="form-group">
+                        <label>Smena</label>
+                        <select name="shift_id" class="form-control">
+                            <option value="">— Tanlanmagan —</option>
+                            {% for s in shifts %}
+                            <option value="{{ s.id }}">{{ s.name }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    <div class="form-group" style="flex:1;" id="piecework-rate-group" style="display:none;">
-                        <label data-i18n="piecework_rate">Bir dona uchun to'lov (UZS)</label>
-                        <input type="number" step="10" name="piecework_rate" class="form-control" value="0">
+                    <div class="form-group">
+                        <label>Kunlik nagruzka (reja, dona)</label>
+                        <input type="number" name="daily_target" class="form-control" value="0" min="0">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Xodim rasmi</label>
+                        <input type="file" name="photo" accept="image/*" class="form-control">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Tizim foydalanuvchisi (sotuv — ishbay avtomatik uchun)</label>
+                        <select name="user_account_id" class="form-control">
+                            <option value="">— Bog'lanmagan —</option>
+                            {% for u in seller_users %}
+                            <option value="{{ u.id }}">{{ u.username }} ({{ u.get_full_name|default:u.email|default:"-" }})</option>
+                            {% endfor %}
+                        </select>
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary"
-                        style="width:100%; justify-content:center; padding:14px; margin-top:8px;">
-                    <i class="fa-solid fa-user-plus"></i>
-                    <span data-i18n="add_employee">Xodim qo'shish</span>
+                <div style="background: #fdfaf5; padding: 20px; border-radius: 16px; margin: 10px 0 25px 0; border: 1px solid var(--warm-1);">
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <label style="display:flex; align-items:center; gap:12px; cursor:pointer; text-transform:none;">
+                            <input type="checkbox" name="is_piecework" id="isPiecework" style="width:20px; height:20px; accent-color:var(--warm-2);" onchange="toggleSalaryFields(this)">
+                            <span data-i18n="is_piecework_label" style="font-size:15px; color:var(--ink);">Ishbay to'lov (novvoylar uchun)</span>
+                        </label>
+                    </div>
+                    
+                    <div id="salary-fields" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label data-i18n="base_salary">Oylik maosh (UZS)</label>
+                            <input type="number" name="base_salary" class="form-control" value="0">
+                        </div>
+                        <div class="form-group" id="piecework-row" style="display:none;">
+                            <label data-i18n="piecework_rate">Bir dona uchun to'lov</label>
+                            <input type="number" name="piecework_rate" class="form-control" value="0">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    <i class="fa-solid fa-user-plus"></i> <span data-i18n="add_employee">Xodimni ro'yxatga olish</span>
                 </button>
+            </form>
+        </section>
+    </div>
+
+    <div id="pane-reports" class="tab-pane" style="grid-column: span 12; display: none;">
+        <section class="panel" style="margin-bottom: 22px;">
+            <h3 class="hero-title" style="font-size:20px; margin-bottom:16px;">Filtr va eksport</h3>
+            <form method="get" style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
+                <button type="submit" name="period" value="today" class="tab-link" {% if period == 'today' %}style="border-color:var(--warm-2);"{% endif %}>Bugun</button>
+                <button type="submit" name="period" value="week" class="tab-link" {% if period == 'week' %}style="border-color:var(--warm-2);"{% endif %}>Hafta</button>
+                <input type="date" name="date_from" value="{{ date_from|date:'Y-m-d' }}" class="form-control" style="width:auto;">
+                <span>—</span>
+                <input type="date" name="date_to" value="{{ date_to|date:'Y-m-d' }}" class="form-control" style="width:auto;">
+                <button type="submit" name="period" value="custom" class="submit-btn" style="width:auto;padding:10px 18px;">Qo'llash</button>
+                <a href="?export=excel&period={{ period }}&sort={{ sort_by }}" class="tab-link" style="margin-left:auto;">📊 Excel</a>
+                <button type="button" class="tab-link" onclick="window.print()">🖨 Chop</button>
+            </form>
+            <div style="margin-top:12px;font-size:13px;color:var(--muted-ink);">
+                Tartib: 
+                <a href="?period={{ period }}&sort=name">Ism</a> ·
+                <a href="?period={{ period }}&sort=shift">Smena</a> ·
+                <a href="?period={{ period }}&sort=position">Lavozim</a> ·
+                <a href="?period={{ period }}&sort=target">Nagruzka</a>
+            </div>
+        </section>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:22px;">
+            <section class="panel">
+                <h3 class="hero-title" style="font-size:18px;">Smena yaratish</h3>
+                <form method="POST" class="premium-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_shift">
+                    <div class="form-group"><label>Nomi</label><input type="text" name="shift_name" class="form-control" placeholder="1-smena" required></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <div class="form-group"><label>Boshlanish</label><input type="time" name="shift_start" class="form-control" required></div>
+                        <div class="form-group"><label>Tugash</label><input type="time" name="shift_end" class="form-control" required></div>
+                    </div>
+                    <button type="submit" class="submit-btn" style="margin-top:8px;">Saqlash</button>
+                </form>
+                <h4 style="margin-top:18px;">Mavjud smenalar</h4>
+                <ul style="padding-left:18px;color:var(--ink);">
+                    {% for s in shifts %}
+                    <li style="margin-bottom:8px;">{{ s.name }} — {{ s.start_time|time:"H:i" }}–{{ s.end_time|time:"H:i" }}
+                        <form method="POST" style="display:inline;margin-left:8px;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_shift">
+                            <input type="hidden" name="shift_id" value="{{ s.id }}">
+                            <button type="submit" class="action-btn btn-delete" onclick="return confirm('O\'chirilsinmi?')"><i class="fa-solid fa-trash"></i></button>
+                        </form>
+                    </li>
+                    {% empty %}
+                    <li>Hozircha smenalar yo'q.</li>
+                    {% endfor %}
+                </ul>
+            </section>
+
+            <section class="panel">
+                <h3 class="hero-title" style="font-size:18px;">Kunlik hisobot qo'shish</h3>
+                <form method="POST" class="premium-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_daily_report">
+                    <div class="form-group">
+                        <label>Xodim</label>
+                        <select name="employee_id" class="form-control" required>
+                            {% for emp in active_employees %}
+                            <option value="{{ emp.id }}">{{ emp.name }} — {{ emp.position }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Sana</label>
+                        <input type="date" name="report_date" value="{{ today|date:'Y-m-d' }}" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Smena</label>
+                        <select name="shift_id" class="form-control">
+                            <option value="">—</option>
+                            {% for s in shifts %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Davomat</label>
+                        <select name="attendance" class="form-control">
+                            <option value="present">Keldi</option>
+                            <option value="absent">Kelmadi</option>
+                        </select>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                        <div class="form-group"><label>Kirish</label><input type="time" name="check_in" class="form-control"></div>
+                        <div class="form-group"><label>Chiqish</label><input type="time" name="check_out" class="form-control"></div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                        <div class="form-group"><label>Kutilgan soat</label><input type="number" step="0.01" name="hours_expected" value="8" class="form-control"></div>
+                        <div class="form-group"><label>Ishlagan soat</label><input type="number" step="0.01" name="hours_present" class="form-control" placeholder="8"></div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                        <div class="form-group"><label>Kelmagan soat</label><input type="number" step="0.01" name="hours_absent" class="form-control"></div>
+                        <div class="form-group"><label>Erta ketgan soat</label><input type="number" step="0.01" name="hours_left_early" class="form-control"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Nagruzka (qo‘lda, ishlab chiqarish / boshqa)</label>
+                        <input type="number" name="units_produced" value="0" min="0" class="form-control">
+                        <small style="color:var(--muted-ink);">Sotuvdan keladigan donalar avtomatik <code>units_from_sales</code> ga yoziladi (agar xodim POS bilan bog‘langan bo‘lsa).</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Izoh</label>
+                        <textarea name="notes" class="form-control" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="submit-btn">Hisobotni saqlash</button>
+                </form>
+            </section>
+        </div>
+
+        <section class="panel" style="margin-top:22px;">
+            <h3 class="hero-title" style="font-size:18px;">Hisobotlar ro'yxati ({{ date_from }} — {{ date_to }})</h3>
+            <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                    <thead>
+                        <tr style="text-align:left;color:var(--muted-ink);">
+                            <th style="padding:8px;">Sana</th>
+                            <th>Xodim</th>
+                            <th>Smena</th>
+                            <th>Davomat</th>
+                            <th>Soatlar</th>
+                            <th>Qo‘lda nagruzka</th>
+                            <th>Sotuvdan avto</th>
+                            <th>Ishbay KPI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in daily_reports %}
+                        <tr style="border-top:1px solid var(--line-soft);">
+                            <td style="padding:8px;">{{ r.date }}</td>
+                            <td>{{ r.employee.name }}</td>
+                            <td>{{ r.shift.name|default:"—" }}</td>
+                            <td>{% if r.was_present %}Keldi{% else %}Kelmadi{% endif %}</td>
+                            <td>kutilgan {{ r.hours_expected }} / ish {{ r.hours_present|default:"—" }} / kelmagan {{ r.hours_absent|default:"—" }}</td>
+                            <td>{{ r.units_produced }} dona</td>
+                            <td>{{ r.units_from_sales }} dona</td>
+                            <td>
+                                {{ r.units_produced|add:r.units_from_sales }} dona jami;
+                                × {{ r.employee.piecework_rate|floatformat:0 }} UZS/dona
+                                (taxminiy {{ r.estimated_piecework_earn|floatformat:0 }} UZS)
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="8" style="padding:16px;color:var(--muted-ink);">Tanlangan davr uchun yozuvlar yo'q.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <div id="editEmployeeModal" role="dialog" aria-modal="true" style="display:none;position:fixed;inset:0;background:rgba(47,42,37,0.48);z-index:10001;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)closeEditEmployeeModal();">
+        <div style="background:#fffdf7;border-radius:18px;max-width:720px;width:100%;max-height:92vh;overflow-y:auto;padding:26px 28px;border:1px solid var(--line-soft);box-shadow:0 24px 48px rgba(47,42,37,0.14);" onclick="event.stopPropagation();">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px;">
+                <h3 style="margin:0;font-family:'Lexend',sans-serif;font-size:22px;color:var(--ink);">Xodimni tahrirlash</h3>
+                <button type="button" class="action-btn" style="background:var(--line-soft);color:var(--ink);" onclick="closeEditEmployeeModal()" aria-label="Yopish"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form method="POST" class="premium-form" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_employee">
+                <input type="hidden" name="employee_id" id="ee_id">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+                    <div class="form-group" style="margin-bottom:14px;">
+                        <label>To‘liq ism</label>
+                        <input type="text" name="name" id="ee_name" class="form-control" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom:14px;">
+                        <label>Telefon</label>
+                        <input type="text" name="phone" id="ee_phone" class="form-control">
+                    </div>
+                    <div class="form-group" style="margin-bottom:14px;">
+                        <label>Lavozim</label>
+                        <select name="position" id="ee_position" class="form-control" required>
+                            <option value="Novvoy">Novvoy</option>
+                            <option value="Sotuvchi">Sotuvchi</option>
+                            <option value="Haydovchi">Haydovchi</option>
+                            <option value="Qorovul">Qorovul</option>
+                            <option value="Boshqaruvchi">Boshqaruvchi</option>
+                            <option value="Oshpaz">Oshpaz</option>
+                            <option value="Buxgalter">Buxgalter</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:14px;">
+                        <label>Qo‘shilgan sana</label>
+                        <input type="date" name="date_joined" id="ee_date_joined" class="form-control" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom:14px;">
+                        <label>Smena</label>
+                        <select name="shift_id" id="ee_shift_id" class="form-control">
+                            <option value="">— Tanlanmagan —</option>
+                            {% for s in shifts %}
+                            <option value="{{ s.id }}">{{ s.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:14px;">
+                        <label>Holat</label>
+                        <select name="status" id="ee_status" class="form-control">
+                            <option value="active">Faol</option>
+                            <option value="vacation">Ta'tilda</option>
+                            <option value="left">Ketgan</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="grid-column:span 2;margin-bottom:14px;">
+                        <label>Tizim foydalanuvchisi (sotuv → ishbay)</label>
+                        <select name="user_account_id" id="ee_user_account_id" class="form-control">
+                            <option value="">— Bog‘lanmagan —</option>
+                            {% for u in seller_users %}
+                            <option value="{{ u.id }}">{{ u.username }} ({{ u.get_full_name|default:u.email|default:"-" }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" style="grid-column:span 2;margin-bottom:14px;">
+                        <label>Yangi rasm (ixtiyoriy)</label>
+                        <input type="file" name="photo" id="ee_photo" accept="image/*" class="form-control">
+                    </div>
+                </div>
+                <div style="background:#fdfaf5;padding:18px;border-radius:14px;margin-bottom:18px;border:1px solid var(--warm-1);">
+                    <div class="form-group" style="margin-bottom:10px;">
+                        <label style="display:flex;align-items:center;gap:12px;cursor:pointer;text-transform:none;">
+                            <input type="checkbox" name="is_piecework" id="ee_is_piecework" style="width:20px;height:20px;accent-color:var(--warm-2);" onchange="toggleSalaryFieldsEdit(this)">
+                            <span style="font-size:15px;color:var(--ink);">Ishbay to‘lov</span>
+                        </label>
+                    </div>
+                    <div id="ee_salary_grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Oylik maosh (UZS)</label>
+                            <input type="number" name="base_salary" id="ee_base_salary" class="form-control" step="0.01" min="0">
+                        </div>
+                        <div class="form-group" id="ee_piecework_row" style="display:none;margin-bottom:0;">
+                            <label>Bir dona uchun stavka</label>
+                            <input type="number" name="piecework_rate" id="ee_piecework_rate" class="form-control" step="0.01" min="0">
+                        </div>
+                        <div class="form-group" style="grid-column:span 2;margin-bottom:0;">
+                            <label>Kunlik nagruzka (reja, dona)</label>
+                            <input type="number" name="daily_target" id="ee_daily_target" class="form-control" min="0" value="0">
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+                    <button type="button" class="submit-btn" style="width:auto;background:#e8e4dc;color:var(--ink);box-shadow:none;" onclick="closeEditEmployeeModal()">Bekor</button>
+                    <button type="submit" class="submit-btn" style="width:auto;"><i class="fa-solid fa-floppy-disk"></i> Saqlash</button>
+                </div>
             </form>
         </div>
     </div>
-</div>
 
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-    function showTab(tabId, btn) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
+    function switchTab(tabId, btn) {
+        document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+        document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
+        
+        const activePane = document.getElementById('pane-' + tabId);
+        activePane.style.display = (tabId === 'roster') ? 'grid' : 'block';
         btn.classList.add('active');
+        
+        // Simple fade in
+        activePane.style.opacity = 0;
+        setTimeout(() => { activePane.style.transition = 'opacity 0.3s'; activePane.style.opacity = 1; }, 10);
     }
 
     function toggleSalaryFields(checkbox) {
-        const pieceworkGroup = document.getElementById('piecework-rate-group');
-        if (checkbox.checked) {
-            pieceworkGroup.style.display = 'block';
-        } else {
-            pieceworkGroup.style.display = 'none';
-        }
+        document.getElementById('piecework-row').style.display = checkbox.checked ? 'block' : 'none';
     }
+
+    function toggleSalaryFieldsEdit(checkbox) {
+        var row = document.getElementById('ee_piecework_row');
+        if (row) row.style.display = checkbox.checked ? 'block' : 'none';
+    }
+
+    function openEditEmployeeModal(id) {
+        var dataEl = document.getElementById('hr-employee-edit-data');
+        if (!dataEl) return;
+        var list;
+        try { list = JSON.parse(dataEl.textContent); } catch (e) { return; }
+        var row = list.find(function (x) { return x.id === id; });
+        if (!row) return;
+        document.getElementById('ee_id').value = row.id;
+        document.getElementById('ee_name').value = row.name || '';
+        document.getElementById('ee_phone').value = row.phone || '';
+        var posEl = document.getElementById('ee_position');
+        if (posEl) {
+            var has = Array.prototype.some.call(posEl.options, function (o) { return o.value === row.position; });
+            if (!has && row.position) {
+                var opt = document.createElement('option');
+                opt.value = row.position;
+                opt.textContent = row.position;
+                posEl.appendChild(opt);
+            }
+            posEl.value = row.position || '';
+        }
+        document.getElementById('ee_date_joined').value = row.date_joined || '';
+        document.getElementById('ee_shift_id').value = row.shift_id ? String(row.shift_id) : '';
+        document.getElementById('ee_status').value = row.status || 'active';
+        document.getElementById('ee_is_piecework').checked = !!row.is_piecework;
+        toggleSalaryFieldsEdit(document.getElementById('ee_is_piecework'));
+        document.getElementById('ee_base_salary').value = row.base_salary != null ? row.base_salary : '0';
+        document.getElementById('ee_piecework_rate').value = row.piecework_rate != null ? row.piecework_rate : '0';
+        document.getElementById('ee_daily_target').value = row.daily_target != null ? row.daily_target : '0';
+        document.getElementById('ee_user_account_id').value = row.user_account_id ? String(row.user_account_id) : '';
+        var ph = document.getElementById('ee_photo');
+        if (ph) ph.value = '';
+        var modal = document.getElementById('editEmployeeModal');
+        if (modal) modal.style.display = 'flex';
+    }
+
+    function closeEditEmployeeModal() {
+        var modal = document.getElementById('editEmployeeModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    // Fix select styling in premium forms
+    document.querySelectorAll('select.form-control').forEach(s => {
+        s.style.appearance = 'none';
+        s.style.backgroundImage = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' fill=\'%23746a60\' viewBox=\'0 0 16 16\'%3E%3Cpath d=\'M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z\'/%3E%3C/svg%3E")';
+        s.style.backgroundRepeat = 'no-repeat';
+        s.style.backgroundPosition = 'right 15px center';
+    });
 </script>
 {% endblock %}

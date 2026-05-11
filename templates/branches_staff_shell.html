@@ -1,0 +1,157 @@
+{# Filial xodimi: aylanma / umumiy statistikalar ko‘rinmaydi #}
+<div class="branches-shell">
+    <header class="panel hero-section">
+        <div>
+            <h1 class="hero-title"><i class="fa-solid fa-store" style="color:var(--warm-2);"></i> {{ user_branch.name }}</h1>
+            <p class="hero-subtitle">Filial kabineti — mahsulot qoldig‘i, markazdan kelgan yuklar va sotuvni qayd etish. Savdo summalari va umumiy aylanma markazda ko‘rinadi; bu yerda faqat mahsulot va miqdor.</p>
+        </div>
+    </header>
+
+    <div class="tab-nav">
+        <div class="tab-link active" onclick="switchTabStaff('sales', this)">
+            <i class="fa-solid fa-cart-shopping"></i> Sotuv
+        </div>
+        <div class="tab-link" onclick="switchTabStaff('transfers', this)">
+            <i class="fa-solid fa-truck-ramp-box"></i> O‘tkazmalar
+        </div>
+        <div class="tab-link" onclick="switchTabStaff('stock', this)">
+            <i class="fa-solid fa-boxes-stacked"></i> Mening qoldig‘im
+        </div>
+    </div>
+
+    <section id="staff-pane-sales" class="tab-pane active">
+        <article class="panel half-panel">
+            <h3 style="font-family:'Lexend',sans-serif;font-size:18px;margin-bottom:8px;"><i class="fa-solid fa-receipt" style="color:var(--warm-2);"></i> Yangi sotuv</h3>
+            <p style="font-size:12px;color:var(--muted-ink);margin-bottom:16px;line-height:1.45;">Mahsulot va miqdorni tanlang. Narx bazadagi ruxsat etilgan narxdan avtomatik qo‘llanadi (filial interfeysida ko‘rsatilmaydi).</p>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="add_branch_sale" value="1">
+                <div class="form-group" style="margin-bottom:15px;">
+                    <label>Mahsulot</label>
+                    <select name="product" class="form-control" required>
+                        <option value="">— Tanlang —</option>
+                        {% for row in branch_inventory_rows %}
+                        <option value="{{ row.product.id }}">{{ row.product.name }} (qoldiq: {{ row.stock }} dona)</option>
+                        {% empty %}
+                        <option value="" disabled>Hozircha omborda mahsulot yo‘q — markazdan yuk kuting</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom:20px;">
+                    <label>Miqdor (dona)</label>
+                    <input type="number" name="quantity" min="1" required class="form-control" placeholder="0">
+                </div>
+                <button type="submit" class="btn-submit" {% if not branch_inventory_rows %}disabled{% endif %}>Sotuvni qayd etish</button>
+            </form>
+        </article>
+        <article class="panel half-panel">
+            <h3 style="font-family:'Lexend',sans-serif;font-size:18px;margin-bottom:16px;"><i class="fa-solid fa-clock-rotate-left" style="color:var(--olive-2);"></i> So‘nggi sotuvlar</h3>
+            <p style="font-size:11px;color:var(--muted-ink);margin-bottom:12px;">Sana, mahsulot va miqdor (summa ko‘rsatilmaydi).</p>
+            <div class="table-responsive">
+                <table class="table-premium">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left;">Sana</th>
+                            <th style="text-align:left;">Mahsulot</th>
+                            <th>Miqdor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sale in branch_sales %}
+                        {% for item in sale.items.all %}
+                        <tr>
+                            <td style="font-size:12px;color:var(--muted-ink);white-space:nowrap;">{{ sale.date|date:"d.m.Y" }}</td>
+                            <td style="text-align:left;font-weight:600;">{{ item.product.name }}</td>
+                            <td>{{ item.quantity }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% empty %}
+                        <tr><td colspan="3" style="padding:24px;color:var(--muted-ink);">Hozircha sotuv yo‘q.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </section>
+
+    <section id="staff-pane-transfers" class="tab-pane">
+        <article class="panel full-panel">
+            <h3 style="font-family:'Lexend',sans-serif;font-size:18px;margin-bottom:16px;"><i class="fa-solid fa-truck"></i> Markazdan kelgan yuklar</h3>
+            <div class="table-responsive">
+                <table class="table-premium">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left;">Sana</th>
+                            <th style="text-align:left;">Mahsulot</th>
+                            <th>Holat</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in transfers %}
+                        <tr>
+                            <td style="font-size:12px;color:var(--muted-ink);">{{ t.date_sent|date:"d.m.Y H:i" }}</td>
+                            <td style="text-align:left;">
+                                {% for item in t.items.all %}{{ item.product.name }}: {{ item.quantity }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                            </td>
+                            <td>
+                                {% if t.status == 'in_transit' %}
+                                    <span style="color:#f39c12;font-weight:700;">Yo‘lda</span>
+                                {% else %}
+                                    <span style="color:#28a745;font-weight:700;">Qabul qilingan</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if t.status == 'in_transit' %}
+                                <form method="POST">{% csrf_token %}<input type="hidden" name="receive_transfer" value="1"><input type="hidden" name="transfer_id" value="{{ t.id }}"><button type="submit" class="btn-submit" style="padding:6px 12px;width:auto;font-size:12px;">Qabul qilish</button></form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" style="padding:24px;color:var(--muted-ink);">Transferlar yo‘q.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </section>
+
+    <section id="staff-pane-stock" class="tab-pane">
+        <article class="panel full-panel">
+            <h3 style="font-family:'Lexend',sans-serif;font-size:20px;margin-bottom:16px;">Filial ombori</h3>
+            <div class="table-responsive">
+                <table class="table-premium">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left;">Mahsulot</th>
+                            <th>Qoldiq (dona)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p, stock in branch_stock_list %}
+                        <tr>
+                            <td style="text-align:left;font-weight:600;">{{ p.name }}</td>
+                            <td>
+                                <span class="stock-badge {% if stock > 0 %}stock-ok{% else %}stock-zero{% endif %}">{{ stock }}</span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="2" style="padding:24px;color:var(--muted-ink);">Ma’lumot yo‘q.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </section>
+</div>
+
+<script>
+function switchTabStaff(name, btn) {
+    document.querySelectorAll('#staff-pane-sales, #staff-pane-transfers, #staff-pane-stock').forEach(function (el) {
+        el.classList.remove('active');
+    });
+    document.querySelectorAll('.branches-shell .tab-nav .tab-link').forEach(function (l) { l.classList.remove('active'); });
+    document.getElementById('staff-pane-' + name).classList.add('active');
+    if (btn) btn.classList.add('active');
+}
+</script>

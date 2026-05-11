@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% block breadcrumb %}Foydalanuvchilarni boshqarish{% endblock %}
+{% block content %}
+
+<div class="card" style="max-width:760px;margin-bottom:28px;border:2px solid rgba(212,163,115,0.35);">
+    <h2 style="margin-bottom:12px;font-size:20px;"><i class="fa-solid fa-store" style="color:#D4A373;margin-right:8px;"></i>Yangi filial + filial login</h2>
+    <p style="font-size:13px;color:#666;margin-bottom:20px;line-height:1.5;">Bitta qadamda filial yaratiladi va unga alohida <strong>login / parol</strong> beriladi. Bu foydalanuvchi faqat o‘z filialiga kiradi, sotuv va qoldiqni ko‘radi (umumiy aylanma ko‘rinmaydi).</p>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="create_branch_with_admin">
+        <h3 style="font-size:15px;margin-bottom:12px;color:#444;">Filial</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div class="form-group">
+                <label>Filial nomi <span style="color:#dc3545;">*</span></label>
+                <input class="form-control" type="text" name="branch_name" required placeholder="Masalan: Chilonzor">
+            </div>
+            <div class="form-group">
+                <label>Mas’ul shaxs</label>
+                <input class="form-control" type="text" name="responsible_person" placeholder="F.I.Sh.">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Manzil</label>
+            <input class="form-control" type="text" name="branch_address" placeholder="Toshkent, ko‘cha...">
+        </div>
+        <h3 style="font-size:15px;margin:20px 0 12px;color:#444;">Filial admini (kirish)</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div class="form-group">
+                <label>Login <span style="color:#dc3545;">*</span></label>
+                <input class="form-control" type="text" name="ba_username" required placeholder="filial_chilonzor" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>Parol <span style="color:#dc3545;">*</span></label>
+                <input class="form-control" type="password" name="ba_password" required placeholder="kamida 6 belgi" autocomplete="new-password">
+            </div>
+            <div class="form-group">
+                <label>Ism</label>
+                <input class="form-control" type="text" name="ba_first_name" placeholder="Ism">
+            </div>
+            <div class="form-group">
+                <label>Familiya</label>
+                <input class="form-control" type="text" name="ba_last_name" placeholder="Familiya">
+            </div>
+            <div class="form-group" style="grid-column:span 2;">
+                <label>Telefon</label>
+                <input class="form-control" type="text" name="ba_phone" placeholder="+998 ...">
+            </div>
+        </div>
+        <button class="btn btn-primary" type="submit" style="margin-top:8px;">
+            <i class="fa-solid fa-circle-plus"></i> Filial va foydalanuvchini yaratish
+        </button>
+    </form>
+</div>
+
+<div class="card" style="max-width:760px;">
+    <h2 style="margin-bottom:24px;font-size:20px;"><i class="fa-solid fa-user-plus" style="color:#D4A373;margin-right:8px;"></i>Yangi foydalanuvchi qo'shish</h2>
+    <form method="post">
+        {% csrf_token %}
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div class="form-group">
+                <label>Ism</label>
+                <input class="form-control" type="text" name="first_name" placeholder="Ism">
+            </div>
+            <div class="form-group">
+                <label>Familiya</label>
+                <input class="form-control" type="text" name="last_name" placeholder="Familiya">
+            </div>
+            <div class="form-group">
+                <label>Telefon raqam</label>
+                <input class="form-control" type="text" name="phone" placeholder="+998 90 000 00 00">
+            </div>
+            <div class="form-group">
+                <label>Yashash manzili</label>
+                <input class="form-control" type="text" name="address" placeholder="Shahar, ko'cha, uy">
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:4px;">
+            <div class="form-group">
+                <label>Login <span style="color:#dc3545;">*</span></label>
+                <input class="form-control" type="text" name="username" required placeholder="foydalanuvchi nomi">
+            </div>
+            <div class="form-group">
+                <label>Parol <span style="color:#dc3545;">*</span></label>
+                <input class="form-control" type="password" name="password" required placeholder="parol">
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div class="form-group">
+                <label>Rol <span style="color:#dc3545;">*</span></label>
+                <select class="form-control" name="role" id="roleSelect" onchange="toggleBranch()">
+                    <option value="superadmin">⭐ SuperAdmin</option>
+                    <option value="accountant">💰 Buxgalter</option>
+                    <option value="hr">👥 HR Xodim</option>
+                    <option value="seller">🛒 Sotuvchi</option>
+                    <option value="production_manager">🏭 Ishlab chiqarish menejer</option>
+                    <option value="branch_admin">🏪 Filial Admini</option>
+                </select>
+            </div>
+            <div class="form-group" id="branchGroup" style="display:none;">
+                <label>Filial</label>
+                <select class="form-control" name="branch_id">
+                    <option value="">— Filial tanlang —</option>
+                    {% for b in branches %}
+                    <option value="{{ b.id }}">{{ b.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <button class="btn btn-primary" type="submit" style="margin-top:8px;">
+            <i class="fa-solid fa-user-plus"></i> Foydalanuvchi qo'shish
+        </button>
+    </form>
+</div>
+
+<div class="card" style="margin-top:28px;">
+    <h2 style="margin-bottom:16px;font-size:18px;"><i class="fa-solid fa-users" style="color:#D4A373;margin-right:8px;"></i>Barcha foydalanuvchilar</h2>
+    <div style="overflow-x:auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Ism Familiya</th>
+                    <th>Login</th>
+                    <th>Telefon</th>
+                    <th>Manzil</th>
+                    <th>Rol</th>
+                    <th>Filial</th>
+                    <th>Amal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>
+                        <strong>
+                            {% if u.profile.first_name or u.profile.last_name %}
+                                {{ u.profile.first_name }} {{ u.profile.last_name }}
+                            {% else %}—{% endif %}
+                        </strong>
+                    </td>
+                    <td>{{ u.username }}</td>
+                    <td>{{ u.profile.phone|default:"—" }}</td>
+                    <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                        {{ u.profile.address|default:"—" }}
+                    </td>
+                    <td>
+                        {% if u.is_superuser %}
+                            <span class="badge badge-danger">SuperAdmin</span>
+                        {% elif u.groups.all.0 %}
+                            {% with g=u.groups.all.0.name %}
+                                {% if g == 'accountant' %}<span class="badge badge-info">Buxgalter</span>
+                                {% elif g == 'hr' %}<span class="badge badge-success">HR Xodim</span>
+                                {% elif g == 'seller' %}<span class="badge badge-warning">Sotuvchi</span>
+                                {% elif g == 'production_manager' %}<span class="badge badge-info">Ishlab chiqarish</span>
+                                {% elif g == 'branch_admin' %}<span class="badge badge-warning">Filial Admin</span>
+                                {% else %}{{ g }}{% endif %}
+                            {% endwith %}
+                        {% else %}<span style="color:#aaa;">—</span>{% endif %}
+                    </td>
+                    <td>{{ u.profile.branch.name|default:"—" }}</td>
+                    <td>
+                        {% if u != request.user %}
+                        <form method="post" style="display:inline;" onsubmit="return confirm('O\'chirishni tasdiqlaysizmi?')">
+                            {% csrf_token %}
+                            <input type="hidden" name="delete_user_id" value="{{ u.id }}">
+                            <button class="delete-btn" type="submit">O'chirish</button>
+                        </form>
+                        {% else %}
+                        <span style="color:#aaa;font-size:12px;">Siz</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function toggleBranch() {
+    const role = document.getElementById('roleSelect').value;
+    document.getElementById('branchGroup').style.display = role === 'branch_admin' ? 'block' : 'none';
+}
+</script>
+{% endblock %}

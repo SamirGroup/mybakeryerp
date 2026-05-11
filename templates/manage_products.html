@@ -1,606 +1,1574 @@
 {% extends 'base.html' %}
 
 {% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-    .mgmt-grid {
+    .manage-shell {
+        --mg-ink: #2f2a25;
+        --mg-muted: #75695d;
+        --mg-line: rgba(120, 97, 74, 0.2);
+        --mg-bg: #fffdf8;
+        --mg-accent: #d4a373;
+        --mg-accent-dark: #b88656;
+        --mg-ok: #2a7f42;
+        --mg-danger: #b23d47;
+        font-family: 'Manrope', sans-serif;
         display: grid;
-        grid-template-columns: 380px 1fr;
-        gap: 28px;
+        gap: 18px;
+    }
+
+    .manage-hero {
+        border-radius: 22px;
+        border: 1px solid var(--mg-line);
+        padding: 20px;
+        background:
+            linear-gradient(120deg, rgba(255, 252, 245, 0.98), rgba(251, 244, 236, 0.95)),
+            radial-gradient(circle at right top, rgba(212, 163, 115, 0.25), transparent 40%);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .manage-hero h2 {
+        margin: 0 0 6px;
+        font-family: 'Lexend', sans-serif;
+        font-size: clamp(22px, 2.4vw, 30px);
+        color: var(--mg-ink);
+    }
+
+    .manage-hero p {
+        margin: 0;
+        font-size: 14px;
+        color: var(--mg-muted);
+        max-width: 72ch;
+    }
+
+    .hero-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .hero-workflow {
+        display: grid;
+        gap: 6px;
+        min-width: 240px;
+    }
+
+    .wf-step {
+        border-radius: 10px;
+        border: 1px solid rgba(124, 101, 77, 0.24);
+        background: rgba(255, 255, 255, 0.8);
+        padding: 7px 10px;
+        color: #66594d;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .hero-link {
+        border-radius: 10px;
+        border: 1px solid rgba(118, 95, 71, 0.25);
+        background: rgba(255, 255, 255, 0.84);
+        color: #5f5348;
+        padding: 9px 12px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .overview-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .overview-card {
+        border-radius: 18px;
+        border: 1px solid var(--mg-line);
+        background: linear-gradient(165deg, rgba(255, 255, 255, 0.98), rgba(251, 249, 244, 0.96));
+        padding: 14px;
+    }
+
+    .overview-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #7a6e62;
+        margin-bottom: 8px;
+        font-weight: 700;
+    }
+
+    .overview-value {
+        font-family: 'Lexend', sans-serif;
+        font-size: clamp(22px, 2.2vw, 30px);
+        color: var(--mg-ink);
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .overview-sub {
+        margin-top: 8px;
+        color: #84786d;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .manage-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .manage-tab-btn {
+        border: 1px solid rgba(117, 94, 70, 0.24);
+        border-radius: 999px;
+        padding: 10px 14px;
+        background: rgba(255, 255, 255, 0.78);
+        color: #5d5247;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .manage-tab-btn.active {
+        border-color: var(--mg-accent);
+        background: var(--mg-accent);
+        color: #fff;
+    }
+
+    .manage-tab-btn:focus-visible,
+    .hero-link:focus-visible,
+    .add-ing-btn:focus-visible,
+    .danger-btn:focus-visible,
+    .receive-btn:focus-visible {
+        outline: 3px solid rgba(212, 163, 115, 0.28);
+        outline-offset: 2px;
+    }
+
+    .manage-tab-content {
+        display: none;
+        gap: 16px;
+    }
+
+    .manage-tab-content.active {
+        display: grid;
+    }
+
+    .grid-2 {
+        grid-template-columns: 1fr 1fr;
         align-items: start;
     }
 
-    .form-panel {
-        background: white;
-        border-radius: var(--border-radius);
-        box-shadow: var(--card-shadow);
-        overflow: hidden;
+    .grid-main {
+        grid-template-columns: 1.1fr 1.4fr;
+        align-items: start;
     }
 
-    .form-panel-header {
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-        color: white;
-        padding: 18px 24px;
-        font-size: 15px;
-        font-weight: 700;
+    .mg-card {
+        border-radius: 18px;
+        border: 1px solid var(--mg-line);
+        background: #fff;
+        box-shadow: 0 10px 26px rgba(87, 66, 46, 0.08);
+        padding: 16px;
+    }
+
+    .mg-card h3 {
+        margin: 0;
+        font-family: 'Lexend', sans-serif;
+        font-size: 16px;
+        color: #3b322a;
+    }
+
+    .mg-sub {
+        margin-top: 4px;
+        margin-bottom: 10px;
+        font-size: 12px;
+        color: #8a7f73;
+        font-weight: 600;
+    }
+
+    .section-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .section-tools {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
+        flex-wrap: wrap;
     }
 
-    .form-panel-body {
-        padding: 24px;
+    .table-search {
+        border: 1px solid rgba(121, 99, 76, 0.22);
+        border-radius: 999px;
+        padding: 7px 11px;
+        font-size: 12px;
+        min-width: 180px;
+    }
+
+    .table-search:focus {
+        outline: none;
+        border-color: var(--mg-accent);
+        box-shadow: 0 0 0 3px rgba(212, 163, 115, 0.14);
+    }
+
+    .count-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 4px 11px;
+        background: rgba(212, 163, 115, 0.18);
+        color: #6c5741;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .table-wrap {
+        overflow-x: auto;
+    }
+
+    .clean-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    .clean-table th,
+    .clean-table td {
+        padding: 10px 8px;
+        border-bottom: 1px dashed rgba(127, 104, 82, 0.25);
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    .clean-table tbody tr:hover {
+        background: rgba(250, 244, 235, 0.5);
+    }
+
+    .clean-table th {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #7d7266;
+    }
+
+    .badge-soft {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 4px 9px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .badge-soft.ok {
+        background: rgba(40, 167, 69, 0.14);
+        color: var(--mg-ok);
+    }
+
+    .badge-soft.low {
+        background: rgba(220, 53, 69, 0.14);
+        color: var(--mg-danger);
+    }
+
+    .danger-btn {
+        border: 1px solid rgba(220, 53, 69, 0.6);
+        color: var(--mg-danger);
+        background: transparent;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .danger-btn:hover {
+        background: rgba(220, 53, 69, 0.08);
+    }
+
+    .receive-inline {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+
+    .receive-inline input {
+        width: 80px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 6px 8px;
+        font-size: 12px;
+    }
+
+    .receive-btn {
+        border: none;
+        background: var(--mg-ok);
+        color: white;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .recipe-card {
+        border-radius: 12px;
+        border: 1px solid rgba(119, 95, 71, 0.2);
+        padding: 12px;
+        margin-bottom: 10px;
+        background: rgba(255, 255, 255, 0.96);
+    }
+
+    .recipe-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+
+    .recipe-top strong {
+        color: #3a3129;
+        font-size: 14px;
+    }
+
+    .ingredient-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .ingredient-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        border-radius: 999px;
+        padding: 4px 10px;
+        background: rgba(233, 237, 201, 0.78);
+        color: #4c463f;
+        font-size: 11px;
+        font-weight: 700;
     }
 
     .ingredient-row {
         display: flex;
-        gap: 10px;
-        align-items: center;
-        margin-bottom: 10px;
-        animation: slideIn 0.2s ease;
+        gap: 8px;
+        margin-bottom: 8px;
     }
 
     .ingredient-row select,
     .ingredient-row input {
         flex: 1;
-        padding: 9px 12px;
-        border: 2px solid #eee;
-        border-radius: var(--border-radius-sm);
-        font-family: inherit;
-        font-size: 14px;
-    }
-
-    .ingredient-row select:focus,
-    .ingredient-row input:focus {
-        border-color: var(--primary);
-        outline: none;
-    }
-
-    .remove-ing-btn {
-        background: none;
-        border: none;
-        color: var(--danger);
-        cursor: pointer;
-        font-size: 18px;
-        padding: 4px;
-        transition: transform 0.2s;
-    }
-
-    .remove-ing-btn:hover { transform: scale(1.2); }
-
-    .table-card {
-        background: white;
-        border-radius: var(--border-radius);
-        box-shadow: var(--card-shadow);
-        overflow: hidden;
-    }
-
-    .table-card-header {
-        padding: 18px 24px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        border-bottom: 2px solid #f8f9fa;
-    }
-
-    .table-card-title {
-        font-size: 16px;
-        font-weight: 700;
-        color: var(--text-main);
-    }
-
-    .pill {
-        background: var(--primary-light);
-        color: var(--primary-dark);
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: 600;
-    }
-
-    .recipe-card {
-        border: 1px solid #eee;
-        border-radius: 10px;
-        padding: 16px;
-        margin-bottom: 12px;
-        transition: box-shadow 0.2s;
-    }
-
-    .recipe-card:hover {
-        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-    }
-
-    .recipe-title {
-        font-size: 15px;
-        font-weight: 700;
-        color: var(--text-main);
-        margin-bottom: 10px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .ingredient-tag {
-        display: inline-block;
-        background: var(--accent);
-        color: var(--text-main);
-        padding: 3px 10px;
-        border-radius: 6px;
-        font-size: 12px;
-        font-weight: 500;
-        margin: 3px 2px;
-    }
-
-    .action-form { display: inline; }
-
-    .btn-danger-sm {
-        background: none;
-        border: 1px solid var(--danger);
-        color: var(--danger);
-        padding: 5px 10px;
-        border-radius: 6px;
-        font-size: 12px;
-        cursor: pointer;
-        transition: var(--transition);
-    }
-
-    .btn-danger-sm:hover {
-        background: var(--danger);
-        color: white;
-    }
-
-    .receive-form {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-    }
-
-    .receive-form input {
-        width: 80px;
-        padding: 6px 10px;
         border: 1px solid #ddd;
-        border-radius: 6px;
+        border-radius: 8px;
+        padding: 9px 10px;
         font-size: 13px;
     }
 
-    .btn-receive {
-        background: var(--success);
-        color: white;
+    .icon-btn-danger {
         border: none;
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-size: 12px;
+        background: transparent;
+        color: var(--mg-danger);
         cursor: pointer;
-        font-weight: 600;
-        transition: background 0.2s;
+        font-size: 16px;
+        padding: 4px 6px;
     }
 
-    .btn-receive:hover { background: #218838; }
+    .add-ing-btn {
+        border: 1px solid rgba(115, 97, 74, 0.24);
+        background: rgba(255, 255, 255, 0.88);
+        color: #5f5348;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .empty-box {
+        border: 1px dashed rgba(122, 101, 79, 0.33);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        color: #867a6f;
+        font-size: 13px;
+    }
+
+    .insight-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .insight-card {
+        border-radius: 14px;
+        border: 1px solid rgba(119, 95, 72, 0.2);
+        background: rgba(255, 255, 255, 0.95);
+        padding: 12px;
+    }
+
+    .insight-title {
+        font-size: 12px;
+        color: #7e7165;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 8px;
+        font-weight: 700;
+    }
+
+    .insight-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 12px;
+        color: #5f554c;
+        padding: 6px 0;
+        border-bottom: 1px dashed rgba(128, 106, 84, 0.24);
+    }
+
+    .insight-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    @media (max-width: 1160px) {
+        .overview-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .insight-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .grid-main,
+        .grid-2 {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 760px) {
+        .manage-hero {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .hero-workflow {
+            min-width: 0;
+            width: 100%;
+        }
+
+        .overview-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .manage-tabs {
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            padding-bottom: 4px;
+        }
+
+        .manage-tab-btn {
+            flex-shrink: 0;
+        }
+
+        .table-search {
+            min-width: 150px;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block breadcrumb %}<span data-i18n="product_mgmt">Mahsulotlarni boshqarish</span>{% endblock %}
 
 {% block content %}
-<!-- Tab Navigation -->
-<div class="nav-tabs">
-    <button class="tab-btn active" onclick="showTab('tab-products', this)">
-        <i class="fa-solid fa-bread-slice"></i> <span data-i18n="all_products">Barcha mahsulotlar</span>
-    </button>
-    <button class="tab-btn" onclick="showTab('tab-materials', this)">
-        <i class="fa-solid fa-boxes-stacked"></i> <span data-i18n="all_raw_materials">Barcha xom ashyolar</span>
-    </button>
-    <button class="tab-btn" onclick="showTab('tab-recipes', this)">
-        <i class="fa-solid fa-scroll"></i> <span>Retseptlar</span>
-    </button>
-    <button class="tab-btn" onclick="showTab('tab-add-product', this)">
-        <i class="fa-solid fa-plus"></i> <span data-i18n="add_new_product">Yangi mahsulot qo'shish</span>
-    </button>
-    <button class="tab-btn" onclick="showTab('tab-add-material', this)">
-        <i class="fa-solid fa-plus"></i> <span data-i18n="add_raw_material">Yangi xom ashyo qo'shish</span>
-    </button>
-    <button class="tab-btn" onclick="showTab('tab-add-recipe', this)">
-        <i class="fa-solid fa-plus"></i> <span data-i18n="add_recipe">Retsept qo'shish</span>
-    </button>
-</div>
-
-<!-- ═══════════════ PRODUCTS LIST ═══════════════ -->
-<div id="tab-products" class="tab-content active">
-    <div class="table-card">
-        <div class="table-card-header">
-            <span class="table-card-title"><i class="fa-solid fa-bread-slice" style="color:var(--primary)"></i> &nbsp;<span data-i18n="all_products">Barcha mahsulotlar</span></span>
-            <span class="pill">{{ products.count }} ta</span>
+<section class="manage-shell">
+    <div class="manage-hero">
+        <div>
+            <h2>Mahsulot va retsept boshqaruvi</h2>
+            <p>
+                Bu bo'lim ishlab chiqarish konfiguratsiyasining markazi: mahsulotlar, xom ashyo va texnologik xaritalar bir joyda.
+                Qo'shilgan ma'lumotlar to'g'ridan-to'g'ri ishlab chiqarish modulida ishlatiladi.
+            </p>
         </div>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th data-i18n="product_name">Mahsulot nomi</th>
-                    <th data-i18n="price">Narx</th>
-                    <th data-i18n="in_stock">Qoldiq</th>
-                    <th>Retsept</th>
-                    <th data-i18n="actions">Amallar</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for p in products %}
-                <tr>
-                    <td style="color:var(--text-muted)">{{ forloop.counter }}</td>
-                    <td><strong>{{ p.name }}</strong></td>
-                    <td>{{ p.price }} UZS</td>
-                    <td>
-                        {% if p.inventory %}
-                            <span class="{% if p.inventory.stock > 0 %}badge badge-success{% else %}badge badge-danger{% endif %}">
-                                {{ p.inventory.stock }} dona
-                            </span>
-                        {% else %}
-                            <span class="badge badge-warning">—</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if p.recipe %}
-                            <span class="badge badge-info">{{ p.recipe.batch_size }} donaga</span>
-                        {% else %}
-                            <span style="color:var(--text-muted); font-size:13px;">Yo'q</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <form class="action-form" method="POST">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="delete_product">
-                            <input type="hidden" name="product_id" value="{{ p.id }}">
-                            <button type="submit" class="btn-danger-sm" onclick="return confirm('O\'chirishni tasdiqlaysizmi?')">
-                                <i class="fa-solid fa-trash"></i> <span data-i18n="delete">O'chirish</span>
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="6" style="text-align:center; padding:30px; color:var(--text-muted)">
-                    <i class="fa-solid fa-inbox" style="font-size:30px; margin-bottom:10px; display:block;"></i>
-                    Mahsulotlar yo'q
-                </td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div>
+            <div class="hero-links" style="margin-bottom:8px;">
+                <a class="hero-link" href="/production/">Ishlab chiqarish paneli</a>
+                <a class="hero-link" href="/sales/">Sotuvga o'tish</a>
+            </div>
+            <div class="hero-workflow">
+                <div class="wf-step">1. Xom ashyoni kiriting va qoldiqni tekshiring</div>
+                <div class="wf-step">2. Mahsulot kartasini yarating va narx belgilang</div>
+                <div class="wf-step">3. Retsept tuzing, keyin ishlab chiqarishga o'ting</div>
+            </div>
+        </div>
     </div>
-</div>
 
-<!-- ═══════════════ RAW MATERIALS LIST ═══════════════ -->
-<div id="tab-materials" class="tab-content">
-    <div class="table-card">
-        <div class="table-card-header">
-            <span class="table-card-title"><i class="fa-solid fa-boxes-stacked" style="color:var(--secondary)"></i> &nbsp;<span data-i18n="all_raw_materials">Barcha xom ashyolar</span></span>
-            <span class="pill">{{ raw_materials.count }} ta</span>
+    <div class="overview-grid">
+        <div class="overview-card">
+            <div class="overview-label">Mahsulotlar</div>
+            <div class="overview-value">{{ product_count }}</div>
+            <div class="overview-sub">Aktiv katalog</div>
         </div>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th data-i18n="material_name">Xom ashyo nomi</th>
-                    <th data-i18n="in_stock">Qoldiq</th>
-                    <th data-i18n="unit">O'lchov</th>
-                    <th data-i18n="status">Holat</th>
-                    <th data-i18n="receive_material">Qabul qilish</th>
-                    <th data-i18n="actions">Amallar</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for mat in raw_materials %}
-                <tr>
-                    <td style="color:var(--text-muted)">{{ forloop.counter }}</td>
-                    <td><strong>{{ mat.name }}</strong></td>
-                    <td>{{ mat.stock }}</td>
-                    <td>{{ mat.unit }}</td>
-                    <td>
-                        {% if mat.stock < 10 %}
-                            <span class="badge badge-danger"><i class="fa-solid fa-triangle-exclamation"></i> <span data-i18n="low_stock">Oz qoldi</span></span>
-                        {% else %}
-                            <span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> <span data-i18n="good">Yaxshi</span></span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <form class="action-form" method="POST">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="receive_material">
-                            <input type="hidden" name="material_id" value="{{ mat.id }}">
-                            <div class="receive-form">
-                                <input type="number" name="qty" step="0.01" min="0.01" placeholder="{{ mat.unit }}" required>
-                                <button type="submit" class="btn-receive">+ <span data-i18n="receive_material">Qabul</span></button>
-                            </div>
-                        </form>
-                    </td>
-                    <td>
-                        <form class="action-form" method="POST">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="delete_material">
-                            <input type="hidden" name="material_id" value="{{ mat.id }}">
-                            <button type="submit" class="btn-danger-sm" onclick="return confirm('O\'chirishni tasdiqlaysizmi?')">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted)">
-                    <i class="fa-solid fa-inbox" style="font-size:30px; margin-bottom:10px; display:block;"></i>
-                    Xom ashyolar yo'q
-                </td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="overview-card">
+            <div class="overview-label">Xom ashyolar</div>
+            <div class="overview-value">{{ material_count }}</div>
+            <div class="overview-sub">Ombor nomenklaturasi</div>
+        </div>
+        <div class="overview-card">
+            <div class="overview-label">Retsept qamrovi</div>
+            <div class="overview-value">{{ recipe_coverage }}%</div>
+            <div class="overview-sub">Retseptlar: {{ recipe_count }} | Yetishmaydi: {{ products_without_recipe }}</div>
+        </div>
+        <div class="overview-card">
+            <div class="overview-label">Risk materiallar</div>
+            <div class="overview-value">{{ materials_low_count }}</div>
+            <div class="overview-sub">10 birlikdan past</div>
+        </div>
     </div>
-</div>
 
-<!-- ═══════════════ RECIPES LIST ═══════════════ -->
-<div id="tab-recipes" class="tab-content">
-    <div class="table-card">
-        <div class="table-card-header">
-            <span class="table-card-title"><i class="fa-solid fa-scroll" style="color:#9b6b3a"></i> &nbsp;Retseptlar (Texnologik xarita)</span>
-            <span class="pill">{{ recipes.count }} ta</span>
+    <div class="insight-grid">
+        <div class="insight-card">
+            <div class="insight-title">Kritik xomashyo (top 6)</div>
+            {% for mat in low_material_preview %}
+            <div class="insight-item">
+                <span>{{ mat.name }}</span>
+                <strong>{{ mat.stock }} {{ mat.unit }}</strong>
+            </div>
+            {% empty %}
+            <div class="empty-box" style="padding:12px;">Kritik xomashyo yo'q.</div>
+            {% endfor %}
         </div>
-        <div style="padding: 24px;">
-            {% for recipe in recipes %}
-            <div class="recipe-card">
-                <div class="recipe-title">
-                    <i class="fa-solid fa-bread-slice" style="color:var(--primary)"></i>
-                    {{ recipe.product.name }}
-                    <span class="badge badge-info">{{ recipe.batch_size }} donaga</span>
-                    <span style="font-size:13px; color:var(--text-muted); font-weight:400; margin-left:5px;">= narx: {{ recipe.product.price }} UZS</span>
+        <div class="insight-card">
+            <div class="insight-title">Tezkor audit</div>
+            <div class="insight-item"><span>Katalogdagi mahsulot</span><strong>{{ product_count }}</strong></div>
+            <div class="insight-item"><span>Retseptsiz mahsulot</span><strong>{{ products_without_recipe }}</strong></div>
+            <div class="insight-item"><span>O'rtacha xomashyo qoldig'i</span><strong>{{ avg_material_stock|floatformat:2 }}</strong></div>
+            <div class="insight-item"><span>Tayyor mahsulot qiymati</span><strong>{{ inventory_value|floatformat:0 }} UZS</strong></div>
+        </div>
+    </div>
+
+    <form method="get" class="mg-card" style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;padding:14px 16px;margin-bottom:4px;">
+        <input type="hidden" name="period" value="{{ period }}">
+        <div>
+            <div class="overview-label" style="margin-bottom:4px;">Ro'yxat filtri</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button type="submit" name="period" value="today" class="hero-link" {% if period == 'today' %}style="border-color:#d4a373;background:#fff5ea;"{% endif %}>Bugun</button>
+                <button type="submit" name="period" value="week" class="hero-link" {% if period == 'week' %}style="border-color:#d4a373;background:#fff5ea;"{% endif %}>Haftalik</button>
+            </div>
+        </div>
+        <div>
+            <div class="overview-label" style="margin-bottom:4px;">Sana oralig'i</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <input type="date" name="date_from" value="{{ date_from|date:'Y-m-d' }}" class="form-control" style="width:auto;min-width:140px;">
+                <span style="font-weight:700;color:#75695d;">—</span>
+                <input type="date" name="date_to" value="{{ date_to|date:'Y-m-d' }}" class="form-control" style="width:auto;min-width:140px;">
+                <button type="submit" name="period" value="custom" class="btn btn-primary" style="padding:8px 14px;">Qo'llash</button>
+            </div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;">
+            <a href="?export=catalog{% if period %}&period={{ period }}{% endif %}{% if period == 'custom' %}&date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}{% endif %}" class="hero-link">📊 Mahsulotlar Excel</a>
+            <a href="?export=excel{% if period %}&period={{ period }}{% endif %}" class="hero-link">📊 Retseptlar Excel</a>
+            <button type="button" class="hero-link" onclick="window.print()">🖨️ Chop</button>
+        </div>
+    </form>
+
+    <div class="manage-tabs">
+        <button class="manage-tab-btn active" onclick="showManageTab('tab-overview', this)">Katalog</button>
+        <button class="manage-tab-btn" onclick="showManageTab('tab-add-product', this)">Yangi mahsulot</button>
+        <button class="manage-tab-btn" onclick="showManageTab('tab-add-material', this)">Yangi xom ashyo</button>
+        <button class="manage-tab-btn" onclick="showManageTab('tab-recipes', this)">Retseptlar</button>
+        <button class="manage-tab-btn" onclick="showManageTab('tab-day-balance', this)">Kunlik ombor</button>
+    </div>
+
+    <div id="tab-overview" class="manage-tab-content grid-2 active">
+        <div class="mg-card">
+            <div class="section-head">
+                <h3>Mahsulotlar ro'yxati</h3>
+                <div class="section-tools">
+                    <input id="productsSearch" class="table-search" type="text" placeholder="Mahsulot qidirish...">
+                    <span class="count-pill">{{ product_count }} ta</span>
                 </div>
-                <div>
+            </div>
+            <div class="table-wrap">
+                <table class="clean-table" id="productsTable">
+                    <thead>
+                        <tr>
+                            <th>Rasm</th>
+                            <th>Mahsulot</th>
+                            <th>Kategoriya</th>
+                            <th>Narx</th>
+                            <th>Qoldiq</th>
+                            <th>Ishlab chiq.</th>
+                            <th>Retsept</th>
+                            <th>Amal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in products %}
+                        <tr>
+                            <td>
+                                {% if p.image %}
+                                    <img src="{{ p.image.url }}" alt="{{ p.name }}" style="width:40px;height:40px;object-fit:cover;border-radius:8px;border:1px solid #e0d5c8;">
+                                {% else %}
+                                    <div style="width:40px;height:40px;border-radius:8px;background:#f5ede0;display:flex;align-items:center;justify-content:center;font-size:18px;">🍞</div>
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ p.name }}</strong></td>
+                            <td>{{ p.category.name|default:"—" }}</td>
+                            <td>{{ p.price|floatformat:0 }} UZS</td>
+                            <td>{% if p.inventory %}{{ p.inventory.stock }}{% else %}0{% endif %}</td>
+                            <td>{% if p.inventory and p.inventory.produced_at %}{{ p.inventory.produced_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</td>
+                            <td>{% if p.recipe %}Bor{% else %}Yo'q{% endif %}</td>
+                            <td>
+                                <button type="button" class="receive-btn" style="margin-right:6px;background:#d4a373;"
+                                    onclick="openEditProductModal({{ p.id }}, '{{ p.name|escapejs }}', '{{ p.price }}', {% if p.category %}{{ p.category.id }}{% else %}null{% endif %})">Tahrirlash</button>
+                                <form method="POST" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="delete_product">
+                                    <input type="hidden" name="product_id" value="{{ p.id }}">
+                                    <button type="submit" class="danger-btn" onclick="return confirm('Mahsulot o\'chirilsinmi?')">O'chirish</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="8"><div class="empty-box">Mahsulotlar hozircha mavjud emas.</div></td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="mg-card">
+            <div class="section-head">
+                <h3>Xom ashyo ombori</h3>
+                <div class="section-tools">
+                    <input id="materialsSearch" class="table-search" type="text" placeholder="Xom ashyo qidirish...">
+                    <span class="count-pill">{{ material_count }} ta</span>
+                </div>
+            </div>
+            <div class="mg-sub">Tayyor mahsulot taxminiy qiymati: <strong>{{ inventory_value|floatformat:0 }} UZS</strong></div>
+            <div class="table-wrap">
+                <table class="clean-table" id="materialsTable">
+                    <thead>
+                        <tr>
+                            <th>Xom ashyo</th>
+                            <th>Qoldiq</th>
+                            <th>Birlik</th>
+                            <th>Holat</th>
+                            <th>Qabul</th>
+                            <th>Amal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mat in raw_materials %}
+                        <tr>
+                            <td><strong>{{ mat.name }}</strong></td>
+                            <td>{{ mat.stock }}</td>
+                            <td>{{ mat.unit }}</td>
+                            <td>
+                                {% if mat.stock < 10 %}
+                                    <span class="badge-soft low"><i class="fa-solid fa-triangle-exclamation"></i> Kam</span>
+                                {% else %}
+                                    <span class="badge-soft ok"><i class="fa-solid fa-circle-check"></i> Me'yor</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <form method="POST" class="receive-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="receive_material">
+                                    <input type="hidden" name="material_id" value="{{ mat.id }}">
+                                    <input type="number" name="qty" step="0.01" min="0.01" placeholder="{{ mat.unit }}" required>
+                                    <button type="submit" class="receive-btn">Qabul</button>
+                                </form>
+                            </td>
+                            <td>
+                                <form method="POST" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="delete_material">
+                                    <input type="hidden" name="material_id" value="{{ mat.id }}">
+                                    <button type="submit" class="danger-btn" onclick="return confirm('Xom ashyo o\'chirilsinmi?')">O'chirish</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="6"><div class="empty-box">Xom ashyolar hali yo'q.</div></td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-add-product" class="manage-tab-content grid-main">
+        <div class="mg-card">
+            <h3>Yangi mahsulot qo'shish</h3>
+            <div class="mg-sub">Mahsulot qo'shilganda avtomatik 0 qoldiq bilan inventar yaratiladi.</div>
+            <form method="POST" style="margin-bottom:14px;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_category">
+                <div class="form-group">
+                    <label>Kategoriya qo'shish</label>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <input type="text" name="cat_name" class="form-control" placeholder="Yangi kategoriya nomi" style="flex:1;min-width:180px;">
+                        <button type="submit" class="btn btn-primary">Saqlash</button>
+                    </div>
+                </div>
+            </form>
+            <form method="POST" enctype="multipart/form-data" id="add-product-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_product">
+
+                <div class="form-group">
+                    <label>Mahsulot nomi</label>
+                    <input type="text" name="name" id="addProdName" class="form-control" required placeholder="Masalan: Obi Non, Patir Non">
+                </div>
+
+                <div class="form-group">
+                    <label>Kategoriya</label>
+                    <select name="category" class="form-control">
+                        <option value="">— Tanlanmagan —</option>
+                        {% for c in categories %}
+                            <option value="{{ c.id }}">{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Sotuv narxi (UZS)</label>
+                    <input type="number" name="price" step="0.01" min="0.01" class="form-control" required placeholder="7000">
+                </div>
+
+                <div class="form-group">
+                    <label>Mahsulot rasmi</label>
+                    <input type="file" name="image" id="addProdImage" accept="image/*" class="form-control">
+                    <div id="addProdImagePreview" style="margin-top:8px;display:none;">
+                        <img id="addProdImgThumb" src="" alt="preview" style="width:80px;height:80px;object-fit:cover;border-radius:10px;border:1px solid #e0d5c8;">
+                    </div>
+                </div>
+
+                <!-- hidden real submit -->
+                <button type="submit" id="addProdRealSubmit" style="display:none;"></button>
+
+                <button type="button" class="btn btn-primary" style="width:100%; justify-content:center; padding:12px;" onclick="confirmAddProductSave()">
+                    <i class="fa-solid fa-plus"></i> Mahsulot qo'shish
+                </button>
+            </form>
+        </div>
+
+        <div class="mg-card">
+            <div class="section-head">
+                <h3>Katalog nazorati</h3>
+                <span class="count-pill">{{ product_count }} ta</span>
+            </div>
+            <div class="table-wrap">
+                <table class="clean-table">
+                    <thead>
+                        <tr>
+                            <th>Rasm</th>
+                            <th>Nomi</th>
+                            <th>Narx</th>
+                            <th>Qoldiq</th>
+                            <th>Retsept</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in products %}
+                        <tr>
+                            <td>
+                                {% if p.image %}
+                                    <img src="{{ p.image.url }}" alt="{{ p.name }}" style="width:36px;height:36px;object-fit:cover;border-radius:7px;border:1px solid #e0d5c8;">
+                                {% else %}
+                                    <div style="width:36px;height:36px;border-radius:7px;background:#f5ede0;display:flex;align-items:center;justify-content:center;font-size:16px;">🍞</div>
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ p.name }}</strong></td>
+                            <td>{{ p.price|floatformat:0 }} UZS</td>
+                            <td>{% if p.inventory %}{{ p.inventory.stock }}{% else %}0{% endif %}</td>
+                            <td>{% if p.recipe %}Tayyor{% else %}Kutilmoqda{% endif %}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5"><div class="empty-box">Mahsulotlar yo'q.</div></td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-add-material" class="manage-tab-content grid-main">
+        <div class="mg-card">
+            <h3>Yangi xom ashyo qo'shish</h3>
+            <div class="mg-sub">Nom va birlik bo'yicha yagona nomenklatura yuriting.</div>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_material">
+
+                <div class="form-group">
+                    <label>Xom ashyo nomi</label>
+                    <input type="text" name="name" class="form-control" required placeholder="Masalan: Premium un">
+                </div>
+
+                <div class="form-group">
+                    <label>O'lchov birligi</label>
+                    <select name="unit" class="form-control" required>
+                        <option value="kg">kg</option>
+                        <option value="g">g</option>
+                        <option value="liter">liter</option>
+                        <option value="ml">ml</option>
+                        <option value="dona">dona</option>
+                        <option value="qop">qop</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Boshlang'ich qoldiq</label>
+                    <input type="number" name="stock" step="0.01" min="0" class="form-control" value="0">
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:12px;">
+                    <i class="fa-solid fa-plus"></i> Xom ashyo qo'shish
+                </button>
+            </form>
+        </div>
+
+        <div class="mg-card">
+            <div class="section-head">
+                <h3>Ombor holati</h3>
+                <span class="count-pill">Kam qoldiq: {{ materials_low_count }}</span>
+            </div>
+            <div class="table-wrap">
+                <table class="clean-table">
+                    <thead>
+                        <tr>
+                            <th>Nomi</th>
+                            <th>Qoldiq</th>
+                            <th>Birlik</th>
+                            <th>Holat</th>
+                            <th>Amal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in raw_materials %}
+                        <tr>
+                            <td><strong>{{ m.name }}</strong></td>
+                            <td>{{ m.stock }}</td>
+                            <td>{{ m.unit }}</td>
+                            <td>
+                                {% if m.stock < 10 %}
+                                    <span class="badge-soft low">Kam</span>
+                                {% else %}
+                                    <span class="badge-soft ok">Yaxshi</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button type="button" class="receive-btn" style="background:#d4a373;"
+                                    onclick="openEditMaterialModal({{ m.id }}, '{{ m.name|escapejs }}', '{{ m.unit }}', '{{ m.stock }}')">Tahrirlash</button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5"><div class="empty-box">Xom ashyolar yo'q.</div></td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Material Modal -->
+    <div id="editMaterialModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9998; align-items:center; justify-content:center;">
+        <div style="background:white; padding:26px; border-radius:14px; max-width:440px; width:92%;">
+            <h3 style="margin-top:0;">Xom ashyoni tahrirlash</h3>
+            <form method="POST" id="editMaterialForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_material">
+                <input type="hidden" name="material_id" id="editMatId">
+                <div class="form-group">
+                    <label>Nomi</label>
+                    <input type="text" name="name" id="editMatName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>O'lchov birligi</label>
+                    <select name="unit" id="editMatUnit" class="form-control" required>
+                        <option value="kg">kg</option>
+                        <option value="g">g</option>
+                        <option value="liter">liter</option>
+                        <option value="ml">ml</option>
+                        <option value="dona">dona</option>
+                        <option value="qop">qop</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Joriy qoldiq</label>
+                    <input type="number" name="stock" id="editMatStock" step="0.01" min="0" class="form-control" required>
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+                    <button type="button" onclick="document.getElementById('editMaterialModal').style.display='none'" style="padding:10px 18px;border:1px solid #ccc;border-radius:8px;background:#f5f5f5;cursor:pointer;font-weight:700;">Bekor</button>
+                    <button type="submit" style="padding:10px 18px;border:none;border-radius:8px;background:#d4a373;color:white;cursor:pointer;font-weight:700;">Saqlash</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="tab-recipes" class="manage-tab-content grid-main">
+        <div class="mg-card">
+            <h3>Retsept qo'shish / yangilash</h3>
+            <div class="mg-sub">Bir mahsulot uchun bitta retsept saqlanadi, qayta saqlansa yangilanadi.</div>
+            <form id="recipe-form" onsubmit="confirmRecipeSave(event, this)">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_recipe">
+
+                <div class="form-group">
+                    <label>Mahsulot</label>
+                    <select name="recipe_product" class="form-control" required id="recipeProductSelect">
+                        <option value="">-- Mahsulotni tanlang --</option>
+                        {% for p in products %}
+                            <option value="{{ p.id }}">{{ p.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group" style="display:none;">
+                    <!-- Batch size is hardcoded to 1 now, hiding from UI -->
+                    <input type="hidden" name="batch_size" id="recipeBatchSize" value="1">
+                </div>
+
+                <div class="form-group">
+                    <label>Ingredientlar (1 dona mahsulot uchun)</label>
+                    <div id="ingredients-container"></div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+                        <button type="button" class="add-ing-btn" onclick="addIngredientRow()">
+                            <i class="fa-solid fa-plus"></i> Ingredient qo'shish
+                        </button>
+                        <button type="button" class="add-ing-btn" id="toggleRecipeQtyBtn" onclick="toggleRecipeIngredientQtyLock()">
+                            Miqdorlarni tahrirlash
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:12px; margin-top:10px;">
+                    <i class="fa-solid fa-floppy-disk"></i> Retseptni saqlash
+                </button>
+            </form>
+        </div>
+
+        <div class="mg-card">
+            <div class="section-head">
+                <h3>Mavjud retseptlar</h3>
+                <div class="section-tools">
+                    <input id="recipesSearch" class="table-search" type="text" placeholder="Retsept qidirish...">
+                    <a href="?export=excel" class="btn-icon" title="Excel yuklab olish">📊</a>
+                    <span class="count-pill">{{ recipe_count }} ta</span>
+                </div>
+            </div>
+            <div id="recipesList">
+            {% for recipe in recipes %}
+            <div class="recipe-card" data-recipe-name="{{ recipe.product.name|lower }}" data-recipe-id="{{ recipe.id }}">
+                <div class="recipe-top">
+                    <strong>{{ recipe.product.name }}</strong>
+                    <span class="count-pill">1 dona uchun</span>
+                </div>
+                <div class="ingredient-grid">
                     {% for item in recipe.items.all %}
-                        <span class="ingredient-tag">
-                            <i class="fa-solid fa-circle-dot" style="font-size:8px;"></i>
-                            {{ item.raw_material.name }}: <strong>{{ item.quantity }} {{ item.raw_material.unit }}</strong>
-                        </span>
+                    <span class="ingredient-tag">
+                        <i class="fa-solid fa-circle-dot" style="font-size:7px;"></i>
+                        {{ item.raw_material.name }}: {{ item.quantity }} {{ item.raw_material.unit }}
+                        {% if item.quantity_grams %}<span style="font-size:10px; opacity:0.7;">({{ item.quantity_grams }}g)</span>{% endif %}
+                    </span>
                     {% empty %}
-                        <span style="color:var(--text-muted); font-size:13px;">Ingredientlar kiritilmagan</span>
+                    <span class="ingredient-tag" style="background:#f4f4f4;">Ingredient yo'q</span>
                     {% endfor %}
+                </div>
+                <div class="recipe-actions" style="display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end;">
+                    <button class="btn-icon" onclick="editRecipe({{ recipe.id }})" title="Tahrirlash" style="background:#d4a373; color:white; border:none; padding:6px 10px; border-radius:5px; cursor:pointer; font-size:12px;">✏️ Tahrirlash</button>
+                    <button class="btn-icon" onclick="printRecipe({{ recipe.id }})" title="Chop etish" style="background:#666; color:white; border:none; padding:6px 10px; border-radius:5px; cursor:pointer; font-size:12px;">🖨️ Chop</button>
                 </div>
             </div>
             {% empty %}
-            <div style="text-align:center; padding:40px; color:var(--text-muted)">
-                <i class="fa-solid fa-scroll" style="font-size:40px; margin-bottom:15px; display:block; opacity:0.3;"></i>
-                Retseptlar yo'q. Avval mahsulot va xom ashyo qo'shing.
-            </div>
+            <div class="empty-box">Retseptlar hozircha kiritilmagan.</div>
             {% endfor %}
+            </div>
         </div>
     </div>
-</div>
 
-<!-- ═══════════════ ADD PRODUCT FORM ═══════════════ -->
-<div id="tab-add-product" class="tab-content">
-    <div class="mgmt-grid">
-        <div class="form-panel">
-            <div class="form-panel-header">
-                <i class="fa-solid fa-bread-slice"></i>
-                <span data-i18n="add_new_product">Yangi mahsulot qo'shish</span>
-            </div>
-            <div class="form-panel-body">
-                <form method="POST">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="add_product">
-
-                    <div class="form-group">
-                        <label data-i18n="product_name">Mahsulot nomi</label>
-                        <input type="text" name="name" class="form-control" required placeholder="Masalan: Obinon, Patir, Bukhara noni...">
-                    </div>
-
-                    <div class="form-group">
-                        <label data-i18n="selling_price">Sotuv narxi (UZS)</label>
-                        <input type="number" name="price" step="0.01" class="form-control" required placeholder="0.00">
-                    </div>
-
-                    <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding: 14px;">
-                        <i class="fa-solid fa-plus"></i> <span data-i18n="add_new_product">Mahsulot qo'shish</span>
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <div class="table-card">
-            <div class="table-card-header">
-                <span class="table-card-title" data-i18n="all_products">Barcha mahsulotlar</span>
-                <span class="pill">{{ products.count }}</span>
-            </div>
-            <table class="data-table">
-                <thead><tr>
-                    <th data-i18n="product_name">Nomi</th>
-                    <th data-i18n="price">Narxi</th>
-                    <th data-i18n="in_stock">Qoldiq</th>
-                </tr></thead>
-                <tbody>
-                    {% for p in products %}
-                    <tr>
-                        <td><strong>{{ p.name }}</strong></td>
-                        <td>{{ p.price }} UZS</td>
-                        <td>{% if p.inventory %}{{ p.inventory.stock }}{% else %}—{% endif %}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<!-- ═══════════════ ADD RAW MATERIAL FORM ═══════════════ -->
-<div id="tab-add-material" class="tab-content">
-    <div class="mgmt-grid">
-        <div class="form-panel">
-            <div class="form-panel-header">
-                <i class="fa-solid fa-boxes-stacked"></i>
-                <span data-i18n="add_raw_material">Yangi xom ashyo qo'shish</span>
-            </div>
-            <div class="form-panel-body">
-                <form method="POST">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="add_material">
-
-                    <div class="form-group">
-                        <label data-i18n="material_name">Xom ashyo nomi</label>
-                        <input type="text" name="name" class="form-control" required placeholder="Masalan: Un, Yog', Xamirturush...">
-                    </div>
-
-                    <div class="form-group">
-                        <label data-i18n="measurement_unit">O'lchov birligi</label>
-                        <select name="unit" class="form-control" required>
-                            <option value="kg">kg (kilogram)</option>
-                            <option value="g">g (gramm)</option>
-                            <option value="litr">litr</option>
-                            <option value="ml">ml (millilitr)</option>
-                            <option value="dona">dona (pcs)</option>
-                            <option value="qop">qop (meshok)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label data-i18n="initial_stock">Boshlang'ich qoldiq</label>
-                        <input type="number" name="stock" step="0.01" class="form-control" value="0" min="0">
-                    </div>
-
-                    <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:14px;">
-                        <i class="fa-solid fa-plus"></i> <span data-i18n="add_raw_material">Xom ashyo qo'shish</span>
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <div class="table-card">
-            <div class="table-card-header">
-                <span class="table-card-title" data-i18n="all_raw_materials">Barcha xom ashyolar</span>
-                <span class="pill">{{ raw_materials.count }}</span>
-            </div>
-            <table class="data-table">
-                <thead><tr>
-                    <th data-i18n="material_name">Nomi</th>
-                    <th data-i18n="in_stock">Qoldiq</th>
-                    <th data-i18n="unit">O'lchov</th>
-                </tr></thead>
-                <tbody>
-                    {% for m in raw_materials %}
-                    <tr>
-                        <td><strong>{{ m.name }}</strong></td>
-                        <td>{{ m.stock }}</td>
-                        <td>{{ m.unit }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<!-- ═══════════════ ADD RECIPE FORM ═══════════════ -->
-<div id="tab-add-recipe" class="tab-content">
-    <div class="mgmt-grid">
-        <div class="form-panel" style="max-width:100%;">
-            <div class="form-panel-header">
-                <i class="fa-solid fa-scroll"></i>
-                <span data-i18n="add_recipe">Retsept qo'shish / yangilash</span>
-            </div>
-            <div class="form-panel-body">
-                <form method="POST" id="recipe-form">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="add_recipe">
-
-                    <div class="form-group">
-                        <label data-i18n="select_product_recipe">Mahsulot tanlang</label>
-                        <select name="recipe_product" class="form-control" required>
-                            <option value="">-- Mahsulot --</option>
-                            {% for p in products %}
-                                <option value="{{ p.id }}">{{ p.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label data-i18n="batch_size">Partiya hajmi (necha donaga)</label>
-                        <input type="number" name="batch_size" class="form-control" required min="1" placeholder="Masalan: 100">
-                        <small style="color:var(--text-muted)">Quyidagi ingredientlar shu dona uchun kerak bo'ladi</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label data-i18n="ingredient">Ingredientlar (Xom ashyolar)</label>
-                        <div id="ingredients-container">
-                            <!-- JS will add rows here -->
-                        </div>
-                        <button type="button" class="btn" style="background:var(--accent); color:var(--text-main); margin-top:10px;" onclick="addIngredientRow()">
-                            <i class="fa-solid fa-plus"></i> <span data-i18n="add_ingredient">Ingredient qo'shish</span>
-                        </button>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:14px; margin-top:10px;">
-                        <i class="fa-solid fa-floppy-disk"></i> <span data-i18n="save_recipe">Retseptni saqlash</span>
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <div class="table-card" style="align-self: start;">
-            <div class="table-card-header">
-                <span class="table-card-title">Mavjud retseptlar</span>
-                <span class="pill">{{ recipes.count }}</span>
-            </div>
-            <div style="padding: 20px;">
-                {% for recipe in recipes %}
-                <div class="recipe-card">
-                    <div class="recipe-title">
-                        <i class="fa-solid fa-bread-slice" style="color:var(--primary)"></i>
-                        {{ recipe.product.name }}
-                        <span class="badge badge-info">{{ recipe.batch_size }} donaga</span>
-                    </div>
-                    {% for item in recipe.items.all %}
-                        <span class="ingredient-tag">{{ item.raw_material.name }}: {{ item.quantity }} {{ item.raw_material.unit }}</span>
-                    {% endfor %}
+    <div id="tab-day-balance" class="manage-tab-content grid-main">
+        <div class="mg-card">
+            <h3>Kunlik tayyor mahsulot</h3>
+            <div class="mg-sub">Sana tanlang, qoldiqlarni ko'ring yoki tahrirlang.</div>
+            <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;">
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#7a6e62;text-transform:uppercase;">Sana</label>
+                    <input type="date" name="balance_date" value="{{ balance_view_date|date:'Y-m-d' }}" class="form-control">
                 </div>
-                {% empty %}
-                <p style="color:var(--text-muted); text-align:center; padding: 20px;">Retseptlar yo'q</p>
-                {% endfor %}
+                <button type="submit" class="btn btn-primary">Ko'rish</button>
+            </form>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+                <form method="POST" style="margin:0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="close_inventory_day">
+                    <input type="hidden" name="balance_date" value="{{ balance_view_date|date:'Y-m-d' }}">
+                    <button type="submit" class="btn btn-primary" onclick="return confirm('Kun yakuni yozilsinmi?')">Kun yakunini yozish</button>
+                </form>
+                <form method="POST" style="margin:0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="carry_inventory_forward">
+                    <input type="hidden" name="balance_date" value="{{ balance_view_date|date:'Y-m-d' }}">
+                    <button type="submit" class="btn" style="background:#555;color:#fff;" onclick="return confirm('Keyingi kunga o\'tkazilsinmi?')">Keyingi kunga o'tkazish</button>
+                </form>
+            </div>
+            <p class="mg-sub">Ko'rilayotgan: <strong>{{ balance_view_date|date:"d.m.Y" }}</strong> &middot; Oldingi: {{ balance_prev_date|date:"d.m.Y" }}</p>
+        </div>
+        <div class="mg-card">
+            <div class="section-head">
+                <h3>Qoldiqlar jadvali</h3>
+                <span class="count-pill">{{ balance_rows|length }} ta</span>
+            </div>
+            <div class="table-wrap">
+                <table class="clean-table">
+                    <thead>
+                        <tr>
+                            <th>Mahsulot</th>
+                            <th>Fizik qoldiq</th>
+                            <th>Kirish</th>
+                            <th>Yakun</th>
+                            <th>Vaqt</th>
+                            <th>Amal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in balance_rows %}
+                        <tr>
+                            <td><strong>{{ row.product.name }}</strong></td>
+                            <td>{{ row.physical }}</td>
+                            <td>{% if row.opening is not None %}{{ row.opening }}{% else %}&mdash;{% endif %}</td>
+                            <td>{% if row.closing is not None %}<strong>{{ row.closing }}</strong>{% else %}&mdash;{% endif %}</td>
+                            <td style="font-size:11px;color:#999;">{% if row.closed_at %}{{ row.closed_at|date:"d.m H:i" }}{% else %}&mdash;{% endif %}</td>
+                            <td>
+                                <button type="button" class="receive-btn" style="background:#d4a373;padding:5px 10px;font-size:11px;"
+                                    onclick="openBalanceEditModal({{ row.product.id }},'{{ row.product.name|escapejs }}',{{ row.physical }},{% if row.opening is not None %}{{ row.opening }}{% else %}null{% endif %},{% if row.closing is not None %}{{ row.closing }}{% else %}null{% endif %})">Tahrirlash</button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="6"><div class="empty-box">Mahsulotlar yo'q.</div></td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-</div>
+
+    <!-- Balance Edit Modal -->
+    <div id="balanceEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+        <div style="background:white;padding:26px;border-radius:14px;max-width:420px;width:92%;">
+            <h3 style="margin-top:0;" id="balanceEditTitle">Qoldiqni tahrirlash</h3>
+            <form method="POST" id="balanceEditForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_balance_row">
+                <input type="hidden" name="balance_date" value="{{ balance_view_date|date:'Y-m-d' }}">
+                <input type="hidden" name="product_id" id="balEditProdId">
+                <div class="form-group">
+                    <label>Fizik qoldiq (ombordagi haqiqiy dona)</label>
+                    <input type="number" name="physical" id="balEditPhysical" min="0" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Kirish qoldig'i (opening)</label>
+                    <input type="number" name="opening" id="balEditOpening" min="0" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Kun yakuni (closing)</label>
+                    <input type="number" name="closing" id="balEditClosing" min="0" class="form-control">
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+                    <button type="button" onclick="document.getElementById('balanceEditModal').style.display='none'" style="padding:10px 18px;border:1px solid #ccc;border-radius:8px;background:#f5f5f5;cursor:pointer;font-weight:700;">Bekor</button>
+                    <button type="submit" style="padding:10px 18px;border:none;border-radius:8px;background:#d4a373;color:white;cursor:pointer;font-weight:700;">Saqlash</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+        <!-- Edit product modal -->
+    <div id="editProductModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9998; align-items:center; justify-content:center;">
+        <div style="background:white; padding:26px; border-radius:14px; max-width:480px; width:92%; max-height:90vh; overflow-y:auto;">
+            <h3 style="margin-top:0;">Mahsulotni tahrirlash</h3>
+            <form method="POST" enctype="multipart/form-data" id="editProductFormPost">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_product">
+                <input type="hidden" name="product_id" id="editProdId">
+                <div class="form-group">
+                    <label>Nomi</label>
+                    <input type="text" name="name" id="editProdName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Narx</label>
+                    <input type="number" name="price" id="editProdPrice" step="0.01" min="0.01" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Kategoriya</label>
+                    <select name="category" id="editProdCategory" class="form-control">
+                        <option value="">—</option>
+                        {% for c in categories %}
+                            <option value="{{ c.id }}">{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Yangi rasm (ixtiyoriy)</label>
+                    <input type="file" name="image" accept="image/*" class="form-control">
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+                    <button type="button" class="btn" onclick="closeEditProductModal()" style="background:#eee;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;">Bekor</button>
+                    <button type="submit" class="btn btn-primary" style="padding:10px 18px;border:none;border-radius:8px;cursor:pointer;background:#d4a373;color:white;">Saqlash</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirm Save Modal -->
+    <div id="confirmSaveModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center;">
+        <div style="background:white; padding:28px; border-radius:14px; max-width:420px; width:90%; text-align:center;">
+            <div style="font-size:40px; margin-bottom:12px;">💾</div>
+            <h3 style="margin:0 0 8px; color:#2f2a25;">Saqlashni tasdiqlang</h3>
+            <p id="confirmSaveText" style="color:#75695d; font-size:14px; margin-bottom:20px;"></p>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button onclick="closeConfirmModal()" style="padding:10px 22px; border:1px solid #ccc; border-radius:8px; background:#f5f5f5; cursor:pointer; font-weight:700;">Bekor qilish</button>
+                <button id="confirmSaveBtn" style="padding:10px 22px; border:none; border-radius:8px; background:#d4a373; color:white; cursor:pointer; font-weight:700;">Tasdiqlash</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Recipe Editing -->
+    <div id="editRecipeModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:white; padding:30px; border-radius:10px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto;">
+            <h3>Retseptni tahrirlash</h3>
+            <form method="POST" id="editRecipeForm" onsubmit="return confirmEditRecipeSubmit(event, this)">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_recipe">
+                <input type="hidden" name="recipe_id" id="editRecipeId">
+
+                <div class="form-group" style="display:none;">
+                    <input type="hidden" name="batch_size" id="editBatchSize" value="1">
+                </div>
+
+                <div class="form-group">
+                    <label>Ingredientlar (1 dona mahsulot uchun)</label>
+                    <div id="editIngredientsContainer"></div>
+                    <button type="button" class="add-ing-btn" onclick="addEditIngredientRow()">
+                        <i class="fa-solid fa-plus"></i> Ingredient qo'shish
+                    </button>
+                </div>
+
+                <div style="display:flex; gap:10px; margin-top:20px; justify-content:flex-end;">
+                    <button type="button" class="btn" onclick="closeEditRecipeModal()" style="background:#ccc; padding:10px 20px; border:none; border-radius:5px; cursor:pointer;">Bekor qilish</button>
+                    <button type="submit" class="btn btn-primary" style="background:#d4a373; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer;">Saqlash</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</section>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-    // Pass raw_materials list from Django to JS
     const RAW_MATERIALS = [
         {% for m in raw_materials %}
         { id: {{ m.id }}, name: "{{ m.name }}", unit: "{{ m.unit }}" }{% if not forloop.last %},{% endif %}
         {% endfor %}
     ];
 
+    function showManageTab(tabId, btn) {
+        document.querySelectorAll('.manage-tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.manage-tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btn.classList.add('active');
+        localStorage.setItem('manageProductsActiveTab', tabId);
+    }
+
+    let _pendingForm = null;
+    let recipeIngredientQtyLocked = true;
+
+    function applyIngredientQtyReadonly(container) {
+        if (!container) return;
+        container.querySelectorAll('input[name=\"ingredient_qty\"]').forEach((inp) => {
+            inp.readOnly = recipeIngredientQtyLocked;
+            inp.style.opacity = recipeIngredientQtyLocked ? '0.65' : '1';
+        });
+        container.querySelectorAll('input[name=\"ingredient_qty_g\"]').forEach((inp) => {
+            inp.readOnly = recipeIngredientQtyLocked;
+            inp.style.opacity = recipeIngredientQtyLocked ? '0.65' : '1';
+        });
+    }
+
+    function toggleRecipeIngredientQtyLock() {
+        recipeIngredientQtyLocked = !recipeIngredientQtyLocked;
+        const btn = document.getElementById('toggleRecipeQtyBtn');
+        if (btn) btn.textContent = recipeIngredientQtyLocked ? 'Miqdorlarni tahrirlash' : 'Tahrirni yakunlash';
+        applyIngredientQtyReadonly(document.getElementById('ingredients-container'));
+    }
+
+    function confirmAddProductSave() {
+        const form = document.getElementById('add-product-form');
+        if (!form.checkValidity()) { form.reportValidity(); return; }
+        const nm = document.getElementById('addProdName').value.trim();
+        document.getElementById('confirmSaveText').textContent =
+            `"${nm}" mahsuloti qo'shilishini tasdiqlaysizmi?`;
+        _pendingForm = null;
+        document.getElementById('confirmSaveModal').style.display = 'flex';
+        document.getElementById('confirmSaveBtn').onclick = function () {
+            closeConfirmModal();
+            document.getElementById('addProdRealSubmit').click();
+        };
+    }
+
+    function confirmEditRecipeSubmit(e, form) {
+        e.preventDefault();
+        document.getElementById('confirmSaveText').textContent =
+            'Retsept o\'zgarishlari saqlansinmi? Ogohlantirish: eski ingredientlar ro\'yxati yangilanadi.';
+        _pendingForm = form;
+        document.getElementById('confirmSaveModal').style.display = 'flex';
+        document.getElementById('confirmSaveBtn').onclick = function () {
+            document.getElementById('confirmSaveModal').style.display = 'none';
+            if (_pendingForm) {
+                _pendingForm.onsubmit = null;
+                _pendingForm.submit();
+                _pendingForm = null;
+            }
+        };
+        return false;
+    }
+
+    function openEditMaterialModal(mid, name, unit, stock) {
+        document.getElementById('editMatId').value = mid;
+        document.getElementById('editMatName').value = name;
+        document.getElementById('editMatUnit').value = unit;
+        document.getElementById('editMatStock').value = stock;
+        document.getElementById('editMaterialModal').style.display = 'flex';
+    }
+
+    function openEditProductModal(pid, name, price, catId) {
+        document.getElementById('editProdId').value = pid;
+        document.getElementById('editProdName').value = name;
+        document.getElementById('editProdPrice').value = price;
+        const sel = document.getElementById('editProdCategory');
+        sel.value = catId === null || catId === undefined ? '' : String(catId);
+        document.getElementById('editProductModal').style.display = 'flex';
+    }
+
+    function closeEditProductModal() {
+        document.getElementById('editProductModal').style.display = 'none';
+    }
+
+    function confirmRecipeSave(e, form) {
+        e.preventDefault();
+        const productSel = form.querySelector('[name="recipe_product"]');
+        const productName = productSel ? productSel.options[productSel.selectedIndex]?.text : '';
+        document.getElementById('confirmSaveText').textContent =
+            `"${productName}" mahsuloti uchun (1 dona) retsept saqlansinmi?`;
+        _pendingForm = form;
+        document.getElementById('confirmSaveModal').style.display = 'flex';
+        document.getElementById('confirmSaveBtn').onclick = function() {
+            document.getElementById('confirmSaveModal').style.display = 'none';
+            if (_pendingForm) {
+                _pendingForm.method = 'POST';
+                _pendingForm.action = '';
+                _pendingForm.onsubmit = null;
+                _pendingForm.submit();
+                _pendingForm = null;
+            }
+        };
+        return false;
+    }
+
+    function closeConfirmModal() {
+        document.getElementById('confirmSaveModal').style.display = 'none';
+        _pendingForm = null;
+    }
+
+    function _getUnitForMaterial(matId) {
+        const m = RAW_MATERIALS.find(x => String(x.id) === String(matId));
+        return m ? m.unit : '';
+    }
+
+    function _buildGramHint(qtyGInput, matSelect) {
+        // gramm/ml kiritilganda kg/liter ko'rsatish
+        const hint = qtyGInput.parentElement.querySelector('.gram-hint');
+        const val = parseFloat(qtyGInput.value);
+        const unit = _getUnitForMaterial(matSelect.value).toLowerCase();
+        if (!hint) return;
+        if (!val || val <= 0) { hint.textContent = ''; return; }
+        if (unit === 'kg') {
+            hint.textContent = `= ${(val / 1000).toFixed(4)} kg`;
+        } else if (unit === 'liter') {
+            hint.textContent = `= ${(val / 1000).toFixed(4)} liter`;
+        } else {
+            hint.textContent = '';
+        }
+    }
+
+    function _attachGramHint(row) {
+        const matSel = row.querySelector('select[name="ingredient_id"]');
+        const qtyGInp = row.querySelector('input[name="ingredient_qty_g"]');
+        if (!matSel || !qtyGInp) return;
+        const update = () => _buildGramHint(qtyGInp, matSel);
+        qtyGInp.addEventListener('input', update);
+        matSel.addEventListener('change', update);
+    }
+
     function addIngredientRow() {
         const container = document.getElementById('ingredients-container');
+        if (!container) return;
+
         const row = document.createElement('div');
         row.className = 'ingredient-row';
 
-        let selectHTML = `<select name="ingredient_id" required>
-            <option value="">-- Xom ashyo --</option>`;
-        RAW_MATERIALS.forEach(m => {
+        let selectHTML = '<select name="ingredient_id" required><option value="">-- Xom ashyo --</option>';
+        RAW_MATERIALS.forEach((m) => {
             selectHTML += `<option value="${m.id}">${m.name} (${m.unit})</option>`;
         });
-        selectHTML += `</select>`;
+        selectHTML += '</select>';
 
         row.innerHTML = `
             ${selectHTML}
-            <input type="number" name="ingredient_qty" step="0.001" min="0.001" placeholder="Miqdori" required>
-            <button type="button" class="remove-ing-btn" onclick="this.parentElement.remove()">
+            <input type="number" name="ingredient_qty" step="any" min="0" placeholder="Miqdori (kg/liter/dona)">
+            <div style="position:relative;display:flex;flex-direction:column;gap:2px;">
+                <input type="number" name="ingredient_qty_g" step="any" min="0" placeholder="Gramm/ml">
+                <span class="gram-hint" style="font-size:10px;color:#d4a373;font-weight:700;"></span>
+            </div>
+            <button type="button" class="icon-btn-danger" onclick="this.closest('.ingredient-row').remove()">
                 <i class="fa-solid fa-circle-xmark"></i>
             </button>
         `;
+
         container.appendChild(row);
+        _attachGramHint(row);
+        applyIngredientQtyReadonly(container);
     }
 
-    // Add first row automatically
-    addIngredientRow();
+    function addEditIngredientRow() {
+        const container = document.getElementById('editIngredientsContainer');
+        if (!container) return;
 
-    function showTab(tabId, btn) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
-        btn.classList.add('active');
+        const row = document.createElement('div');
+        row.className = 'ingredient-row';
+
+        let selectHTML = '<select name="ingredient_id"><option value="">-- Xom ashyo --</option>';
+        RAW_MATERIALS.forEach((m) => {
+            selectHTML += `<option value="${m.id}">${m.name} (${m.unit})</option>`;
+        });
+        selectHTML += '</select>';
+
+        row.innerHTML = `
+            ${selectHTML}
+            <input type="number" name="ingredient_qty" step="any" min="0" placeholder="Miqdori (kg/liter/dona)">
+            <div style="position:relative;display:flex;flex-direction:column;gap:2px;">
+                <input type="number" name="ingredient_qty_g" step="any" min="0" placeholder="Gramm/ml">
+                <span class="gram-hint" style="font-size:10px;color:#d4a373;font-weight:700;"></span>
+            </div>
+            <button type="button" class="icon-btn-danger" onclick="this.closest('.ingredient-row').remove()">
+                <i class="fa-solid fa-circle-xmark"></i>
+            </button>
+        `;
+
+        container.appendChild(row);
+        _attachGramHint(row);
     }
+
+    function filterTableRows(tableId, query) {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach((row) => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(query) ? '' : 'none';
+        });
+    }
+
+    function filterRecipeCards(query) {
+        const cards = document.querySelectorAll('#recipesList .recipe-card');
+        cards.forEach((card) => {
+            const recipeName = card.getAttribute('data-recipe-name') || '';
+            card.style.display = recipeName.includes(query) ? '' : 'none';
+        });
+    }
+
+    // Recipe Edit Functions
+    function editRecipe(recipeId) {
+        fetch(`/production/recipe/${recipeId}/json/`)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.ok) {
+                    alert('Xato: ' + (data.error || 'Ma\'lumot yuklanibs olib kelinmadi'));
+                    return;
+                }
+                
+                document.getElementById('editRecipeId').value = recipeId;
+                document.getElementById('editBatchSize').value = data.recipe.batch_size;
+                
+                const container = document.getElementById('editIngredientsContainer');
+                container.innerHTML = '';
+                
+                data.items.forEach(item => {
+                    const row = document.createElement('div');
+                    row.className = 'ingredient-row';
+                    
+                    let selectHTML = '<select name="ingredient_id" required><option value="">-- Xom ashyo --</option>';
+                    RAW_MATERIALS.forEach((m) => {
+                        const selected = m.id == item.material_id ? 'selected' : '';
+                        selectHTML += `<option value="${m.id}" ${selected}>${m.name} (${m.unit})</option>`;
+                    });
+                    selectHTML += '</select>';
+                    
+                    const gVal = item.quantity_grams || '';
+                    const matUnit = (RAW_MATERIALS.find(m => m.id == item.material_id)?.unit || '').toLowerCase();
+                    let hintText = '';
+                    if (gVal) {
+                        const gNum = parseFloat(gVal);
+                        if (matUnit === 'kg') hintText = `= ${(gNum/1000).toFixed(4)} kg`;
+                        else if (matUnit === 'liter') hintText = `= ${(gNum/1000).toFixed(4)} liter`;
+                    }
+
+                    row.innerHTML = `
+                        ${selectHTML}
+                        <input type="number" name="ingredient_qty" step="any" min="0" placeholder="Miqdori" value="${item.quantity}">
+                        <div style="position:relative;display:flex;flex-direction:column;gap:2px;">
+                            <input type="number" name="ingredient_qty_g" step="any" min="0" placeholder="Gramm/ml" value="${gVal}">
+                            <span class="gram-hint" style="font-size:10px;color:#d4a373;font-weight:700;">${hintText}</span>
+                        </div>
+                        <button type="button" class="icon-btn-danger" onclick="this.closest('.ingredient-row').remove()">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </button>
+                    `;
+                    container.appendChild(row);
+                    _attachGramHint(row);
+                });
+
+                document.getElementById('editRecipeModal').style.display = 'flex';
+            })
+            .catch(err => alert('Xato: ' + err.message));
+    }
+
+    function openBalanceEditModal(prodId, prodName, physical, opening, closing) {
+        document.getElementById('balEditProdId').value = prodId;
+        document.getElementById('balanceEditTitle').textContent = prodName + ' — qoldiqni tahrirlash';
+        document.getElementById('balEditPhysical').value = physical;
+        document.getElementById('balEditOpening').value = opening !== null ? opening : '';
+        document.getElementById('balEditClosing').value = closing !== null ? closing : '';
+        document.getElementById('balanceEditModal').style.display = 'flex';
+    }
+
+    function closeEditRecipeModal() {
+        document.getElementById('editRecipeModal').style.display = 'none';
+    }
+
+    function printRecipe(recipeId) {
+        window.open(`/production/recipe/${recipeId}/print/`, '_blank', 'width=800,height=600');
+    }
+
+    function printAllRecipes() {
+        window.print();
+    }
+
+    // Close modal when clicking outside
+    document.addEventListener('click', function(event) {
+        const modal = document.getElementById('editRecipeModal');
+        if (event.target === modal) {
+            closeEditRecipeModal();
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Rasm preview
+        const imgInput = document.getElementById('addProdImage');
+        if (imgInput) {
+            imgInput.addEventListener('change', function () {
+                const file = this.files[0];
+                const preview = document.getElementById('addProdImagePreview');
+                const thumb = document.getElementById('addProdImgThumb');
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = e => { thumb.src = e.target.result; preview.style.display = 'block'; };
+                    reader.readAsDataURL(file);
+                } else {
+                    preview.style.display = 'none';
+                }
+            });
+        }
+
+        // Django messages ni toast sifatida ko'rsatish
+        document.querySelectorAll('.alert').forEach(function(el) {
+            el.style.cssText = 'position:fixed;top:20px;right:20px;z-index:99999;min-width:280px;max-width:400px;padding:14px 18px;border-radius:12px;font-weight:700;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,0.15);animation:slideInRight 0.3s ease;';
+            if (el.classList.contains('alert-success')) {
+                el.style.background = '#d4edda'; el.style.color = '#155724'; el.style.border = '1px solid #c3e6cb';
+            } else if (el.classList.contains('alert-error')) {
+                el.style.background = '#f8d7da'; el.style.color = '#721c24'; el.style.border = '1px solid #f5c6cb';
+            } else {
+                el.style.background = '#fff3cd'; el.style.color = '#856404'; el.style.border = '1px solid #ffeeba';
+            }
+            setTimeout(() => { el.style.transition = 'opacity 0.5s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 500); }, 4000);
+        });
+
+        if (document.getElementById('ingredients-container')) {
+            addIngredientRow();
+            applyIngredientQtyReadonly(document.getElementById('ingredients-container'));
+        }
+
+        document.addEventListener('click', (event) => {
+            const m = document.getElementById('editProductModal');
+            if (event.target === m) closeEditProductModal();
+            const m2 = document.getElementById('editMaterialModal');
+            if (event.target === m2) m2.style.display = 'none';
+            const m3 = document.getElementById('balanceEditModal');
+            if (event.target === m3) m3.style.display = 'none';
+        });
+
+        const savedTab = localStorage.getItem('manageProductsActiveTab');
+        const hashTab = location.hash.replace('#', '');
+        const activeTabId = hashTab && document.getElementById(hashTab) ? hashTab : savedTab;
+        if (activeTabId) {
+            const targetTab = document.getElementById(activeTabId);
+            const targetBtn = Array.from(document.querySelectorAll('.manage-tab-btn')).find((btn) => btn.getAttribute('onclick')?.includes(activeTabId));
+            if (targetTab && targetBtn) {
+                showManageTab(activeTabId, targetBtn);
+            }
+        }
+
+        const productsSearch = document.getElementById('productsSearch');
+        const materialsSearch = document.getElementById('materialsSearch');
+        const recipesSearch = document.getElementById('recipesSearch');
+
+        if (productsSearch) {
+            productsSearch.addEventListener('input', (e) => filterTableRows('productsTable', e.target.value.trim().toLowerCase()));
+        }
+
+        if (materialsSearch) {
+            materialsSearch.addEventListener('input', (e) => filterTableRows('materialsTable', e.target.value.trim().toLowerCase()));
+        }
+
+        if (recipesSearch) {
+            recipesSearch.addEventListener('input', (e) => filterRecipeCards(e.target.value.trim().toLowerCase()));
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+                event.preventDefault();
+                const activeTab = document.querySelector('.manage-tab-content.active')?.id;
+                if (activeTab === 'tab-overview' && productsSearch) {
+                    productsSearch.focus();
+                } else if (activeTab === 'tab-recipes' && recipesSearch) {
+                    recipesSearch.focus();
+                } else if (materialsSearch) {
+                    materialsSearch.focus();
+                }
+            }
+        });
+    });
 </script>
 {% endblock %}

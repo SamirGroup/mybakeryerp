@@ -1,390 +1,1530 @@
 {% extends 'base.html' %}
 
-{% block breadcrumb %}<span data-i18n="accounting_title">Buxgalteriya va moliya</span>{% endblock %}
-
 {% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <style>
-    .delete-btn {
-        background: none;
-        border: 1px solid var(--danger);
-        color: var(--danger);
-        padding: 4px 10px;
-        border-radius: 6px;
-        font-size: 12px;
-        cursor: pointer;
-        transition: var(--transition);
+    .content-wrapper {
+        --paper: #fffdf7;
+        --ink: #2f2a25;
+        --muted-ink: #746a60;
+        --warm-1: #f2dcc2;
+        --warm-2: #d4a373;
+        --olive-1: #d7debc;
+        --olive-2: #a6b07f;
+        --line-soft: rgba(111, 89, 65, 0.15);
+        --accent-blue: #2c6b8a;
+        font-family: 'Manrope', sans-serif;
+        background:
+            radial-gradient(1100px 460px at -2% -5%, rgba(212, 163, 115, 0.2), transparent),
+            radial-gradient(900px 420px at 101% 12%, rgba(167, 176, 127, 0.18), transparent),
+            linear-gradient(180deg, #fffdf7 0%, #f9f8f3 100%);
     }
 
-    .delete-btn:hover {
-        background: var(--danger);
-        color: white;
+    .accounting-shell {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        max-width: 100%;
     }
 
-    .setup-grid {
+    .accounting-panes {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .panel {
+        border-radius: 22px;
+        border: 1px solid var(--line-soft);
+        background: rgba(255, 255, 255, 0.88);
+        backdrop-filter: blur(8px);
+        box-shadow: 0 10px 30px rgba(78, 60, 41, 0.06);
+        padding: 22px;
+        animation: panelIn 400ms ease both;
+    }
+    
+    .hero-section {
+        width: 100%;
+        padding: 28px 32px;
+        background: linear-gradient(125deg, #fffcf5 0%, #f3f7fa 45%, #fcf9f0 100%);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        flex-wrap: wrap;
+        position: relative;
+        overflow: hidden;
+    }
+    .hero-section::after {
+        content: '';
+        position: absolute;
+        right: -40px;
+        top: -40px;
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(212, 163, 115, 0.25), transparent 70%);
+        pointer-events: none;
+    }
+
+    .hero-title {
+        font-family: 'Lexend', sans-serif;
+        font-size: clamp(22px, 2.5vw, 30px);
+        color: var(--ink);
+        margin-bottom: 6px;
+        letter-spacing: -0.02em;
+    }
+    .hero-subtitle { color: var(--muted-ink); font-size: 14px; max-width: 520px; line-height: 1.5; }
+
+    .hero-badges { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .pill-stat {
+        padding: 10px 16px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.75);
+        border: 1px solid var(--line-soft);
+        font-family: 'Lexend', sans-serif;
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--ink);
+    }
+    .pill-stat small { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted-ink); margin-bottom: 4px; }
+
+    .overview-metrics-grid {
+        grid-column: span 12;
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+        gap: 14px;
+    }
+    .overview-kpi-card {
+        position: relative;
+        overflow: hidden;
+        padding: 16px 18px;
+        min-height: 108px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .overview-kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--warm-2), var(--olive-2));
+        opacity: 0.85;
+    }
+    .overview-kpi-card.is-negative::before {
+        background: linear-gradient(90deg, #dc3545, #c82333);
+    }
+    .overview-kpi-icon {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        font-size: 20px;
+        opacity: 0.14;
+        color: var(--warm-2);
+    }
+    .overview-kpi-card .kpi-title {
+        font-size: 10px;
+        padding-right: 28px;
+        line-height: 1.35;
+    }
+    .overview-kpi-card .kpi-value {
+        font-size: clamp(17px, 1.6vw, 22px);
+        margin-top: 6px;
+    }
+    .overview-kpi-card .kpi-value small { font-size: 11px; font-weight: 600; opacity: 0.75; }
+
+    .kpi { grid-column: span 3; position: relative; overflow: hidden; }
+    .kpi::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--warm-2), var(--olive-2));
+        opacity: 0.85;
+    }
+    .kpi-title {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--muted-ink);
+        margin-bottom: 8px;
+        font-weight: 700;
+    }
+    .kpi-value {
+        font-family: 'Lexend', sans-serif;
+        font-size: clamp(20px, 2vw, 26px);
+        color: var(--ink);
+        font-weight: 800;
+    }
+    .kpi-icon { float: right; font-size: 22px; opacity: 0.18; color: var(--warm-2); }
+
+    .tab-pane {
+        grid-column: span 12;
+        display: none;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
         gap: 20px;
     }
+    .tab-pane.active { display: grid; }
 
-    @media(max-width:900px) {
-        .setup-grid {
-            grid-template-columns: 1fr;
+    .chart-panel { grid-column: span 8; }
+    .side-panel { grid-column: span 4; }
+
+    .analytics-charts-grid {
+        grid-column: span 12;
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 16px;
+        margin-top: 8px;
+    }
+    .analytics-chart-card {
+        grid-column: span 6;
+        display: flex;
+        flex-direction: column;
+        min-height: 300px;
+    }
+    .analytics-chart-hint {
+        margin: 6px 0 12px;
+        font-size: 12px;
+        color: var(--muted-ink);
+        line-height: 1.35;
+    }
+    .chart-canvas-wrap-analytics {
+        flex: 1;
+        min-height: 240px;
+        position: relative;
+    }
+    .full-panel { grid-column: span 12; }
+    .half-panel { grid-column: span 6; }
+    .third-panel { grid-column: span 4; }
+
+    .form-group {
+        margin-bottom: 14px;
+    }
+    .form-group label {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--muted-ink);
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1.5px solid var(--line-soft);
+        background: rgba(255, 255, 255, 0.95);
+        font-family: inherit;
+        font-size: 14px;
+        transition: border-color 0.2s;
+    }
+    .form-control:focus { outline: none; border-color: var(--warm-2); }
+
+    .btn-submit {
+        width: 100%;
+        padding: 13px;
+        border-radius: 12px;
+        border: none;
+        background: linear-gradient(135deg, var(--warm-2), #c49363);
+        color: white;
+        font-weight: 800;
+        font-family: 'Lexend', sans-serif;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        font-size: 14px;
+    }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(212, 163, 115, 0.35); }
+
+    .btn-accent { background: linear-gradient(135deg, var(--accent-blue), #1e4d66); }
+    .btn-success { background: linear-gradient(135deg, #2d8a5c, #1f6b47); }
+    .btn-muted { background: linear-gradient(135deg, #7a7268, #5c564e); }
+
+    .table-premium { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .table-premium th {
+        text-align: left;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted-ink);
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--line-soft);
+        font-weight: 700;
+    }
+    .table-premium td {
+        padding: 12px 14px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        color: var(--ink);
+        vertical-align: top;
+    }
+    .table-premium tr:hover td { background: rgba(212, 163, 115, 0.04); }
+    .num { font-family: 'Lexend', sans-serif; font-variant-numeric: tabular-nums; text-align: right; }
+
+    .badge {
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .badge-income { background: rgba(40, 167, 69, 0.12); color: #1e7e45; }
+    .badge-expense { background: rgba(220, 53, 69, 0.12); color: #c82333; }
+    .badge-transfer { background: rgba(0, 123, 255, 0.12); color: #0056b3; }
+    .badge-payment { background: rgba(255, 193, 7, 0.15); color: #856404; }
+    .badge-je { background: rgba(44, 107, 138, 0.12); color: var(--accent-blue); }
+
+    .delete-btn {
+        width: 32px; height: 32px;
+        border-radius: 8px;
+        border: 1px solid rgba(220, 53, 69, 0.25);
+        color: #dc3545;
+        background: transparent;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .delete-btn:hover { background: #dc3545; color: white; }
+
+    .je-lines {
+        font-size: 12px;
+        color: var(--muted-ink);
+        margin-top: 8px;
+        padding-left: 12px;
+        border-left: 2px solid var(--line-soft);
+    }
+    .je-lines div { margin: 2px 0; }
+
+    .section-title {
+        font-family: 'Lexend', sans-serif;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--ink);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    @keyframes panelIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* —— Kassa (#cash) —— */
+    .cash-intro {
+        grid-column: span 12;
+    }
+    .cash-intro__row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 20px;
+    }
+    .cash-intro__title {
+        font-family: 'Lexend', sans-serif;
+        font-size: clamp(18px, 2vw, 22px);
+        font-weight: 800;
+        color: var(--ink);
+        margin: 0 0 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .cash-intro__title i { color: var(--warm-2); }
+    .cash-intro__lead {
+        margin: 0;
+        font-size: 13px;
+        color: var(--muted-ink);
+        line-height: 1.55;
+        max-width: 560px;
+    }
+    .cash-intro__stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .cash-stat-pill {
+        padding: 12px 18px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid var(--line-soft);
+        font-family: 'Lexend', sans-serif;
+        font-weight: 800;
+        font-size: 15px;
+        color: var(--ink);
+        min-width: 158px;
+    }
+    .cash-stat-pill small {
+        display: block;
+        font-size: 9px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted-ink);
+        margin-bottom: 4px;
+    }
+    .cash-register-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+        padding-top: 18px;
+        border-top: 1px dashed var(--line-soft);
+    }
+    .cash-reg-chip {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        background: linear-gradient(145deg, rgba(212, 163, 115, 0.14), rgba(255, 255, 255, 0.92));
+        border: 1px solid var(--line-soft);
+        min-width: 148px;
+    }
+    .cash-reg-chip__name {
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: var(--muted-ink);
+    }
+    .cash-reg-chip__code {
+        font-size: 10px;
+        font-weight: 600;
+        font-family: ui-monospace, monospace;
+        color: var(--accent-blue);
+        opacity: 0.85;
+    }
+    .cash-reg-chip__bal {
+        font-family: 'Lexend', sans-serif;
+        font-weight: 800;
+        font-size: 15px;
+        color: var(--ink);
+        font-variant-numeric: tabular-nums;
+    }
+    .cash-empty-banner {
+        margin: 16px 0 0;
+        padding: 14px 16px;
+        border-radius: 12px;
+        background: rgba(255, 193, 7, 0.12);
+        border: 1px solid rgba(133, 100, 4, 0.22);
+        color: #856404;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        line-height: 1.4;
+    }
+    .cash-op-card {
+        grid-column: span 4;
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
+        border-top: 4px solid var(--cash-accent, var(--warm-2));
+        padding-top: 20px;
+    }
+    .cash-op-card .section-title {
+        margin-bottom: 6px;
+        font-size: 15px;
+    }
+    .cash-op-hint {
+        font-size: 12px;
+        color: var(--muted-ink);
+        line-height: 1.45;
+        margin: 0 0 16px;
+    }
+    .cash-op-card form { flex: 1; display: flex; flex-direction: column; }
+    .cash-op-card .btn-submit { margin-top: auto; }
+    .cash-op--income { --cash-accent: #2d8a5c; }
+    .cash-op--expense { --cash-accent: #dc3545; }
+    .cash-op--xfer { --cash-accent: var(--warm-2); }
+    .cash-op--supplier { --cash-accent: #2c6b8a; }
+    .cash-op--debt { --cash-accent: #b8860b; }
+    .cash-op-span6 { grid-column: span 6; }
+    .cash-op-card .section-title i { opacity: 0.9; }
+
+    /* —— Jurnal (#ledger) —— */
+    .ledger-intro {
+        grid-column: span 12;
+    }
+    .ledger-intro__row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 20px;
+    }
+    .ledger-intro__title {
+        font-family: 'Lexend', sans-serif;
+        font-size: clamp(18px, 2vw, 22px);
+        font-weight: 800;
+        color: var(--ink);
+        margin: 0 0 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .ledger-intro__title i { color: var(--accent-blue); }
+    .ledger-intro__lead {
+        margin: 0;
+        font-size: 13px;
+        color: var(--muted-ink);
+        line-height: 1.55;
+        max-width: 640px;
+    }
+    .ledger-intro__stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .ledger-stat-pill {
+        padding: 10px 16px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid var(--line-soft);
+        font-family: 'Lexend', sans-serif;
+        font-weight: 800;
+        font-size: 14px;
+        color: var(--ink);
+        min-width: 120px;
+    }
+    .ledger-stat-pill small {
+        display: block;
+        font-size: 9px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted-ink);
+        margin-bottom: 3px;
+    }
+    .ledger-stat-pill.is-note {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted-ink);
+        max-width: 220px;
+        line-height: 1.4;
+    }
+    .ledger-section-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+    .ledger-section-head .section-title { margin-bottom: 0; }
+    .ledger-section-hint {
+        font-size: 12px;
+        color: var(--muted-ink);
+        max-width: 420px;
+        line-height: 1.45;
+    }
+    .table-ledger-wrap {
+        overflow-x: auto;
+        border-radius: 14px;
+        border: 1px solid var(--line-soft);
+        background: rgba(255, 255, 255, 0.5);
+    }
+    .table-ledger {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+    .table-ledger caption {
+        caption-side: top;
+        text-align: left;
+        padding: 12px 14px 8px;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--muted-ink);
+        letter-spacing: 0.04em;
+    }
+    .table-ledger thead th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: rgba(255, 253, 247, 0.97);
+        backdrop-filter: blur(6px);
+        text-align: left;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted-ink);
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--line-soft);
+        font-weight: 700;
+    }
+    .table-ledger tbody td {
+        padding: 12px 14px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        vertical-align: top;
+    }
+    .table-ledger tbody tr:hover td { background: rgba(212, 163, 115, 0.05); }
+    .table-ledger .tx-desc { max-width: 280px; word-break: break-word; }
+    .ledger-empty {
+        text-align: center;
+        padding: 44px 20px;
+        color: var(--muted-ink);
+    }
+    .ledger-empty i {
+        font-size: 42px;
+        opacity: 0.18;
+        color: var(--warm-2);
+        display: block;
+        margin: 0 auto 14px;
+    }
+    .ledger-empty strong { color: var(--ink); display: block; margin-bottom: 6px; }
+    .je-stack { display: flex; flex-direction: column; gap: 14px; }
+    .je-card {
+        border-radius: 16px;
+        border: 1px solid var(--line-soft);
+        padding: 16px 18px;
+        background: rgba(255, 255, 255, 0.72);
+        border-left: 4px solid var(--je-accent, var(--warm-2));
+        box-shadow: 0 4px 18px rgba(78, 60, 41, 0.04);
+    }
+    .je-card--cash { --je-accent: #2d8a5c; }
+    .je-card--manual { --je-accent: #2c6b8a; }
+    .je-card--sales { --je-accent: #d4a373; }
+    .je-card--branch { --je-accent: #7a9a5f; }
+    .je-card--system { --je-accent: #7a7268; }
+    .je-card__head {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .je-card__id { font-family: 'Lexend', sans-serif; font-weight: 800; font-size: 15px; color: var(--ink); }
+    .je-card__meta { font-size: 12px; color: var(--muted-ink); margin-top: 6px; }
+    .je-card__memo { font-size: 13px; margin-top: 8px; color: var(--ink); line-height: 1.45; }
+    .je-mini-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        margin-top: 14px;
+    }
+    .je-mini-table th {
+        text-align: left;
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted-ink);
+        padding: 8px 10px 8px 0;
+        border-bottom: 1px solid var(--line-soft);
+        font-weight: 700;
+    }
+    .je-mini-table td {
+        padding: 8px 10px 8px 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        vertical-align: top;
+    }
+    .je-mini-table tr:last-child td { border-bottom: none; }
+    .je-mini-table .acc-code { font-weight: 800; font-family: 'Lexend', sans-serif; color: var(--accent-blue); }
+    .je-mini-table .amt-d { color: #1e7e45; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .je-mini-table .amt-c { color: #c82333; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .je-totals {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px dashed var(--line-soft);
+        font-size: 12px;
+        font-family: 'Lexend', sans-serif;
+        font-weight: 700;
+        color: var(--muted-ink);
+    }
+    .je-totals span { color: var(--ink); }
+
+    /* —— Buxgalter dashboard nav grid —— */
+    .acc-nav-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 14px;
+    }
+    .acc-nav-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 22px 14px 18px;
+        border-radius: 18px;
+        border: 1.5px solid var(--line-soft);
+        background: rgba(255, 255, 255, 0.88);
+        backdrop-filter: blur(8px);
+        box-shadow: 0 6px 20px rgba(78, 60, 41, 0.07);
+        text-align: center;
+        text-decoration: none;
+        color: var(--ink);
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+        cursor: pointer;
+    }
+    .acc-nav-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 14px 32px rgba(78, 60, 41, 0.13);
+        border-color: var(--warm-2);
+        text-decoration: none;
+        color: var(--ink);
+    }
+    .acc-nav-card i {
+        font-size: 28px;
+        color: var(--warm-2);
+        opacity: 0.9;
+    }
+    .acc-nav-card span {
+        font-family: 'Lexend', sans-serif;
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--ink);
+    }
+    .acc-nav-card small {
+        font-size: 11px;
+        color: var(--muted-ink);
+        line-height: 1.35;
+    }
+
+    .acc-filter-panel {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: flex-end;
+        padding: 16px 18px;
+        border-radius: 18px;
+    }
+    .acc-filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .acc-preset-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .acc-filter-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted-ink);
+        font-weight: 700;
+    }
+    .acc-filter-quick {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .acc-filter-btn {
+        border-radius: 10px;
+        border: 1px solid var(--line-soft);
+        background: rgba(255, 255, 255, 0.95);
+        color: var(--ink);
+        font-family: 'Lexend', sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 10px 14px;
+        cursor: pointer;
+        transition: all .18s ease;
+    }
+    .acc-filter-btn:hover {
+        border-color: rgba(212, 163, 115, 0.55);
+        background: rgba(212, 163, 115, 0.08);
+    }
+    .acc-filter-btn.is-active {
+        background: linear-gradient(135deg, var(--warm-2), #c49363);
+        border-color: var(--warm-2);
+        color: #fff;
+        box-shadow: 0 6px 18px rgba(212, 163, 115, 0.28);
+    }
+    .acc-filter-dates {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .acc-filter-divider {
+        color: var(--muted-ink);
+        font-weight: 700;
+    }
+    .acc-filter-dates .form-control {
+        width: auto;
+        min-width: 160px;
+    }
+    .acc-date-wrap {
+        position: relative;
+    }
+    .acc-date-wrap .fa-calendar-days {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted-ink);
+        font-size: 13px;
+        pointer-events: none;
+        opacity: 0.9;
+    }
+    .acc-date-input {
+        min-width: 190px !important;
+        padding-left: 34px;
+        border-radius: 12px;
+        border: 1.5px solid var(--line-soft);
+        background: linear-gradient(180deg, #ffffff 0%, #fffaf2 100%);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+    .acc-date-input:focus {
+        border-color: var(--warm-2);
+        box-shadow: 0 0 0 4px rgba(212, 163, 115, 0.18);
+    }
+    .flatpickr-calendar {
+        border: 1px solid rgba(111, 89, 65, 0.18);
+        border-radius: 14px;
+        box-shadow: 0 18px 40px rgba(62, 48, 32, 0.18);
+        font-family: 'Manrope', sans-serif;
+    }
+    .flatpickr-months .flatpickr-month {
+        background: linear-gradient(135deg, #f5e6d3, #fff8ef);
+        color: #3a312a;
+    }
+    .flatpickr-current-month {
+        font-family: 'Lexend', sans-serif;
+        font-weight: 700;
+    }
+    .flatpickr-weekdays {
+        background: #fffaf2;
+    }
+    .flatpickr-weekday {
+        color: #7a6e62 !important;
+        font-weight: 700;
+        font-size: 11px;
+    }
+    .flatpickr-day {
+        border-radius: 8px;
+        font-weight: 600;
+    }
+    .flatpickr-day.selected,
+    .flatpickr-day.startRange,
+    .flatpickr-day.endRange {
+        background: linear-gradient(135deg, #d4a373, #c39162);
+        border-color: #c39162;
+    }
+    .flatpickr-day.today {
+        border-color: #d4a373;
+    }
+    .flatpickr-day:hover {
+        background: rgba(212, 163, 115, 0.16);
+        border-color: rgba(212, 163, 115, 0.22);
+    }
+    .acc-filter-apply {
+        width: auto;
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-size: 12px;
+    }
+    .acc-filter-range-note {
+        margin-left: auto;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px dashed var(--line-soft);
+        background: rgba(255, 255, 255, 0.72);
+        color: var(--muted-ink);
+        font-size: 12px;
+        font-weight: 700;
+    }
+    .acc-filter-actions {
+        display: flex;
+        gap: 8px;
+        margin-left: auto;
+        flex-wrap: wrap;
+    }
+    .acc-outline-btn {
+        border-radius: 10px;
+        border: 1px solid var(--line-soft);
+        background: #fff;
+        color: var(--ink);
+        font-family: 'Lexend', sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 10px 12px;
+        cursor: pointer;
+    }
+    .acc-outline-btn:hover {
+        border-color: rgba(212, 163, 115, 0.55);
+        background: rgba(212, 163, 115, 0.08);
+    }
+
+    @media (max-width: 1100px) {
+        .kpi { grid-column: span 6; }
+        .chart-panel, .side-panel, .analytics-chart-card, .half-panel, .third-panel { grid-column: span 12; }
+        .cash-op-card, .cash-op-span6 { grid-column: span 12; }
+    }
+    @media (max-width: 768px) {
+        .kpi { grid-column: span 12; }
+        .acc-filter-range-note {
+            margin-left: 0;
+            width: 100%;
         }
-    }
-    
-    .text-success {
-        color: var(--success);
-    }
-    
-    .text-danger {
-        color: var(--danger);
+        .acc-filter-dates .form-control {
+            min-width: 140px;
+        }
     }
 </style>
 {% endblock %}
 
+{% block breadcrumb %}<span data-i18n="accounting_title">Buxgalteriya va moliya</span>{% endblock %}
+
 {% block content %}
+<div class="accounting-shell">
+    <header class="panel hero-section">
+        <div style="position:relative; z-index:1;">
+            <h1 class="hero-title" data-i18n="accounting_title">Buxgalteriya markazi</h1>
+            <p class="hero-subtitle">Kassa, ikki tomonlama jurnal, sinov balansi va savdo moduli bilan integratsiya — barcha moliyaviy oqimlar bir joyda.</p>
+        </div>
+        <div class="hero-badges" style="position:relative; z-index:1;">
+            <div class="pill-stat"><small>Jami kassa</small>{{ total_balance|floatformat:0 }} UZS</div>
+            <div class="pill-stat"><small>Ta'minotchilar qarzi</small>{{ total_debt|floatformat:0 }} UZS</div>
+        </div>
+    </header>
 
-<div class="nav-tabs">
-    <button class="tab-btn active" onclick="showTab('tab-ops', this)">
-        <i class="fa-solid fa-wallet"></i> <span data-i18n="accounting_title">Operatsiyalar</span>
-    </button>
-    <button class="tab-btn" onclick="showTab('tab-ledger', this)">
-        <i class="fa-solid fa-book"></i> <span data-i18n="recent_ledger">Jurnal</span>
-    </button>
-    <button class="tab-btn" onclick="showTab('tab-setup', this)">
-        <i class="fa-solid fa-gear"></i> <span data-i18n="setup">Sozlamalar</span>
-        {% if not registers %}
-            <span style="background:var(--danger);color:white;border-radius:20px;padding:2px 8px;font-size:11px;margin-left:6px;">!</span>
-        {% endif %}
-    </button>
-</div>
-
-<!-- ═══════ TAB: OPERATIONS ═══════ -->
-<div id="tab-ops" class="tab-content active">
-
-    <!-- Cash Registers Row -->
-    <div style="display:flex; gap:16px; margin-bottom:24px; overflow-x:auto; padding-bottom:8px;">
-        {% for reg in registers %}
-        <div class="card" style="min-width:220px; flex-shrink:0; border-left:5px solid var(--primary);">
-            <div style="color:var(--text-muted); font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:6px;">
-                {{ reg.name }}
-            </div>
-            <div style="font-size:26px; font-weight:800; color:var(--text-main);">
-                {{ reg.balance|floatformat:0 }} <span style="font-size:14px;font-weight:400;">UZS</span>
-            </div>
-            <div style="color:var(--success); font-size:12px; margin-top:8px;">
-                <i class="fa-solid fa-circle" style="font-size:7px;"></i>
-                <span data-i18n="status_active">Faol</span>
+    <form method="get" class="panel acc-filter-panel">
+        <div class="acc-filter-group">
+            <label class="acc-filter-label">Preset oralig'lar</label>
+            <div class="acc-preset-grid">
+                <button type="submit" name="preset" value="today" class="acc-filter-btn{% if period == 'today' %} is-active{% endif %}">Today</button>
+                <button type="submit" name="preset" value="yesterday" class="acc-filter-btn{% if period == 'yesterday' %} is-active{% endif %}">Yesterday</button>
+                <button type="submit" name="preset" value="today_yesterday" class="acc-filter-btn{% if period == 'today_yesterday' %} is-active{% endif %}">Today & yesterday</button>
+                <button type="submit" name="preset" value="last_7" class="acc-filter-btn{% if period == 'last_7' %} is-active{% endif %}">Last 7 days</button>
+                <button type="submit" name="preset" value="last_14" class="acc-filter-btn{% if period == 'last_14' %} is-active{% endif %}">Last 14 days</button>
+                <button type="submit" name="preset" value="last_28" class="acc-filter-btn{% if period == 'last_28' %} is-active{% endif %}">Last 28 days</button>
+                <button type="submit" name="preset" value="last_30" class="acc-filter-btn{% if period == 'last_30' %} is-active{% endif %}">Last 30 days</button>
+                <button type="submit" name="preset" value="this_week" class="acc-filter-btn{% if period == 'this_week' %} is-active{% endif %}">This week</button>
+                <button type="submit" name="preset" value="last_week" class="acc-filter-btn{% if period == 'last_week' %} is-active{% endif %}">Last week</button>
+                <button type="submit" name="preset" value="this_month" class="acc-filter-btn{% if period == 'this_month' %} is-active{% endif %}">This month</button>
+                <button type="submit" name="preset" value="last_month" class="acc-filter-btn{% if period == 'last_month' %} is-active{% endif %}">Last month</button>
+                <button type="submit" name="preset" value="maximum" class="acc-filter-btn{% if period == 'maximum' %} is-active{% endif %}">Maximum</button>
             </div>
         </div>
-        {% empty %}
-        <div class="card" style="width:100%; text-align:center; color:var(--danger); padding:20px;">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-            <span data-i18n="no_registers_hint"> Avval "Sozlamalar" bo'limida kassa qo'shing!</span>
+        <div class="acc-filter-group">
+            <label class="acc-filter-label">Sana oralig'i</label>
+            <div class="acc-filter-dates">
+                <div class="acc-date-wrap">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <input type="text" name="date_from" value="{{ date_from|date:'Y-m-d' }}" class="form-control acc-date-input js-acc-date" autocomplete="off">
+                </div>
+                <span class="acc-filter-divider">—</span>
+                <div class="acc-date-wrap">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <input type="text" name="date_to" value="{{ date_to|date:'Y-m-d' }}" class="form-control acc-date-input js-acc-date" autocomplete="off">
+                </div>
+                <button type="submit" name="preset" value="custom" class="btn-submit acc-filter-apply">Custom qo'llash</button>
+            </div>
         </div>
-        {% endfor %}
-    </div>
+        <div class="acc-filter-range-note">
+            Tanlangan davr: {{ date_from|date:"d.m.Y" }} — {{ date_to|date:"d.m.Y" }}
+        </div>
+        <div class="acc-filter-actions">
+            <button type="submit" name="save_range" value="1" class="acc-outline-btn">Saqlash</button>
+            {% if saved_filter %}
+            <span class="acc-outline-btn" style="cursor:default;">
+                Saqlangan: {{ saved_filter.date_from }} — {{ saved_filter.date_to }}
+            </span>
+            {% endif %}
+        </div>
+    </form>
 
-    <div class="grid-2">
-        <!-- Record Expense -->
-        <div class="card">
-            <h3 style="margin-bottom:20px;">
-                <i class="fa-solid fa-file-invoice-dollar" style="color:var(--danger)"></i>
-                <span data-i18n="record_expense">Xarajatni qayd etish</span>
-            </h3>
-            <form method="POST">
+    {% if not is_superadmin %}
+    <nav class="acc-nav-grid" aria-label="Buxgalteriya bo'limlari">
+        <a href="#cash" class="acc-nav-card" data-acc-tab="cash">
+            <i class="fa-solid fa-money-bill-wave"></i>
+            <span>Kassa</span>
+            <small>Tushum, chiqim, o'tkazma</small>
+        </a>
+        <a href="#balance" class="acc-nav-card" data-acc-tab="balance">
+            <i class="fa-solid fa-scale-balanced"></i>
+            <span>Sinov balansi</span>
+            <small>Debet / kredit tekshiruvi</small>
+        </a>
+        <a href="#coa" class="acc-nav-card" data-acc-tab="coa">
+            <i class="fa-solid fa-sitemap"></i>
+            <span>Hisoblar rejasi</span>
+            <small>GL hisoblari ro'yxati</small>
+        </a>
+        <a href="#manual" class="acc-nav-card" data-acc-tab="manual">
+            <i class="fa-solid fa-pen-to-square"></i>
+            <span>Qo'lda jurnal</span>
+            <small>Qo'lda yozuv kiritish</small>
+        </a>
+        <a href="#integration" class="acc-nav-card" data-acc-tab="integration">
+            <i class="fa-solid fa-plug"></i>
+            <span>Integratsiya</span>
+            <small>POS va filial savdosi</small>
+        </a>
+        <a href="#settings" class="acc-nav-card" data-acc-tab="settings">
+            <i class="fa-solid fa-sliders"></i>
+            <span>Sozlamalar</span>
+            <small>Kassa, kategoriya, ta'minotchi</small>
+        </a>
+    </nav>
+    {% endif %}
+
+    <div class="accounting-panes">
+
+    <!-- ——— OVERVIEW ——— -->
+    <section id="pane-overview" class="tab-pane active">
+        <div class="overview-metrics-grid">
+            {% for k in overview_kpis %}
+            <article class="panel overview-kpi-card{% if k.kind == 'money' and k.value < 0 %} is-negative{% endif %}" title="{{ k.hint }}">
+                <i class="fa-solid {{ k.icon }} overview-kpi-icon"></i>
+                <div class="kpi-title">{{ k.label }}</div>
+                <div class="kpi-value">
+                    {% if k.kind == 'money' %}
+                        {{ k.value|floatformat:0 }} <small>UZS</small>
+                    {% else %}
+                        {{ k.value }}
+                    {% endif %}
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+
+        <div class="analytics-charts-grid">
+            {% for card in chart_cards %}
+            <article class="panel analytics-chart-card" data-chart-key="{{ card.key }}" title="{{ card.hint }}">
+                <div class="section-title"><i class="fa-solid fa-chart-column"></i> {{ card.title }}</div>
+                <p class="analytics-chart-hint">{{ card.hint }}</p>
+                <div class="chart-canvas-wrap-analytics"><canvas id="canvas_{{ card.key }}"></canvas></div>
+            </article>
+            {% endfor %}
+        </div>
+        {{ chart_bundle|json_script:"acc-overview-charts" }}
+    </section>
+
+    <!-- ——— CASH ——— -->
+    <section id="pane-cash" class="tab-pane">
+        <article class="panel cash-intro">
+            <div class="cash-intro__row">
+                <div>
+                    <h2 class="cash-intro__title"><i class="fa-solid fa-money-bill-transfer"></i> Kassa operatsiyalari</h2>
+                    <p class="cash-intro__lead">Naqd tushum va chiqimlar, kassalar o‘rtasida o‘tkazma, ta’minotchiga naqd to‘lov va qarzga xarid — barchasi jurnal bilan bog‘langan. Pastdagi kartochkalar va «Jami kassada» <strong>ma’lumotlar bazasidan</strong> hisoblanadi: har bir kassa uchun bog‘langan GL hisob bo‘yicha jurnal qatorlari (debet − kredit).</p>
+                </div>
+                <div class="cash-intro__stats">
+                    <div class="cash-stat-pill"><small>Jami kassada</small>{{ total_balance|floatformat:0 }} <span style="font-size:12px;font-weight:700;opacity:.75;">UZS</span></div>
+                    <div class="cash-stat-pill is-muted"><small>Ta’minotchilar qarzi</small>{{ total_debt|floatformat:0 }} <span style="font-size:12px;font-weight:700;opacity:.75;">UZS</span></div>
+                </div>
+            </div>
+            {% if cash_register_rows %}
+            <div class="cash-register-chips" aria-label="Kassa qoldiqlari (GL / jurnal asosida)">
+                {% for row in cash_register_rows %}
+                <div class="cash-reg-chip">
+                    <span class="cash-reg-chip__name">{{ row.name }}</span>
+                    {% if row.gl_code %}<span class="cash-reg-chip__code">{{ row.gl_code }}</span>{% endif %}
+                    <span class="cash-reg-chip__bal">{{ row.balance|floatformat:0 }} UZS</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="cash-empty-banner" role="status">
+                <i class="fa-solid fa-circle-info"></i>
+                <span>Hozircha kassa yo‘q. «Sozlamalar» bo‘limida kassa qo‘shing — shundan keyin operatsiyalar ochiladi.</span>
+            </div>
+            {% endif %}
+        </article>
+
+        <article class="panel cash-op-card cash-op--income">
+            <h3 class="section-title" style="color:#1e7e45;"><i class="fa-solid fa-circle-plus"></i> Tushum</h3>
+            <p class="cash-op-hint">Kassaga naqd (yoki tushum sifatida) kirim. GL va kassa qoldig‘i yangilanadi.</p>
+            <form method="POST" autocomplete="off">
+                {% csrf_token %}
+                <input type="hidden" name="add_income" value="1">
+                <div class="form-group"><label>Summa (UZS)</label><input type="number" name="amount" step="0.01" min="0.01" inputmode="decimal" required class="form-control" placeholder="Masalan: 500000"></div>
+                <div class="form-group"><label>Kassa</label>
+                    <select name="register" class="form-control" required>{% for row in cash_register_rows %}<option value="{{ row.id }}">{{ row.name }} — {{ row.balance|floatformat:0 }}</option>{% empty %}<option value="">— Avval kassa qo‘shing —</option>{% endfor %}</select>
+                </div>
+                <div class="form-group"><label>Izoh</label><input type="text" name="description" class="form-control" placeholder="Masalan: kunlik tushum"></div>
+                <button type="submit" class="btn-submit btn-success" {% if not cash_register_rows %}disabled{% endif %}>Qayd etish</button>
+            </form>
+        </article>
+        <article class="panel cash-op-card cash-op--expense">
+            <h3 class="section-title" style="color:#c82333;"><i class="fa-solid fa-circle-minus"></i> Xarajat</h3>
+            <p class="cash-op-hint">Kategoriya bo‘yicha chiqim. Kassa va xarajat hisobi debetlanadi.</p>
+            <form method="POST" autocomplete="off">
                 {% csrf_token %}
                 <input type="hidden" name="add_expense" value="1">
-
-                <div class="form-group">
-                    <label data-i18n="amount">Summa</label>
-                    <input type="number" step="0.01" name="amount" required class="form-control" style="font-size:20px;">
-                </div>
-
-                <div style="display:flex; gap:14px;">
-                    <div class="form-group" style="flex:1;">
-                        <label data-i18n="from_register">Kassadan</label>
-                        <select name="register" required class="form-control">
-                            <option value="" data-i18n="opt_select">-- Tanlang --</option>
-                            {% for reg in registers %}
-                            <option value="{{ reg.id }}">{{ reg.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group" style="flex:1;">
-                        <label data-i18n="category">Kategoriya</label>
-                        <select name="category" required class="form-control">
-                            <option value="" data-i18n="opt_select">-- Tanlang --</option>
-                            {% for cat in expense_cats %}
-                            <option value="{{ cat.id }}">{{ cat.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label data-i18n="description">Tavsif</label>
-                    <input type="text" name="description" class="form-control" data-i18n-placeholder="expense_placeholder">
-                </div>
-
-                <button type="submit" class="btn" style="width:100%; background:var(--danger); color:white; justify-content:center; padding:13px;">
-                    <i class="fa-solid fa-minus-circle"></i>
-                    <span data-i18n="record_expense">Xarajatni qayd etish</span>
-                </button>
+                <div class="form-group"><label>Summa (UZS)</label><input type="number" name="amount" step="0.01" min="0.01" inputmode="decimal" required class="form-control" placeholder="0"></div>
+                <div class="form-group"><label>Kassa</label><select name="register" class="form-control" required>{% for row in cash_register_rows %}<option value="{{ row.id }}">{{ row.name }}</option>{% endfor %}</select></div>
+                <div class="form-group"><label>Kategoriya</label><select name="category" class="form-control" required>{% for cat in expense_cats %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% empty %}<option value="">— Kategoriya yo‘q —</option>{% endfor %}</select></div>
+                <div class="form-group"><label>Tavsif</label><input type="text" name="description" class="form-control" placeholder="Qisqa izoh"></div>
+                <button type="submit" class="btn-submit" style="background:linear-gradient(135deg,#dc3545,#b02a37);" {% if not cash_register_rows or not expense_cats %}disabled{% endif %}>Xarajat qaydi</button>
             </form>
-        </div>
-
-        <!-- Transfer Funds -->
-        <div class="card">
-            <h3 style="margin-bottom:20px;">
-                <i class="fa-solid fa-money-bill-transfer" style="color:var(--primary)"></i>
-                <span data-i18n="transfer_funds">Mablag' o'tkazish</span>
-            </h3>
-            <form method="POST">
+        </article>
+        <article class="panel cash-op-card cash-op--xfer">
+            <h3 class="section-title"><i class="fa-solid fa-shuffle"></i> Kassalar o‘rtasida</h3>
+            <p class="cash-op-hint">Bir kassadan boshqasiga naqd ko‘chirish (ichki o‘tkazma).{% if cash_register_rows|length < 2 %} <strong style="color:#856404;"> Kamida ikkita kassa bo‘lganda ishlaydi.</strong>{% endif %}</p>
+            <form method="POST" id="form-cash-transfer" autocomplete="off">
                 {% csrf_token %}
                 <input type="hidden" name="transfer_funds" value="1">
-
-                <div class="form-group">
-                    <label data-i18n="amount">Summa</label>
-                    <input type="number" step="0.01" name="amount" required class="form-control" style="font-size:20px;">
-                </div>
-
-                <div style="display:flex; gap:10px; align-items:flex-end; margin-bottom:16px;">
-                    <div style="flex:1;">
-                        <label class="form-group" data-i18n="from">Dan</label>
-                        <select name="from_register" required class="form-control">
-                            <option value="" data-i18n="opt_select">-- Tanlang --</option>
-                            {% for reg in registers %}
-                            <option value="{{ reg.id }}">{{ reg.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div style="font-size:22px; color:var(--primary); padding:0 4px 10px;">
-                        <i class="fa-solid fa-arrow-right"></i>
-                    </div>
-                    <div style="flex:1;">
-                        <label class="form-group" data-i18n="to">Ga</label>
-                        <select name="to_register" required class="form-control">
-                            <option value="" data-i18n="opt_select">-- Tanlang --</option>
-                            {% for reg in registers %}
-                            <option value="{{ reg.id }}">{{ reg.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:13px;">
-                    <i class="fa-solid fa-shuffle"></i>
-                    <span data-i18n="execute_transfer">O'tkazmani bajarish</span>
-                </button>
+                <div class="form-group"><label>Summa (UZS)</label><input type="number" name="amount" step="0.01" min="0.01" inputmode="decimal" required class="form-control" placeholder="0"></div>
+                <div class="form-group"><label>Qayerdan</label><select name="from_register" class="form-control js-xfer-from" required>{% for row in cash_register_rows %}<option value="{{ row.id }}">{{ row.name }}</option>{% endfor %}</select></div>
+                <div class="form-group"><label>Qayerga</label><select name="to_register" class="form-control js-xfer-to" required>{% for row in cash_register_rows %}<option value="{{ row.id }}">{{ row.name }}</option>{% endfor %}</select></div>
+                <div class="form-group"><label>Izoh</label><input type="text" name="description" class="form-control" placeholder="Ixtiyoriy"></div>
+                <button type="submit" class="btn-submit" {% if not cash_register_rows or cash_register_rows|length < 2 %}disabled{% endif %}>O‘tkazish</button>
             </form>
-        </div>
-    </div>
-</div>
+        </article>
 
-<!-- ═══════ TAB: LEDGER ═══════ -->
-<div id="tab-ledger" class="tab-content">
-    <div class="card">
-        <h3 style="margin-bottom:20px;">
-            <i class="fa-solid fa-book" style="color:var(--primary)"></i>
-            <span data-i18n="recent_ledger">So'nggi operatsiyalar</span>
-        </h3>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th data-i18n="date">Sana</th>
-                    <th data-i18n="type">Tur</th>
-                    <th data-i18n="description">Tavsif</th>
-                    <th data-i18n="register">Kassa</th>
-                    <th style="text-align:right;" data-i18n="amount">Summa</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for t in recent_transactions %}
-                <tr>
-                    <td style="color:var(--text-muted); font-size:13px;">{{ t.date|date:"d M Y H:i" }}</td>
-                    <td>
-                        {% if t.transaction_type == 'income' %}
-                            <span class="badge badge-success"><i class="fa-solid fa-arrow-down"></i> <span data-i18n="income">Daromad</span></span>
-                        {% elif t.transaction_type == 'expense' %}
-                            <span class="badge badge-danger"><i class="fa-solid fa-arrow-up"></i> <span data-i18n="expense">Xarajat</span></span>
-                        {% elif t.transaction_type == 'transfer' %}
-                            <span class="badge badge-info"><i class="fa-solid fa-arrows-turn-right"></i> <span data-i18n="transfer">O'tkazma</span></span>
+        <article class="panel cash-op-card cash-op--supplier cash-op-span6">
+            <h3 class="section-title" style="color:var(--accent-blue);"><i class="fa-solid fa-truck-field"></i> Ta’minotchiga to‘lov</h3>
+            <p class="cash-op-hint">Kassadan ta’minotchining kreditor qarzini qoplash — tanlangan kassadan chiqim va qarz kamayadi.</p>
+            <form method="POST" autocomplete="off">
+                {% csrf_token %}
+                <input type="hidden" name="supplier_payment" value="1">
+                <div class="form-group"><label>Summa (UZS)</label><input type="number" name="amount" step="0.01" min="0.01" inputmode="decimal" required class="form-control" placeholder="0"></div>
+                <div class="form-group"><label>Ta’minotchi</label><select name="supplier" class="form-control" required>{% for s in suppliers %}<option value="{{ s.id }}">{{ s.name }} — qarz {{ s.debt|floatformat:0 }} UZS</option>{% empty %}<option value="">— Ro‘yxat bo‘sh —</option>{% endfor %}</select></div>
+                <div class="form-group"><label>Kassa</label><select name="register" class="form-control" required>{% for row in cash_register_rows %}<option value="{{ row.id }}">{{ row.name }}</option>{% endfor %}</select></div>
+                <button type="submit" class="btn-submit btn-accent" {% if not cash_register_rows or not suppliers %}disabled{% endif %}>To‘lovni qayd etish</button>
+            </form>
+        </article>
+        <article class="panel cash-op-card cash-op--debt cash-op-span6">
+            <h3 class="section-title" style="color:#856404;"><i class="fa-solid fa-file-invoice-dollar"></i> Qarzga xarid</h3>
+            <p class="cash-op-hint">Naqd harakatsiz: ta’minotchining qarzi oshadi, xarid (ombor/xom ashyo) hisobiga jurnal yozuvi yaratiladi.</p>
+            <form method="POST" autocomplete="off">
+                {% csrf_token %}
+                <input type="hidden" name="supplier_debt" value="1">
+                <div class="form-group"><label>Summa (UZS)</label><input type="number" name="amount" step="0.01" min="0.01" inputmode="decimal" required class="form-control" placeholder="0"></div>
+                <div class="form-group"><label>Ta’minotchi</label><select name="supplier" class="form-control" required>{% for s in suppliers %}<option value="{{ s.id }}">{{ s.name }}</option>{% empty %}<option value="">—</option>{% endfor %}</select></div>
+                <div class="form-group"><label>Izoh</label><input type="text" name="description" class="form-control" placeholder="Masalan: un partiyasi"></div>
+                <button type="submit" class="btn-submit btn-muted" {% if not suppliers %}disabled{% endif %}>Jurnalga yozish</button>
+            </form>
+        </article>
+    </section>
+
+    <!-- ——— LEDGER ——— -->
+    <section id="pane-ledger" class="tab-pane">
+        <article class="panel ledger-intro">
+            <div class="ledger-intro__row">
+                <div>
+                    <h2 class="ledger-intro__title"><i class="fa-solid fa-book-journal-whills"></i> Jurnal va kassa yozuvlari</h2>
+                    <p class="ledger-intro__lead">Bu yerda <strong>kassa operatsiyalari</strong> (Transaction) va ularga bog‘langan <strong>GL jurnal yozuvlari</strong> (JournalEntry) ko‘rinadi — barchasi ma’lumotlar bazasidan, real vaqtga yaqin tartibda (eng yangisi yuqorida).</p>
+                </div>
+                <div class="ledger-intro__stats">
+                    <div class="ledger-stat-pill"><small>Kassa yozuvlari (davr)</small>{{ ledger_tx_total }}</div>
+                    <div class="ledger-stat-pill"><small>Jurnal sarlavhalari (davr)</small>{{ ledger_je_total }}</div>
+                    <div class="ledger-stat-pill"><small>Jurnal qatorlari (davr)</small>{{ ledger_line_total }}</div>
+                    <div class="ledger-stat-pill is-note">Tanlangan davr: <strong>{{ date_from|date:"d.m.Y" }}</strong> — <strong>{{ date_to|date:"d.m.Y" }}</strong></div>
+                </div>
+            </div>
+        </article>
+
+        <article class="panel full-panel">
+            <div class="ledger-section-head">
+                <div class="section-title" style="margin-bottom:0;"><i class="fa-solid fa-receipt"></i> Kassa operatsiyalari</div>
+                <p class="ledger-section-hint">Har bir qator <code style="font-size:11px;background:rgba(0,0,0,0.05);padding:2px 6px;border-radius:6px;">accounting_transaction</code> jadvalidan — tushum, xarajat, o‘tkazma yoki ta’minotchiga to‘lov.</p>
+            </div>
+            <div class="table-ledger-wrap">
+                <table class="table-ledger">
+                    <caption>Tanlangan davrdagi kassa harakatlari (eng yangisi birinchi)</caption>
+                    <thead>
+                        <tr>
+                            <th>Sana / vaqt</th>
+                            <th>Tur</th>
+                            <th>Kassa</th>
+                            <th>Tavsif</th>
+                            <th class="num">Summa (UZS)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in recent_transactions %}
+                        <tr>
+                            <td style="white-space:nowrap;color:var(--muted-ink);font-size:12px;">{{ t.date|date:"d.m.Y H:i" }}</td>
+                            <td>
+                                {% if t.transaction_type == 'income' %}<span class="badge badge-income">Tushum</span>
+                                {% elif t.transaction_type == 'expense' %}<span class="badge badge-expense">Xarajat</span>
+                                {% elif t.transaction_type == 'transfer' %}<span class="badge badge-transfer">O‘tkazma</span>
+                                {% else %}<span class="badge badge-payment">To‘lov</span>{% endif %}
+                            </td>
+                            <td style="font-weight:600;">{{ t.cash_register.name }}</td>
+                            <td class="tx-desc">{{ t.description|default:"—" }}</td>
+                            <td class="num" style="font-weight:700;">
+                                {% if t.transaction_type == 'income' %}<span style="color:#1e7e45">+{{ t.amount|floatformat:0 }}</span>
+                                {% elif t.transaction_type == 'expense' or t.transaction_type == 'supplier_payment' %}<span style="color:#c82333">−{{ t.amount|floatformat:0 }}</span>
+                                {% else %}{{ t.amount|floatformat:0 }}{% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5">
+                                <div class="ledger-empty">
+                                    <i class="fa-solid fa-receipt"></i>
+                                    <strong>Hozircha kassa operatsiyasi yo‘q</strong>
+                                    «Kassa» yorlig‘ida tushum yoki chiqim qayd eting — yozuvlar shu jadvalga tushadi.
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+        <article class="panel full-panel">
+            <div class="ledger-section-head">
+                <div class="section-title" style="margin-bottom:0;"><i class="fa-solid fa-book"></i> Bosh jurnal (GL)</div>
+                <p class="ledger-section-hint">Har bir yozuv ikki tomonlama: qatorlar <code style="font-size:11px;background:rgba(0,0,0,0.05);padding:2px 6px;border-radius:6px;">JournalLine</code> orqali hisoblar rejasi bilan bog‘langan.</p>
+            </div>
+            {% if journal_entries %}
+            <div class="je-stack">
+                {% for je in journal_entries %}
+                <article class="je-card {% if je.source == 'cash' %}je-card--cash{% elif je.source == 'manual' %}je-card--manual{% elif je.source == 'sales' %}je-card--sales{% elif je.source == 'branch' %}je-card--branch{% else %}je-card--system{% endif %}">
+                    <div class="je-card__head">
+                        <div>
+                            <span class="je-card__id">#{{ je.id }}</span>
+                            <span class="badge badge-je" style="margin-left:8px;">{{ je.get_source_display }}</span>
+                            <div class="je-card__meta">{{ je.entry_date|date:"d.m.Y H:i" }}{% if je.reference %} · {{ je.reference }}{% endif %}{% if je.created_by %} · {{ je.created_by.get_username }}{% endif %}</div>
+                            {% if je.memo %}<div class="je-card__memo">{{ je.memo }}</div>{% endif %}
+                        </div>
+                    </div>
+                    <table class="je-mini-table">
+                        <thead>
+                            <tr>
+                                <th>Hisob</th>
+                                <th class="num">Debet</th>
+                                <th class="num">Kredit</th>
+                                <th>Izoh</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for line in je.lines.all %}
+                            <tr>
+                                <td><span class="acc-code">{{ line.account.code }}</span> {{ line.account.name }}</td>
+                                <td class="num amt-d">{% if line.debit > 0 %}{{ line.debit|floatformat:2 }}{% else %}—{% endif %}</td>
+                                <td class="num amt-c">{% if line.credit > 0 %}{{ line.credit|floatformat:2 }}{% else %}—{% endif %}</td>
+                                <td style="font-size:11px;color:var(--muted-ink);">{{ line.description|default:"—" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <div class="je-totals">
+                        Jami debet <span>{{ je.total_debit|floatformat:2 }}</span>
+                        · Jami kredit <span>{{ je.total_credit|floatformat:2 }}</span>
+                        {% if je.total_debit != je.total_credit %}
+                        <span style="color:#c82333;font-size:11px;">⚠ D ≠ K</span>
                         {% endif %}
-                    </td>
-                    <td style="font-size:14px;">{{ t.description|default:"—" }}</td>
-                    <td style="font-size:13px;">{{ t.cash_register.name }}</td>
-                    <td style="text-align:right; font-weight:700;">
-                        {% if t.transaction_type == 'income' %}
-                            <span class="text-success">+{{ t.amount|floatformat:0 }} UZS</span>
-                        {% elif t.transaction_type == 'expense' %}
-                            <span class="text-danger">-{{ t.amount|floatformat:0 }} UZS</span>
-                        {% else %}
-                            <span>{{ t.amount|floatformat:0 }} UZS</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted);">
-                        <i class="fa-solid fa-inbox" style="font-size:32px; display:block; margin-bottom:10px; opacity:0.25;"></i>
-                        <span data-i18n="no_transactions">So'nggi operatsiyalar yo'q</span>
-                    </td>
-                </tr>
+                    </div>
+                </article>
                 {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
+            </div>
+            {% else %}
+            <div class="ledger-empty">
+                <i class="fa-solid fa-book-open"></i>
+                <strong>GL jurnal yozuvlari hali yo‘q</strong>
+                Kassa operatsiyasi qiling yoki «Qo‘lda jurnal» bo‘limidan yozuv yarating — yozuvlar shu yerda paydo bo‘ladi.
+            </div>
+            {% endif %}
+        </article>
+    </section>
 
-<!-- ═══════ TAB: SETUP ═══════ -->
-<div id="tab-setup" class="tab-content">
-    <div class="setup-grid">
+    <!-- ——— TRIAL BALANCE ——— -->
+    <section id="pane-balance" class="tab-pane">
+        <article class="panel full-panel">
+            <div class="section-title"><i class="fa-solid fa-scale-balanced"></i> Sinov balansi (jurnal asosida)</div>
+            <div style="overflow-x:auto;">
+                <table class="table-premium">
+                    <thead>
+                        <tr><th>Kod</th><th>Hisob</th><th>Tur</th><th class="num">Debet</th><th class="num">Kredit</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for row in trial_balance %}
+                        <tr>
+                            <td style="font-weight:700;">{{ row.code }}</td>
+                            <td>{{ row.name }}</td>
+                            <td><span class="badge" style="background:rgba(0,0,0,0.06);color:var(--muted-ink);">{{ row.type }}</span></td>
+                            <td class="num">{{ row.debit|floatformat:2 }}</td>
+                            <td class="num">{{ row.credit|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" style="text-align:center;padding:32px;">Hisobot uchun ma’lumot yo‘q.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                    {% if trial_balance %}
+                    <tfoot>
+                        <tr style="font-weight:800;font-family:'Lexend',sans-serif;">
+                            <td colspan="3">Jami</td>
+                            <td class="num">{{ tb_total_debit|floatformat:2 }}</td>
+                            <td class="num">{{ tb_total_credit|floatformat:2 }}</td>
+                        </tr>
+                    </tfoot>
+                    {% endif %}
+                </table>
+            </div>
+            {% if trial_balance and not tb_balanced %}
+            <p style="color:#c82333;margin-top:12px;font-size:13px;"><i class="fa-solid fa-triangle-exclamation"></i> Diqqat: jami debet va kredit mos emas — ma’lumotlarni tekshiring.</p>
+            {% endif %}
+        </article>
+    </section>
 
-        <!-- Add Cash Register -->
-        <div class="card">
-            <h3 style="margin-bottom:18px; color:var(--primary);">
-                <i class="fa-solid fa-cash-register"></i>
-                <span data-i18n="add_register">Yangi kassa qo'shish</span>
-            </h3>
+    <!-- ——— CHART OF ACCOUNTS ——— -->
+    <section id="pane-coa" class="tab-pane">
+        <article class="panel full-panel">
+            <div class="section-title"><i class="fa-solid fa-list-ol"></i> Faol hisoblar</div>
+            <div style="overflow-x:auto;">
+                <table class="table-premium">
+                    <thead><tr><th>Kod</th><th>Nomi</th><th>Tur</th></tr></thead>
+                    <tbody>
+                        {% for a in accounts %}
+                        <tr>
+                            <td style="font-weight:800;font-family:'Lexend',sans-serif;">{{ a.code }}</td>
+                            <td>{{ a.name }}</td>
+                            <td>{{ a.get_account_type_display }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3">Hisoblar yo‘q.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </section>
+
+    <!-- ——— MANUAL JOURNAL ——— -->
+    <section id="pane-manual" class="tab-pane">
+        <article class="panel full-panel">
+            <div class="section-title"><i class="fa-solid fa-pen-to-square"></i> Qo‘lda jurnal yozuvi</div>
+            <p style="font-size:13px;color:var(--muted-ink);max-width:720px;margin-bottom:20px;">
+                Kamida ikkita qator to‘ldiring. Har bir qatorda <strong>yoki debet yoki kredit</strong> musbat bo‘lishi kerak. Barcha qatorlar bo‘yicha jami debet = jami kredit.
+            </p>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="manual_journal" value="1">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:640px; margin-bottom:20px;">
+                    <div class="form-group"><label>Referens</label><input type="text" name="mj_ref" class="form-control" placeholder="REF-001"></div>
+                    <div class="form-group"><label>Izoh</label><input type="text" name="mj_memo" class="form-control" placeholder="Tuzatish / qo‘lda yozuv"></div>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="table-premium">
+                        <thead><tr><th>Hisob</th><th class="num">Debet</th><th class="num">Kredit</th><th>Qator izohi</th></tr></thead>
+                        <tbody>
+                            {% for i in "12345678" %}
+                            <tr>
+                                <td>
+                                    <select name="acc_{{ forloop.counter }}" class="form-control" style="min-width:220px;">
+                                        <option value="">— tanlang —</option>
+                                        {% for a in accounts %}<option value="{{ a.id }}">{{ a.code }} — {{ a.name }}</option>{% endfor %}
+                                    </select>
+                                </td>
+                                <td><input type="number" step="0.01" name="d_{{ forloop.counter }}" class="form-control" placeholder="0"></td>
+                                <td><input type="number" step="0.01" name="c_{{ forloop.counter }}" class="form-control" placeholder="0"></td>
+                                <td><input type="text" name="n_{{ forloop.counter }}" class="form-control" placeholder=""></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <button type="submit" class="btn-submit" style="max-width:320px;margin-top:20px;">Jurnalni yaratish</button>
+            </form>
+        </article>
+    </section>
+
+    <!-- ——— INTEGRATION ——— -->
+    <section id="pane-integration" class="tab-pane">
+        <article class="panel half-panel">
+            <div class="section-title"><i class="fa-solid fa-cash-register"></i> POS savdo (sales)</div>
+            <p style="font-size:13px;color:var(--muted-ink);margin-bottom:16px;">`sales` modulidagi cheklar — buxgalteriyada alohida kassa tushumi sifatida avtomatik ulanishi keyingi bosqichda to‘liq jurnal bilan bog‘lanadi. Hozir statistikani ko‘rasiz.</p>
+            <div class="panel" style="padding:16px; margin-bottom:12px;">
+                <div class="kpi-title">Tanlangan davr</div>
+                <div class="kpi-value" style="font-size:22px;">{{ pos_period|floatformat:0 }} <small>UZS</small></div>
+            </div>
+            <div class="panel" style="padding:16px;">
+                <div class="kpi-title">Bugun</div>
+                <div class="kpi-value" style="font-size:22px;">{{ pos_today|floatformat:0 }} <small>UZS</small></div>
+            </div>
+        </article>
+        <article class="panel half-panel">
+            <div class="section-title"><i class="fa-solid fa-store"></i> Filial savdo (branches)</div>
+            <p style="font-size:13px;color:var(--muted-ink);margin-bottom:16px;">Filial bo‘yicha savdo summalari markaziy boshqaruv paneli bilan solishtirish uchun.</p>
+            <div class="panel" style="padding:16px; margin-bottom:12px;">
+                <div class="kpi-title">Tanlangan davr</div>
+                <div class="kpi-value" style="font-size:22px;">{{ br_period|floatformat:0 }} <small>UZS</small></div>
+            </div>
+            <div class="panel" style="padding:16px;">
+                <div class="kpi-title">Bugun</div>
+                <div class="kpi-value" style="font-size:22px;">{{ br_today|floatformat:0 }} <small>UZS</small></div>
+            </div>
+        </article>
+    </section>
+
+    <!-- ——— SETTINGS ——— -->
+    <section id="pane-settings" class="tab-pane">
+        <article class="panel third-panel">
+            <h4 class="section-title" style="font-size:15px;">Kassa qo‘shish</h4>
             <form method="POST">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="add_register">
-                <div class="form-group">
-                    <label data-i18n="register_name">Kassa nomi</label>
-                    <input type="text" name="name" class="form-control" required data-i18n-placeholder="register_name_placeholder">
-                </div>
-                <div class="form-group">
-                    <label data-i18n="initial_balance">Boshlang'ich qoldiq (UZS)</label>
-                    <input type="number" step="0.01" name="initial_balance" class="form-control" value="0">
-                </div>
-                <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">
-                    <i class="fa-solid fa-plus"></i> <span data-i18n="add_register">Kassa qo'shish</span>
-                </button>
+                <div class="form-group"><label>Nomi</label><input type="text" name="name" required class="form-control"></div>
+                <div class="form-group"><label>Boshlang‘ich qoldiq</label><input type="number" name="initial_balance" value="0" step="0.01" class="form-control"></div>
+                <button type="submit" class="btn-submit">Qo‘shish</button>
             </form>
-
-            <hr style="margin:18px 0;">
-            <h4 style="margin-bottom:10px; color:var(--text-muted); font-size:13px; text-transform:uppercase;" data-i18n="existing">Mavjud kassalar</h4>
-            {% for reg in registers %}
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #f0f0f0;">
-                <div>
-                    <strong>{{ reg.name }}</strong>
-                    <span style="color:var(--text-muted); font-size:13px; margin-left:8px;">{{ reg.balance|floatformat:0 }} UZS</span>
+            <div style="margin-top:18px;">
+                {% for row in cash_register_rows %}
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px dashed var(--line-soft);">
+                    <span style="font-weight:700;font-size:13px;">{{ row.name }}{% if row.gl_code %} <span style="font-size:11px;color:var(--accent-blue);font-weight:600;">{{ row.gl_code }}</span>{% endif %} <span style="color:var(--muted-ink);font-weight:600;">{{ row.balance|floatformat:0 }}</span></span>
+                    <form method="POST">{% csrf_token %}<input type="hidden" name="action" value="delete_register"><input type="hidden" name="register_id" value="{{ row.id }}"><button type="submit" class="delete-btn" onclick="return confirm('O‘chirish?');"><i class="fa-solid fa-trash"></i></button></form>
                 </div>
-                <form method="POST" style="display:inline;">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="delete_register">
-                    <input type="hidden" name="register_id" value="{{ reg.id }}">
-                    <button type="submit" class="delete-btn" onclick="return confirm('O\'chirasizmi?')">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </form>
+                {% endfor %}
             </div>
-            {% empty %}
-            <p style="color:var(--text-muted); font-size:13px; text-align:center; padding:10px;">
-                <span data-i18n="no_registers">Kassalar yo'q</span>
-            </p>
-            {% endfor %}
-        </div>
-
-        <!-- Add Expense Category -->
-        <div class="card">
-            <h3 style="margin-bottom:18px; color:var(--danger);">
-                <i class="fa-solid fa-tags"></i>
-                <span data-i18n="add_category">Xarajat kategoriyasi</span>
-            </h3>
+        </article>
+        <article class="panel third-panel">
+            <h4 class="section-title" style="font-size:15px;">Xarajat kategoriyasi</h4>
             <form method="POST">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="add_category">
-                <div class="form-group">
-                    <label data-i18n="category_name">Kategoriya nomi</label>
-                    <input type="text" name="name" class="form-control" required data-i18n-placeholder="category_placeholder">
-                </div>
-                <button type="submit" class="btn" style="width:100%; justify-content:center; background:var(--danger); color:white;">
-                    <i class="fa-solid fa-plus"></i> <span data-i18n="add_category">Kategoriya qo'shish</span>
-                </button>
+                <div class="form-group"><label>Nomi</label><input type="text" name="name" required class="form-control"></div>
+                <button type="submit" class="btn-submit">Qo‘shish</button>
             </form>
-
-            <hr style="margin:18px 0;">
-            <h4 style="margin-bottom:10px; color:var(--text-muted); font-size:13px; text-transform:uppercase;" data-i18n="existing">Kategoriyalar</h4>
-            {% for cat in expense_cats %}
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #f0f0f0;">
-                <strong>{{ cat.name }}</strong>
-                <form method="POST" style="display:inline;">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="delete_category">
-                    <input type="hidden" name="category_id" value="{{ cat.id }}">
-                    <button type="submit" class="delete-btn" onclick="return confirm('O\'chirasizmi?')">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </form>
+            <div style="margin-top:18px;">
+                {% for c in expense_cats %}
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px dashed var(--line-soft);">
+                    <span style="font-weight:700;font-size:13px;">{{ c.name }}</span>
+                    <form method="POST">{% csrf_token %}<input type="hidden" name="action" value="delete_category"><input type="hidden" name="category_id" value="{{ c.id }}"><button type="submit" class="delete-btn" onclick="return confirm('O‘chirish?');"><i class="fa-solid fa-trash"></i></button></form>
+                </div>
+                {% endfor %}
             </div>
-            {% empty %}
-            <p style="color:var(--text-muted); font-size:13px; text-align:center; padding:10px;">
-                <span data-i18n="no_categories">Kategoriyalar yo'q</span>
-            </p>
-            {% endfor %}
-        </div>
-
-        <!-- Add Supplier -->
-        <div class="card">
-            <h3 style="margin-bottom:18px; color:var(--secondary);">
-                <i class="fa-solid fa-truck-field"></i>
-                <span data-i18n="add_supplier">Ta'minotchi qo'shish</span>
-            </h3>
+        </article>
+        <article class="panel third-panel">
+            <h4 class="section-title" style="font-size:15px;">Ta'minotchi</h4>
             <form method="POST">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="add_supplier">
-                <div class="form-group">
-                    <label data-i18n="supplier_name">Ta'minotchi nomi</label>
-                    <input type="text" name="name" class="form-control" required data-i18n-placeholder="supplier_placeholder">
-                </div>
-                <div class="form-group">
-                    <label data-i18n="contact_info">Aloqa ma'lumotlari</label>
-                    <input type="text" name="contact" class="form-control" data-i18n-placeholder="contact_placeholder">
-                </div>
-                <button type="submit" class="btn" style="width:100%; justify-content:center; background:var(--secondary); color:white;">
-                    <i class="fa-solid fa-plus"></i> <span data-i18n="add_supplier">Ta'minotchi qo'shish</span>
-                </button>
+                <div class="form-group"><label>Nomi</label><input type="text" name="name" required class="form-control"></div>
+                <div class="form-group"><label>Aloqa</label><input type="text" name="contact" class="form-control"></div>
+                <button type="submit" class="btn-submit">Qo‘shish</button>
             </form>
-
-            <hr style="margin:18px 0;">
-            <h4 style="margin-bottom:10px; color:var(--text-muted); font-size:13px; text-transform:uppercase;" data-i18n="suppliers">Ta'minotchilar</h4>
-            {% for sup in suppliers %}
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #f0f0f0;">
-                <div>
-                    <strong>{{ sup.name }}</strong>
-                    {% if sup.contact_info %}
-                        <br><small style="color:var(--text-muted);">{{ sup.contact_info }}</small>
-                    {% endif %}
+            <div style="margin-top:18px;">
+                {% for s in suppliers %}
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; padding:10px 0; border-bottom:1px dashed var(--line-soft);">
+                    <div>
+                        <div style="font-weight:700;font-size:13px;">{{ s.name }}</div>
+                        <div style="font-size:11px;color:var(--muted-ink);">Qarz: {{ s.debt|floatformat:0 }} · {{ s.contact_info|default:"" }}</div>
+                    </div>
+                    <form method="POST">{% csrf_token %}<input type="hidden" name="action" value="delete_supplier"><input type="hidden" name="supplier_id" value="{{ s.id }}"><button type="submit" class="delete-btn" onclick="return confirm('O‘chirish?');"><i class="fa-solid fa-trash"></i></button></form>
                 </div>
-                <form method="POST" style="display:inline;">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="delete_supplier">
-                    <input type="hidden" name="supplier_id" value="{{ sup.id }}">
-                    <button type="submit" class="delete-btn" onclick="return confirm('O\'chirasizmi?')">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </form>
+                {% endfor %}
             </div>
-            {% empty %}
-            <p style="color:var(--text-muted); font-size:13px; text-align:center; padding:10px;">
-                <span data-i18n="no_suppliers">Ta'minotchilar yo'q</span>
-            </p>
-            {% endfor %}
-        </div>
-    </div>
-</div>
+        </article>
+    </section>
 
+    </div><!-- /.accounting-panes -->
+</div><!-- /.accounting-shell -->
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-    function showTab(tabId, btn) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
-        btn.classList.add('active');
+(function () {
+    var ACC_IDS = ['overview', 'cash', 'ledger', 'balance', 'coa', 'manual', 'integration', 'settings'];
+    var chartsInited = false;
+
+    function currentPanelId() {
+        var h = (window.location.hash || '#overview').replace(/^#/, '').trim();
+        if (!h || ACC_IDS.indexOf(h) === -1) { return 'overview'; }
+        return h;
     }
+
+    function applyAccountingHash() {
+        var id = currentPanelId();
+        document.querySelectorAll('.accounting-panes .tab-pane').forEach(function (p) {
+            p.classList.toggle('active', p.id === 'pane-' + id);
+        });
+    }
+
+    function initChartsOnce() {
+        if (chartsInited) { return; }
+        if (currentPanelId() !== 'overview') { return; }
+        chartsInited = true;
+
+        var bundleEl = document.getElementById('acc-overview-charts');
+        if (!bundleEl) { return; }
+        var bundle;
+        try {
+            bundle = JSON.parse(bundleEl.textContent);
+        } catch (e) { return; }
+
+        document.querySelectorAll('#pane-overview [data-chart-key]').forEach(function (box) {
+            var key = box.getAttribute('data-chart-key');
+            var cfg = bundle[key];
+            var canvas = box.querySelector('canvas');
+            if (!canvas || !cfg || !cfg.type) { return; }
+            new Chart(canvas.getContext('2d'), {
+                type: cfg.type,
+                data: cfg.data,
+                options: cfg.options || {}
+            });
+        });
+    }
+
+    function onRoute() {
+        applyAccountingHash();
+        initChartsOnce();
+    }
+
+    document.addEventListener('DOMContentLoaded', onRoute);
+    window.addEventListener('hashchange', onRoute);
+
+    // acc-nav-card bosilganda hash o'zgaradi va onRoute ishga tushadi
+    document.querySelectorAll('.acc-nav-card[data-acc-tab]').forEach(function(card) {
+        card.addEventListener('click', function(e) {
+            e.preventDefault();
+            var tab = card.getAttribute('data-acc-tab');
+            window.location.hash = tab;
+        });
+    });
+})();
+
+(function () {
+    var form = document.getElementById('form-cash-transfer');
+    if (!form) { return; }
+    var fromSel = form.querySelector('.js-xfer-from');
+    var toSel = form.querySelector('.js-xfer-to');
+    if (!fromSel || !toSel || fromSel.options.length < 2) { return; }
+
+    function syncToOptions() {
+        var v = fromSel.value;
+        Array.prototype.forEach.call(toSel.options, function (opt) {
+            opt.disabled = opt.value === v && opt.value !== '';
+        });
+        if (toSel.value === v) {
+            var first = Array.prototype.find.call(toSel.options, function (o) { return !o.disabled && o.value; });
+            if (first) { toSel.value = first.value; }
+        }
+    }
+    fromSel.addEventListener('change', syncToOptions);
+    syncToOptions();
+
+    form.addEventListener('submit', function (e) {
+        if (fromSel.value && toSel.value && fromSel.value === toSel.value) {
+            e.preventDefault();
+            alert('Bir xil kassadan o‘ziga o‘tkazib bo‘lmaydi. «Qayerga» maydonida boshqa kassani tanlang.');
+        }
+    });
+})();
+
+(function () {
+    if (typeof flatpickr === 'undefined') { return; }
+    document.querySelectorAll('.js-acc-date').forEach(function (el) {
+        flatpickr(el, {
+            dateFormat: 'Y-m-d',
+            allowInput: true,
+            disableMobile: true,
+            locale: {
+                firstDayOfWeek: 1
+            }
+        });
+    });
+})();
 </script>
 {% endblock %}

@@ -1,160 +1,839 @@
 {% extends 'base.html' %}
 
 {% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-    .dashboard-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; margin-bottom: 24px; }
-    .widget { background-color: white; border-radius: var(--border-radius); padding: 24px; box-shadow: var(--card-shadow); }
-    .widget.span-3 { grid-column: span 3; }
-    .widget.span-4 { grid-column: span 4; }
-    .widget.span-6 { grid-column: span 6; }
-    .widget.span-8 { grid-column: span 8; }
-    .widget-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .widget-title { font-size: 16px; font-weight: 600; color: var(--text-main); }
-    .stat-number { font-size: 28px; font-weight: 700; margin-top: 10px; color: var(--text-main); }
-    .stat-trend { font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 5px; }
-    .trend-up { color: var(--success); }
-    .text-muted { color: var(--text-muted); font-size: 13px; }
-    .chart-container { position: relative; height: 300px; width: 100%; }
+    .content-wrapper {
+        --paper: #fffdf7;
+        --ink: #2f2a25;
+        --muted-ink: #746a60;
+        --warm-1: #f2dcc2;
+        --warm-2: #d4a373;
+        --olive-1: #d7debc;
+        --olive-2: #a6b07f;
+        --line-soft: rgba(111, 89, 65, 0.2);
+        font-family: 'Manrope', sans-serif;
+        background:
+            radial-gradient(1100px 460px at -2% -5%, rgba(212, 163, 115, 0.28), transparent),
+            radial-gradient(900px 420px at 101% 12%, rgba(167, 176, 127, 0.26), transparent),
+            linear-gradient(180deg, #fffdf7 0%, #f7f6f1 62%, #f2f3ee 100%);
+    }
+
+    .dashboard-shell {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 22px;
+    }
+
+    .panel {
+        border-radius: 22px;
+        border: 1px solid var(--line-soft);
+        background: linear-gradient(170deg, rgba(255, 255, 255, 0.95), rgba(252, 250, 245, 0.95));
+        box-shadow: 0 14px 36px rgba(78, 60, 41, 0.09);
+        padding: 22px;
+        animation: panelIn 380ms ease both;
+    }
+
+    .hero {
+        grid-column: span 12;
+        padding: 26px 28px;
+        background:
+            linear-gradient(118deg, rgba(255, 252, 245, 0.97), rgba(250, 245, 236, 0.97)),
+            repeating-linear-gradient(45deg, rgba(212, 163, 115, 0.08) 0 2px, transparent 2px 12px);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .hero:before,
+    .hero:after {
+        content: "";
+        position: absolute;
+        border-radius: 999px;
+        pointer-events: none;
+    }
+
+    .hero:before {
+        width: 180px;
+        height: 180px;
+        right: -40px;
+        top: -40px;
+        background: radial-gradient(circle, rgba(212, 163, 115, 0.22), transparent 65%);
+    }
+
+    .hero:after {
+        width: 140px;
+        height: 140px;
+        right: 120px;
+        bottom: -70px;
+        background: radial-gradient(circle, rgba(166, 176, 127, 0.2), transparent 68%);
+    }
+
+    .hero-title {
+        font-family: 'Lexend', sans-serif;
+        font-size: clamp(24px, 2.8vw, 34px);
+        line-height: 1.15;
+        color: var(--ink);
+        margin-bottom: 8px;
+        letter-spacing: -0.015em;
+    }
+
+    .hero-subtitle {
+        color: var(--muted-ink);
+        font-size: 14px;
+        max-width: 68ch;
+    }
+
+    .hero-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+        margin-top: 14px;
+    }
+
+    .hero-pill {
+        border-radius: 999px;
+        border: 1px solid rgba(134, 106, 80, 0.24);
+        background: rgba(255, 255, 255, 0.66);
+        color: #5f564d;
+        padding: 7px 12px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .hero-cta {
+        display: grid;
+        gap: 10px;
+        min-width: 248px;
+    }
+
+    .hero-link {
+        border-radius: 12px;
+        padding: 10px 14px;
+        border: 1px solid rgba(127, 104, 82, 0.22);
+        background: rgba(255, 255, 255, 0.8);
+        color: #4f463e;
+        font-weight: 700;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: transform 180ms ease, background-color 180ms ease;
+    }
+
+    .hero-link:hover {
+        transform: translateY(-2px);
+        background: #ffffff;
+    }
+
+    .kpi { grid-column: span 3; }
+
+    .kpi-title {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #7d7166;
+        margin-bottom: 8px;
+        font-weight: 700;
+    }
+
+    .kpi-value {
+        font-family: 'Lexend', sans-serif;
+        font-size: clamp(26px, 2.4vw, 34px);
+        line-height: 1;
+        color: #2e2925;
+        font-weight: 800;
+        margin-bottom: 12px;
+    }
+
+    .kpi-note {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 6px 11px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .kpi-note.up {
+        background: rgba(40, 167, 69, 0.14);
+        color: #25713a;
+    }
+
+    .kpi-note.down {
+        background: rgba(220, 53, 69, 0.14);
+        color: #a4333f;
+    }
+
+    .metric-strip {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 14px;
+    }
+
+    .metric-box {
+        border-radius: 12px;
+        padding: 10px;
+        background: linear-gradient(140deg, rgba(254, 250, 224, 0.76), rgba(250, 247, 241, 0.82));
+        border: 1px solid rgba(157, 132, 108, 0.18);
+    }
+
+    .metric-box .m-label {
+        color: #7f7468;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        font-size: 11px;
+        margin-bottom: 3px;
+        font-weight: 700;
+    }
+
+    .metric-box .m-value {
+        font-family: 'Lexend', sans-serif;
+        font-size: 18px;
+        color: #352e29;
+        font-weight: 700;
+    }
+
+    .workflow-guide {
+        grid-column: span 12;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .workflow-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 18px 14px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(254, 250, 224, 0.8), rgba(250, 247, 241, 0.9));
+        border: 1.5px solid rgba(169, 154, 132, 0.3);
+        text-align: center;
+    }
+
+    .workflow-step.step1 { background: linear-gradient(135deg, rgba(212, 163, 115, 0.12), rgba(212, 163, 115, 0.06)); }
+    .workflow-step.step2 { background: linear-gradient(135deg, rgba(166, 176, 127, 0.12), rgba(166, 176, 127, 0.06)); }
+    .workflow-step.step3 { background: linear-gradient(135deg, rgba(212, 163, 115, 0.12), rgba(166, 176, 127, 0.08)); }
+
+    .step-number {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        font-family: 'Lexend', sans-serif;
+        font-size: 18px;
+        font-weight: 700;
+        color: #fff;
+    }
+
+    .step1 .step-number { background: #d4a373; }
+    .step2 .step-number { background: #a6b07f; }
+    .step3 .step-number { background: #d4a373; }
+
+    .step-title {
+        font-family: 'Lexend', sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        color: #2f2a25;
+        line-height: 1.2;
+    }
+
+    .step-text {
+        font-size: 12px;
+        color: #6b5f54;
+        line-height: 1.35;
+    }
+
+    .chart-panel { grid-column: span 8; }
+    .mix-panel { grid-column: span 4; }
+    .products-chart-panel { grid-column: span 7; }
+    .products-table-panel { grid-column: span 5; }
+    .production-panel { grid-column: span 6; }
+    .sales-panel { grid-column: span 6; }
+    .ledger-panel { grid-column: span 8; }
+    .register-panel { grid-column: span 4; }
+
+    .panel-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .panel-title {
+        font-family: 'Lexend', sans-serif;
+        font-size: 16px;
+        color: #3e352d;
+        font-weight: 700;
+    }
+
+    .panel-sub {
+        color: #8a7f73;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .chart-wrap {
+        position: relative;
+        height: 300px;
+    }
+
+    .chart-wrap.sm {
+        height: 240px;
+    }
+
+    .table-clean {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 8px;
+    }
+
+    .table-clean th,
+    .table-clean td {
+        padding: 11px 8px;
+        border-bottom: 1px dashed rgba(140, 119, 98, 0.26);
+        font-size: 13px;
+        text-align: left;
+    }
+
+    .table-clean th {
+        color: #766a5e;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 11px;
+    }
+
+    .table-clean td strong {
+        color: #2f2a26;
+        font-weight: 700;
+    }
+
+    .share-track {
+        width: 100%;
+        height: 7px;
+        background: rgba(151, 124, 98, 0.16);
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .share-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #d4a373, #b88656);
+    }
+
+    .timeline {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 4px;
+    }
+
+    .timeline-item {
+        border-radius: 12px;
+        padding: 12px;
+        border: 1px solid rgba(130, 104, 78, 0.18);
+        background: rgba(255, 255, 255, 0.65);
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .timeline-item .t-main {
+        color: #332d29;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .timeline-item .t-sub {
+        color: #877b6f;
+        font-size: 12px;
+        margin-top: 2px;
+    }
+
+    .timeline-item .t-meta {
+        color: #7b6f64;
+        font-size: 11px;
+        white-space: nowrap;
+        font-weight: 700;
+    }
+
+    .register-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .register-row {
+        border-radius: 12px;
+        padding: 12px;
+        border: 1px solid rgba(133, 106, 79, 0.18);
+        background: rgba(255, 255, 255, 0.74);
+    }
+
+    .register-name {
+        color: #665b51;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 4px;
+        font-weight: 700;
+    }
+
+    .register-value {
+        font-family: 'Lexend', sans-serif;
+        color: #2f2a25;
+        font-size: 21px;
+        font-weight: 700;
+    }
+
+    .empty-note {
+        text-align: center;
+        color: #8d8175;
+        font-size: 13px;
+        padding: 18px;
+    }
+
+    @keyframes panelIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 1160px) {
+        .kpi { grid-column: span 6; }
+        .workflow-guide { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .chart-panel,
+        .mix-panel,
+        .products-chart-panel,
+        .products-table-panel,
+        .production-panel,
+        .sales-panel,
+        .ledger-panel,
+        .register-panel { grid-column: span 12; }
+    }
+
+    @media (max-width: 760px) {
+        .hero { padding: 20px; }
+        .hero { flex-direction: column; align-items: flex-start; }
+        .hero-cta { width: 100%; min-width: 0; }
+        .workflow-guide { grid-template-columns: 1fr; }
+        .kpi { grid-column: span 12; }
+        .metric-strip { grid-template-columns: 1fr; }
+        .chart-wrap { height: 250px; }
+        .chart-wrap.sm { height: 220px; }
+    }
 </style>
 {% endblock %}
 
 {% block breadcrumb %}<span data-i18n="nav_dashboard">Boshqaruv paneli</span>{% endblock %}
 
 {% block content %}
-<div class="dashboard-grid">
+{{ revenue_labels|json_script:"revenue-labels" }}
+{{ income_data|json_script:"income-data" }}
+{{ expense_data|json_script:"expense-data" }}
+{{ top_products_labels|json_script:"top-products-labels" }}
+{{ top_products_data|json_script:"top-products-data" }}
+{{ pos_sales_count|json_script:"pos-sales-count" }}
+{{ branch_sales_count|json_script:"branch-sales-count" }}
 
-    <!-- Today Revenue -->
-    <div class="widget span-3">
-        <div class="widget-header">
-            <div class="widget-title" data-i18n="today_revenue">Bugungi daromad</div>
-            <i class="fa-solid fa-money-bill-wave" style="color: var(--primary);"></i>
-        </div>
-        <div class="stat-number">{{ today_revenue|default:"0.00" }} UZS</div>
-        <div class="stat-trend trend-up">
-            <i class="fa-solid fa-arrow-trend-up"></i>
-            <span data-i18n="from_yesterday">Kechadan</span>
-        </div>
-    </div>
-
-    <!-- Products Produced -->
-    <div class="widget span-3">
-        <div class="widget-header">
-            <div class="widget-title" data-i18n="products_produced">Ishlab chiqarilgan</div>
-            <i class="fa-solid fa-bread-slice" style="color: var(--secondary);"></i>
-        </div>
-        <div class="stat-number">{{ today_production|default:"0" }}</div>
-        <div class="text-muted">
-            <span data-i18n="yesterday_label">Kecha</span>: {{ yesterday_production|default:"0" }}
-        </div>
-    </div>
-
-    <!-- Total Sales -->
-    <div class="widget span-3">
-        <div class="widget-header">
-            <div class="widget-title" data-i18n="total_sales">Jami sotuv</div>
-            <i class="fa-solid fa-cart-shopping" style="color: var(--info);"></i>
-        </div>
-        <div class="stat-number">{{ today_sales|default:"0" }}</div>
-        <div class="text-muted" data-i18n="completed_transactions">Bajarilgan operatsiyalar</div>
-    </div>
-
-    <!-- On Shift -->
-    <div class="widget span-3">
-        <div class="widget-header">
-            <div class="widget-title" data-i18n="on_shift">Bugun smenada</div>
-            <i class="fa-solid fa-users" style="color: var(--warning);"></i>
-        </div>
-        <div class="stat-number">{{ employees_on_shift|default:"0" }}</div>
-        <div class="text-muted" data-i18n="active_employees">Faol xodimlar</div>
-    </div>
-
-    <!-- Revenue Chart -->
-    <div class="widget span-8">
-        <div class="widget-header">
-            <div class="widget-title" data-i18n="revenue_expenses">Daromad va xarajatlar (oylik)</div>
-        </div>
-        <div class="chart-container">
-            <canvas id="revenueChart"></canvas>
-        </div>
-    </div>
-
-    <!-- Financial Summary -->
-    <div class="widget span-4">
-        <div class="widget-header">
-            <div class="widget-title" data-i18n="financial_summary">Moliyaviy xulosa</div>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 20px;">
-            <div>
-                <div class="text-muted" data-i18n="total_cash">Jami kassa qoldig'i</div>
-                <div class="stat-number" style="font-size: 22px;">{{ cash_balances|default:"0.00" }} UZS</div>
-            </div>
-            <div>
-                <div class="text-muted" data-i18n="debtors">Qarzdorlar</div>
-                <div class="stat-number" style="font-size: 22px; color: var(--success);">{{ debtors|default:"0.00" }} UZS</div>
-            </div>
-            <div>
-                <div class="text-muted" data-i18n="creditors">Kreditorlar</div>
-                <div class="stat-number" style="font-size: 22px; color: var(--danger);">{{ creditors|default:"0.00" }} UZS</div>
+<section class="dashboard-shell">
+    <article class="panel hero">
+        <div>
+            <h1 class="hero-title">Umumiy boshqaruv markazi</h1>
+            <p class="hero-subtitle">
+                Bugungi ishlab chiqarish, sotuv, moliya va kassa oqimi bir joyda jamlandi.
+                Quyidagi ko'rsatkichlar real bazadagi ma'lumotlardan yangilanadi.
+            </p>
+            <div class="hero-pills">
+                <span class="hero-pill">Bugun: {{ today_sales }} ta tranzaksiya</span>
+                <span class="hero-pill">Faol xodim: {{ employees_on_shift }}</span>
+                <span class="hero-pill">Kreditor: {{ creditors|floatformat:0 }} UZS</span>
             </div>
         </div>
+        <div class="hero-cta">
+            <a class="hero-link" href="/production/">Ishlab chiqarishga o'tish <i class="fa-solid fa-arrow-right"></i></a>
+            <a class="hero-link" href="/sales/">Sotuv panelini ochish <i class="fa-solid fa-arrow-right"></i></a>
+            <a class="hero-link" href="/accounting/">Moliya bo'limi <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+    </article>
+
+    <div class="workflow-guide">
+        <div class="panel workflow-step step1">
+            <div class="step-number">1</div>
+            <div class="step-title">Xom ashyoni kiriting</div>
+            <div class="step-text">va qo'ldiqni tekshiring</div>
+        </div>
+        <div class="panel workflow-step step2">
+            <div class="step-number">2</div>
+            <div class="step-title">Mahsulot kartasini</div>
+            <div class="step-text">yarating va narx belgilang</div>
+        </div>
+        <div class="panel workflow-step step3">
+            <div class="step-number">3</div>
+            <div class="step-title">Retsept tuzing</div>
+            <div class="step-text">keyin ishlab chiqarishga o'ting</div>
+        </div>
     </div>
 
-    <!-- Top Products -->
-    <div class="widget span-6">
-        <div class="widget-header">
-            <div class="widget-title" data-i18n="top_products">Eng ko'p sotiladigan mahsulotlar</div>
+    <article class="panel kpi">
+        <div class="kpi-title">Bugungi daromad</div>
+        <div class="kpi-value">{{ today_revenue|floatformat:0 }} UZS</div>
+        <div class="kpi-note {% if revenue_delta >= 0 %}up{% else %}down{% endif %}">
+            <i class="fa-solid {% if revenue_delta >= 0 %}fa-arrow-trend-up{% else %}fa-arrow-trend-down{% endif %}"></i>
+            {{ revenue_delta|floatformat:0 }} UZS
         </div>
-        <div class="chart-container" style="height: 250px;">
+    </article>
+
+    <article class="panel kpi">
+        <div class="kpi-title">Ishlab chiqarish (bugun)</div>
+        <div class="kpi-value">{{ today_production }}</div>
+        <div class="kpi-note {% if production_delta >= 0 %}up{% else %}down{% endif %}">
+            <i class="fa-solid {% if production_delta >= 0 %}fa-arrow-up{% else %}fa-arrow-down{% endif %}"></i>
+            {{ production_delta }} dona
+        </div>
+    </article>
+
+    <article class="panel kpi">
+        <div class="kpi-title">Kassa qoldig'i</div>
+        <div class="kpi-value">{{ cash_balances|floatformat:0 }} UZS</div>
+        <div class="kpi-note up">
+            <i class="fa-solid fa-wallet"></i>
+            Jami kassalar holati
+        </div>
+    </article>
+
+    <article class="panel kpi">
+        <div class="kpi-title">Oy sof natija</div>
+        <div class="kpi-value">{{ monthly_net_total|floatformat:0 }} UZS</div>
+        <div class="kpi-note {% if monthly_net_total >= 0 %}up{% else %}down{% endif %}">
+            <i class="fa-solid {% if monthly_net_total >= 0 %}fa-circle-check{% else %}fa-triangle-exclamation{% endif %}"></i>
+            Daromad - xarajat
+        </div>
+    </article>
+
+    <article class="panel chart-panel">
+        <div class="panel-head">
+            <div>
+                <div class="panel-title">Oylik daromad va xarajat dinamikasi</div>
+                <div class="panel-sub">Oxirgi 4 oy bo'yicha pul oqimi</div>
+            </div>
+        </div>
+        <div class="metric-strip">
+            <div class="metric-box">
+                <div class="m-label">Jami daromad</div>
+                <div class="m-value">{{ monthly_income_total|floatformat:0 }}</div>
+            </div>
+            <div class="metric-box">
+                <div class="m-label">Jami xarajat</div>
+                <div class="m-value">{{ monthly_expense_total|floatformat:0 }}</div>
+            </div>
+            <div class="metric-box">
+                <div class="m-label">Sof oqim</div>
+                <div class="m-value">{{ monthly_net_total|floatformat:0 }}</div>
+            </div>
+        </div>
+        <div class="chart-wrap">
+            <canvas id="flowChart"></canvas>
+        </div>
+    </article>
+
+    <article class="panel mix-panel">
+        <div class="panel-head">
+            <div class="panel-title">Sotuv kanallari ulushi</div>
+            <div class="panel-sub">Bugungi tranzaksiyalar</div>
+        </div>
+        <div class="chart-wrap sm">
+            <canvas id="salesMixChart"></canvas>
+        </div>
+        <table class="table-clean" style="margin-top: 8px;">
+            <tbody>
+                <tr>
+                    <td>POS</td>
+                    <td><strong>{{ pos_sales_count }}</strong></td>
+                    <td style="text-align:right;">{{ pos_share_percent }}%</td>
+                </tr>
+                <tr>
+                    <td>Filial</td>
+                    <td><strong>{{ branch_sales_count }}</strong></td>
+                    <td style="text-align:right;">{{ branch_share_percent }}%</td>
+                </tr>
+            </tbody>
+        </table>
+    </article>
+
+    <article class="panel products-chart-panel">
+        <div class="panel-head">
+            <div class="panel-title">Eng ko'p sotiladigan mahsulotlar</div>
+            <div class="panel-sub">POS + filial yig'indi</div>
+        </div>
+        <div class="chart-wrap sm">
             <canvas id="topProductsChart"></canvas>
         </div>
-    </div>
+    </article>
 
-</div>
+    <article class="panel products-table-panel">
+        <div class="panel-head">
+            <div class="panel-title">Mahsulot ulushi</div>
+            <div class="panel-sub">Top 5</div>
+        </div>
+        {% if top_products_rows %}
+        <table class="table-clean">
+            <thead>
+                <tr>
+                    <th>Mahsulot</th>
+                    <th>Miqdor</th>
+                    <th>Ulush</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in top_products_rows %}
+                <tr>
+                    <td><strong>{{ item.name }}</strong></td>
+                    <td>{{ item.qty }}</td>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div class="share-track"><div class="share-fill" style="width: {{ item.share }}%;"></div></div>
+                            <span>{{ item.share }}%</span>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-note">Top mahsulotlar uchun ma'lumot topilmadi.</div>
+        {% endif %}
+    </article>
+
+    <article class="panel production-panel">
+        <div class="panel-head">
+            <div class="panel-title">So'nggi ishlab chiqarish qaydlari</div>
+            <div class="panel-sub">Oxirgi 6 ta yozuv</div>
+        </div>
+        <div class="timeline">
+            {% for log in recent_production_logs %}
+            <div class="timeline-item">
+                <div>
+                    <div class="t-main">{{ log.product.name }} - {{ log.quantity }} dona</div>
+                    <div class="t-sub">Novvoy: {{ log.baker_name|default:"-" }}</div>
+                </div>
+                <div class="t-meta">{{ log.date|date:"d M H:i" }}</div>
+            </div>
+            {% empty %}
+            <div class="empty-note">Ishlab chiqarish qaydlari mavjud emas.</div>
+            {% endfor %}
+        </div>
+    </article>
+
+    <article class="panel sales-panel">
+        <div class="panel-head">
+            <div class="panel-title">So'nggi POS sotuvlar</div>
+            <div class="panel-sub">Oxirgi 6 ta chek</div>
+        </div>
+        <div class="timeline">
+            {% for s in recent_sales %}
+            <div class="timeline-item">
+                <div>
+                    <div class="t-main">Chek #{{ s.id }} - {{ s.total_amount|floatformat:0 }} UZS</div>
+                    <div class="t-sub">To'lov: {{ s.get_payment_method_display }}</div>
+                </div>
+                <div class="t-meta">{{ s.date|date:"d M H:i" }}</div>
+            </div>
+            {% empty %}
+            <div class="empty-note">Sotuvlar hali mavjud emas.</div>
+            {% endfor %}
+        </div>
+    </article>
+
+    <article class="panel ledger-panel">
+        <div class="panel-head">
+            <div class="panel-title">So'nggi moliyaviy operatsiyalar</div>
+            <div class="panel-sub">Kassa jurnali</div>
+        </div>
+        {% if recent_transactions %}
+        <table class="table-clean">
+            <thead>
+                <tr>
+                    <th>Sana</th>
+                    <th>Tur</th>
+                    <th>Tavsif</th>
+                    <th>Kassa</th>
+                    <th style="text-align:right;">Summa</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in recent_transactions %}
+                <tr>
+                    <td>{{ t.date|date:"d M H:i" }}</td>
+                    <td>{{ t.get_transaction_type_display }}</td>
+                    <td>{{ t.description|default:"-" }}</td>
+                    <td>{{ t.cash_register.name }}</td>
+                    <td style="text-align:right;"><strong>{{ t.amount|floatformat:0 }} UZS</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-note">Moliyaviy operatsiyalar topilmadi.</div>
+        {% endif %}
+    </article>
+
+    <article class="panel register-panel">
+        <div class="panel-head">
+            <div class="panel-title">Kassalar holati</div>
+            <div class="panel-sub">Hozirgi balans</div>
+        </div>
+        <div class="register-stack">
+            {% for r in cash_registers %}
+            <div class="register-row">
+                <div class="register-name">{{ r.name }}</div>
+                <div class="register-value">{{ r.balance|floatformat:0 }} UZS</div>
+            </div>
+            {% empty %}
+            <div class="empty-note">Kassalar hozircha mavjud emas.</div>
+            {% endfor %}
+        </div>
+    </article>
+</section>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-    // Chart labels are also translated
-    function buildCharts() {
-        const ctxRevenue = document.getElementById('revenueChart').getContext('2d');
-        new Chart(ctxRevenue, {
+    function initDashboardCharts() {
+        const labels = JSON.parse(document.getElementById('revenue-labels').textContent);
+        const incomeData = JSON.parse(document.getElementById('income-data').textContent);
+        const expenseData = JSON.parse(document.getElementById('expense-data').textContent);
+        let topLabels = JSON.parse(document.getElementById('top-products-labels').textContent);
+        let topData = JSON.parse(document.getElementById('top-products-data').textContent);
+        const posCount = JSON.parse(document.getElementById('pos-sales-count').textContent);
+        const branchCount = JSON.parse(document.getElementById('branch-sales-count').textContent);
+
+        if (!topLabels.length) {
+            topLabels = ['No data'];
+            topData = [0];
+        }
+
+        const flowCtx = document.getElementById('flowChart').getContext('2d');
+        const incomeGradient = flowCtx.createLinearGradient(0, 0, 0, 280);
+        incomeGradient.addColorStop(0, 'rgba(76, 170, 83, 0.35)');
+        incomeGradient.addColorStop(1, 'rgba(76, 170, 83, 0.04)');
+
+        const expenseGradient = flowCtx.createLinearGradient(0, 0, 0, 280);
+        expenseGradient.addColorStop(0, 'rgba(220, 85, 99, 0.28)');
+        expenseGradient.addColorStop(1, 'rgba(220, 85, 99, 0.03)');
+
+        new Chart(flowCtx, {
             type: 'line',
             data: {
-                labels: [t('week_1'), t('week_2'), t('week_3'), t('week_4')],
-                datasets: [{
-                    label: t('income'),
-                    data: [12000, 19000, 15000, 25000],
-                    borderColor: '#D4A373',
-                    backgroundColor: 'rgba(212, 163, 115, 0.1)',
-                    tension: 0.4, fill: true
-                }, {
-                    label: t('expense'),
-                    data: [8000, 10000, 11000, 13000],
-                    borderColor: '#dc3545',
-                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                    tension: 0.4, fill: true
-                }]
+                labels: labels,
+                datasets: [
+                    {
+                        label: t('income'),
+                        data: incomeData,
+                        borderColor: '#4ca653',
+                        backgroundColor: incomeGradient,
+                        fill: true,
+                        borderWidth: 2.5,
+                        pointRadius: 3,
+                        tension: 0.35,
+                    },
+                    {
+                        label: t('expense'),
+                        data: expenseData,
+                        borderColor: '#d34f5f',
+                        backgroundColor: expenseGradient,
+                        fill: true,
+                        borderWidth: 2.5,
+                        pointRadius: 3,
+                        tension: 0.35,
+                    }
+                ]
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { position: 'top' },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(135, 113, 89, 0.16)' },
+                        ticks: {
+                            callback: function(value) { return `${value}`; }
+                        }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
         });
 
-        const ctxProducts = document.getElementById('topProductsChart').getContext('2d');
-        new Chart(ctxProducts, {
-            type: 'bar',
+        const mixCtx = document.getElementById('salesMixChart').getContext('2d');
+        new Chart(mixCtx, {
+            type: 'doughnut',
             data: {
-                labels: ['Obinon', 'Patir', 'Bukhara Bread', 'Sweet Bun'],
+                labels: ['POS', 'Filial'],
                 datasets: [{
-                    label: t('units_sold'),
-                    data: [450, 320, 210, 150],
-                    backgroundColor: ['#D4A373', '#CCD5AE', '#E9EDC9', '#FEFAE0'],
-                    borderRadius: 4
+                    data: [posCount, branchCount],
+                    backgroundColor: ['#d4a373', '#a6b07f'],
+                    borderColor: ['#fff8ef', '#fff8ef'],
+                    borderWidth: 3,
+                    hoverOffset: 7,
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '64%',
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+
+        const topCtx = document.getElementById('topProductsChart').getContext('2d');
+        new Chart(topCtx, {
+            type: 'bar',
+            data: {
+                labels: topLabels,
+                datasets: [{
+                    label: t('units_sold'),
+                    data: topData,
+                    backgroundColor: ['#d4a373', '#b88656', '#ccd5ae', '#a6b07f', '#e9edc9'],
+                    borderRadius: 10,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(135, 113, 89, 0.16)' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
         });
     }
 
-    // Build charts after i18n is ready
-    document.addEventListener('DOMContentLoaded', buildCharts);
+    document.addEventListener('DOMContentLoaded', initDashboardCharts);
 </script>
 {% endblock %}

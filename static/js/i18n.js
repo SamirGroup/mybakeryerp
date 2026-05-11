@@ -15,14 +15,16 @@ const TRANSLATIONS = {
   // ─────────────────────────────────────────────────────────
   uz: {
     // Navigation
-    nav_dashboard: "Boshqaruv paneli",
-    nav_production: "Ishlab chiqarish",
-    nav_sales: "Sotuv",
-    nav_branches: "Filiallar",
-    nav_accounting: "Buxgalteriya",
-    nav_hr: "HR Bo'limi",
-    nav_products: "Mahsulotlar",
-    nav_admin: "Admin",
+    "tabx1": "O'tkazmalar",
+    "tabx2": "Qoldiqlar (Grid)",
+    "nav_dashboard": "Boshqaruv paneli",
+    "nav_production": "Ishlab chiqarish",
+    "nav_sales": "Sotuv",
+    "nav_branches": "Filiallar",
+    "nav_accounting": "Buxgalteriya",
+    "nav_hr": "HR Bo'limi",
+    "nav_products": "Mahsulotlar",
+    "nav_admin": "Foydalanuvchilar",
 
     // Dashboard
     today_revenue: "Bugungi daromad",
@@ -129,6 +131,13 @@ const TRANSLATIONS = {
     no_transfers: "O'tkazmalar yo'q",
     branch_inventories: "Filial qoldiqlari (Ostatka)",
     no_branches: "Filiallar yo'q",
+    no_branches_desc: "Yangi filial qo'shish uchun Sozlamalar bo'limiga o'ting.",
+    total_branches: "Filiallar soni",
+    total_stock: "Filiallar qoldig'i",
+    new_transfer: "Yangi o'tkazma",
+    transfer_history: "O'tkazmalar tarixi",
+    "management": "Sozlamalar",
+    "details": "Tafsilotlar",
 
     // Accounting
     accounting_title: "Buxgalteriya va moliya",
@@ -151,6 +160,7 @@ const TRANSLATIONS = {
     no_registers: "Kassalar yo'q",
     status_active: "Faol",
     type: "Tur",
+    supplier_payment: "Ta'minotchi to'lovi",
 
     // HR
     hr_title: "Kadrlar bo'limi",
@@ -225,12 +235,57 @@ const TRANSLATIONS = {
     pos_manager: "Boshqaruvchi",
     pos_cook: "Oshpaz",
     pos_accountant: "Buxgalter",
+
+    // Accounting sub-menu
+    acc_overview: "Ko'rinish",
+    acc_cash: "Kassa",
+    acc_ledger: "Jurnal",
+    acc_balance: "Sinov balansi",
+    acc_coa: "Hisoblar rejasi",
+    acc_manual: "Qo'lda jurnal",
+    acc_settings: "Sozlamalar",
+
+    // HR extended
+    hr_shifts: "Smenalar",
+    hr_daily_report: "Kunlik hisobot",
+    hr_add_report: "Hisobot qo'shish",
+    hr_edit_emp: "Xodimni tahrirlash",
+    hr_kpi: "KPI / Nagruzka",
+    hr_attendance: "Davomat",
+    hr_present: "Keldi",
+    hr_absent: "Kelmadi",
+    hr_check_in: "Kelgan vaqt",
+    hr_check_out: "Ketgan vaqt",
+    hr_hours_worked: "Ishlagan soat",
+    hr_units_produced: "Ishlab chiqargan (dona)",
+    hr_target: "Nagruzka (maqsad)",
+    hr_piecework_earn: "Ishbay daromad",
+
+    // Production extended
+    prod_process: "Jarayon",
+    prod_timer: "Timer (daqiqa)",
+    prod_batches: "Partiya soni",
+    prod_start: "Ishlab chiqarishni boshlash",
+    prod_done: "Tayyor!",
+    prod_active: "Faol jarayonlar",
+
+    // Sales extended
+    sale_shift: "Smena",
+    sale_confirm: "Sotuvni tasdiqlash",
+    sale_add_item: "Mahsulot qo'shish",
+    sale_close_shift: "Smenani yopish",
+    sale_shift_summary: "Smena xulosasi",
+    sale_filter: "Filtrlash",
+    sale_print: "Chop etish",
+    sale_export: "Excel yuklab olish",
   },
 
   // ─────────────────────────────────────────────────────────
   // UZBEK CYRILLIC
   // ─────────────────────────────────────────────────────────
   "uz-cyrl": {
+    "tabx1": "Ўтказмалар",
+    "tabx2": "Қолдиқлар (Грид)",
     nav_dashboard: "Бошқарув панели",
     nav_production: "Ишлаб чиқариш",
     nav_sales: "Сотув",
@@ -238,7 +293,7 @@ const TRANSLATIONS = {
     nav_accounting: "Бухгалтерия",
     nav_hr: "Кадрлар бўлими",
     nav_products: "Маҳсулотлар",
-    nav_admin: "Админ",
+    nav_admin: "Фойдаланувчилар",
     today_revenue: "Бугунги даромад",
     products_produced: "Ишлаб чиқарилган",
     total_sales: "Жами сотув",
@@ -334,6 +389,13 @@ const TRANSLATIONS = {
     no_transfers: "Ўтказмалар йўқ",
     branch_inventories: "Филиал қолдиқлари (Остатка)",
     no_branches: "Филиаллар йўқ",
+    no_branches_desc: "Янги филиал қўшиш учун Созламалар бўлимига ўтинг.",
+    total_branches: "Филиаллар сони",
+    total_stock: "Филиаллар қолдиғи",
+    new_transfer: "Янги ўтказма",
+    transfer_history: "Ўтказмалар тарихи",
+    management: "Созламалар",
+    details: "Тафсилотлар",
     accounting_title: "Бухгалтерия ва молия",
     record_expense: "Харажатни қайд этиш",
     amount: "Сумма",
@@ -354,6 +416,7 @@ const TRANSLATIONS = {
     no_registers: "Кассалар йўқ",
     status_active: "Фаол",
     type: "Тур",
+    supplier_payment: "Таъминотчи тўлови",
     hr_title: "Кадрлар бўлими",
     active_emps: "Фаол ходимлар",
     today: "Бугун",
@@ -418,20 +481,54 @@ const TRANSLATIONS = {
     pos_manager: "Бошқарувчи",
     pos_cook: "Ошпаз",
     pos_accountant: "Бухгалтер",
+    acc_overview: "Кўриниш",
+    acc_cash: "Касса",
+    acc_ledger: "Журнал",
+    acc_balance: "Синов баланс",
+    acc_coa: "Ҳисоблар режаси",
+    acc_manual: "Қўлда журнал",
+    acc_settings: "Созламалар",
+    hr_shifts: "Сменалар",
+    hr_daily_report: "Кунлик ҳисобот",
+    hr_add_report: "Ҳисобот қўшиш",
+    hr_edit_emp: "Ходимни таҳрирлаш",
+    hr_kpi: "KPI / Нагрузка",
+    hr_attendance: "Даомат",
+    hr_present: "Келди",
+    hr_absent: "Келмади",
+    hr_check_in: "Келган вақт",
+    hr_check_out: "Кетган вақт",
+    hr_hours_worked: "Ишлаган соат",
+    hr_units_produced: "Ишлаб чиқарган (дона)",
+    hr_target: "Нагрузка (мақсад)",
+    hr_piecework_earn: "Ишбай даромад",
+    prod_process: "Жараён",
+    prod_timer: "Таймер (дақиқа)",
+    prod_batches: "Партия сони",
+    prod_start: "Ишлаб чиқаришни бошлаш",
+    prod_done: "Тайёр!",
+    prod_active: "Фаол жараёнлар",
+    sale_shift: "Смена",
+    sale_confirm: "Сотувни тасдиқлаш",
+    sale_add_item: "Маҳсулот қўшиш",
+    sale_close_shift: "Сменани ёпиш",
+    sale_shift_summary: "Смена хулосаси",
+    sale_filter: "Фильтр",
+    sale_print: "Чоп этиш",
+    sale_export: "Excel юклаб олиш",
   },
-
-  // ─────────────────────────────────────────────────────────
-  // RUSSIAN
   // ─────────────────────────────────────────────────────────
   ru: {
-    nav_dashboard: "Панель управления",
+    "tabx1": "Переводы",
+    "tabx2": "Сетка остатков",
+    "nav_dashboard": "Панель управления",
     nav_production: "Производство",
     nav_sales: "Продажи",
     nav_branches: "Филиалы",
     nav_accounting: "Бухгалтерия",
     nav_hr: "Отдел кадров",
     nav_products: "Продукты",
-    nav_admin: "Администратор",
+    nav_admin: "Пользователи",
     today_revenue: "Выручка за сегодня",
     products_produced: "Произведено продуктов",
     total_sales: "Всего продаж",
@@ -527,6 +624,13 @@ const TRANSLATIONS = {
     no_transfers: "Перемещений нет",
     branch_inventories: "Остатки по филиалам",
     no_branches: "Филиалов нет",
+    no_branches_desc: "Перейдите в Настройки, чтобы добавить новый филиал.",
+    total_branches: "Кол-во филиалов",
+    total_stock: "Остаток в филиалах",
+    new_transfer: "Новое перемещение",
+    transfer_history: "История перемещений",
+    management: "Настройки",
+    details: "Детали",
     accounting_title: "Бухгалтерия и финансы",
     record_expense: "Записать расход",
     amount: "Сумма",
@@ -547,6 +651,7 @@ const TRANSLATIONS = {
     no_registers: "Кассы не определены",
     status_active: "Активен",
     type: "Тип",
+    supplier_payment: "Оплата поставщику",
     hr_title: "Управление персоналом",
     active_emps: "Активные сотрудники",
     today: "Сегодня",
@@ -611,57 +716,153 @@ const TRANSLATIONS = {
     pos_manager: "Управляющий",
     pos_cook: "Повар",
     pos_accountant: "Бухгалтер",
+
+    // Accounting sub-menu
+    acc_overview: "Обзор",
+    acc_cash: "Касса",
+    acc_ledger: "Журнал",
+    acc_balance: "Пробный баланс",
+    acc_coa: "План счетов",
+    acc_manual: "Ручной журнал",
+    acc_settings: "Настройки",
+
+    // HR extended
+    hr_shifts: "Смены",
+    hr_daily_report: "Ежедневный отчёт",
+    hr_add_report: "Добавить отчёт",
+    hr_edit_emp: "Редактировать сотрудника",
+    hr_kpi: "KPI / Нагрузка",
+    hr_attendance: "Посещаемость",
+    hr_present: "Пришёл",
+    hr_absent: "Не пришёл",
+    hr_check_in: "Время прихода",
+    hr_check_out: "Время ухода",
+    hr_hours_worked: "Отработано часов",
+    hr_units_produced: "Произведено (шт.)",
+    hr_target: "Нагрузка (план)",
+    hr_piecework_earn: "Сдельный заработок",
+
+    // Production extended
+    prod_process: "Процесс",
+    prod_timer: "Таймер (минуты)",
+    prod_batches: "Кол-во партий",
+    prod_start: "Начать производство",
+    prod_done: "Готово!",
+    prod_active: "Активные процессы",
+
+    // Sales extended
+    sale_shift: "Смена",
+    sale_confirm: "Подтвердить продажу",
+    sale_add_item: "Добавить товар",
+    sale_close_shift: "Закрыть смену",
+    sale_shift_summary: "Итог смены",
+    sale_filter: "Фильтр",
+    sale_print: "Печать",
+    sale_export: "Скачать Excel",
   },
 };
 
 // ─── Language engine ────────────────────────────────────────────────────────
 function getCurrentLang() {
-  return localStorage.getItem("erp_lang") || "uz";
+  return localStorage.getItem('erp_lang') || localStorage.getItem('erp_gt_lang') || 'uz';
 }
 
 function t(key) {
-  const lang = getCurrentLang();
+  var lang = getCurrentLang();
   return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) ||
-         TRANSLATIONS["uz"][key] || key;
+         (TRANSLATIONS['uz'] && TRANSLATIONS['uz'][key]) || key;
 }
 
 function applyTranslations() {
-  const lang = getCurrentLang();
+  var lang = getCurrentLang();
+  // ru tanlanganda Google Translate o'zi tarjima qiladi, data-i18n ni o'zgartirmaymiz
+  if (lang === 'ru') {
+    document.documentElement.lang = 'uz';
+    document.querySelectorAll('.lang-btn').forEach(function(btn) {
+      btn.classList.toggle('active', btn.dataset.lang === lang);
+    });
+    return;
+  }
 
-  // 1. Elements with data-i18n (text content)
-  document.querySelectorAll("[data-i18n]").forEach((el) => {
-    const key = el.getAttribute("data-i18n");
-    const val = t(key);
-    // For input/textarea translate as placeholder
-    if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+  var dict = TRANSLATIONS[lang] || TRANSLATIONS['uz'];
+
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n');
+    var val = dict[key] || (TRANSLATIONS['uz'] && TRANSLATIONS['uz'][key]) || key;
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
       el.placeholder = val;
-    } else if (el.tagName === "OPTION") {
-      // Option elements — translate the text node
-      el.textContent = val;
     } else {
-      el.textContent = val;
+      // Ichki <i>, <span> kabi elementlarni saqlab, faqat text node larni yangilaymiz
+      var hasChildElements = Array.from(el.childNodes).some(function(n) { return n.nodeType === 1; });
+      if (hasChildElements) {
+        // Oxirgi text node ni topib yangilaymiz, yo'q bo'lsa yaratamiz
+        var lastText = null;
+        el.childNodes.forEach(function(n) { if (n.nodeType === 3) lastText = n; });
+        if (lastText) {
+          lastText.textContent = ' ' + val;
+        } else {
+          el.appendChild(document.createTextNode(' ' + val));
+        }
+      } else {
+        el.textContent = val;
+      }
     }
   });
 
-  // 2. Elements with data-i18n-placeholder (only placeholder, not text)
-  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
-    const key = el.getAttribute("data-i18n-placeholder");
-    el.placeholder = t(key);
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n-placeholder');
+    el.placeholder = dict[key] || (TRANSLATIONS['uz'] && TRANSLATIONS['uz'][key]) || key;
   });
 
-  // 3. Update <html lang> attribute
   document.documentElement.lang = lang;
 
-  // 4. Highlight the active language button
-  document.querySelectorAll(".lang-btn").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.lang === lang);
+  document.querySelectorAll('.lang-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.lang === lang);
   });
 }
 
 function setLanguage(lang) {
-  localStorage.setItem("erp_lang", lang);
+  localStorage.setItem('erp_lang', lang);
+  localStorage.setItem('erp_gt_lang', lang);
   applyTranslations();
 }
 
-// Run on DOM ready
-document.addEventListener("DOMContentLoaded", applyTranslations);
+// Run immediately + on DOM ready
+applyTranslations();
+document.addEventListener('DOMContentLoaded', applyTranslations);
+
+// Chart.js labellarini tarjima qilish
+// Google Translate canvas ni tarjima qila olmaydi,
+// shuning uchun Chart yaratilganda labellar i18n orqali o'giriladi
+(function() {
+  if (typeof Chart === 'undefined') return;
+  var _origRegister = Chart.register ? Chart.register.bind(Chart) : null;
+
+  // Chart yaratilganda labellarni tarjima qilish
+  var OrigChart = Chart;
+  window.Chart = function(ctx, config) {
+    if (config && config.data) {
+      var lang = getCurrentLang();
+      if (lang !== 'uz') {
+        // labels massivini tarjima qilish
+        if (Array.isArray(config.data.labels)) {
+          config.data.labels = config.data.labels.map(function(lbl) {
+            return t(lbl) !== lbl ? t(lbl) : lbl;
+          });
+        }
+        // dataset label larni tarjima qilish
+        if (Array.isArray(config.data.datasets)) {
+          config.data.datasets.forEach(function(ds) {
+            if (ds.label) ds.label = t(ds.label) !== ds.label ? t(ds.label) : ds.label;
+          });
+        }
+      }
+    }
+    return new OrigChart(ctx, config);
+  };
+  // Statik metodlarni ko'chirish
+  Object.keys(OrigChart).forEach(function(k) {
+    try { window.Chart[k] = OrigChart[k]; } catch(e) {}
+  });
+  window.Chart.prototype = OrigChart.prototype;
+})();

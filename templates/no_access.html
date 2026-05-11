@@ -1,0 +1,45 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kirish taqiqlangan | Bunyod NON CRM</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family:'Inter',sans-serif;
+            min-height:100vh;
+            display:flex; align-items:center; justify-content:center;
+            background:linear-gradient(135deg,#FEFAE0,#f2dcc2);
+        }
+        .box {
+            background:white; border-radius:20px;
+            padding:48px 40px; text-align:center;
+            box-shadow:0 20px 60px rgba(212,163,115,0.2);
+            max-width:400px; width:100%;
+        }
+        .icon { font-size:48px; color:#dc3545; margin-bottom:16px; }
+        h1 { font-size:20px; font-weight:700; color:#2f2a25; margin-bottom:8px; }
+        p { font-size:14px; color:#6C757D; margin-bottom:24px; }
+        a {
+            display:inline-flex; align-items:center; gap:8px;
+            background:#D4A373; color:white;
+            padding:11px 24px; border-radius:10px;
+            font-weight:600; font-size:14px; text-decoration:none;
+            transition:background 0.2s;
+        }
+        a:hover { background:#b88656; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <div class="icon"><i class="fa-solid fa-lock"></i></div>
+        <h1>Kirish taqiqlangan</h1>
+        <p>Sizning hisobingizga hech qanday rol biriktirilmagan. Iltimos, SuperAdmin bilan bog'laning.</p>
+        <a href="/logout/"><i class="fa-solid fa-right-from-bracket"></i> Chiqish</a>
+    </div>
+</body>
+</html>
