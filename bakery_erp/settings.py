@@ -24,10 +24,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-#8dh8-hxh*8j93l2k@dfu8n1rr@s2-tyezw9-iw33g1@y)bgoa'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'mybakeryerp-production.up.railway.app',
+    '.railway.app',  # Barcha railway.app domenlariga ruxsat
+]
+CSRF_TRUSTED_ORIGINS = [
+    'https://mybakeryerp-production.up.railway.app',
+    'https://*.railway.app',
+]
 
 # Application definition
 
