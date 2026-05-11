@@ -18,3 +18,5 @@ django-rosetta>=0.10.3
 
 # Required for Django ImageField (hr.Employee.photo, production.Product.image)
 Pillow
+whitenoise
+gunicorn
