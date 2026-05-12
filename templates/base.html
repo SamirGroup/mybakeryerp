@@ -59,6 +59,13 @@
                         <span data-i18n="nav_products">Mahsulotlar</span>
                     </a>
                 </li>
+                <li>
+                    <a href="/production/manage/?tab=tab-categories" style="padding-left:32px;font-size:13px;"
+                        class="{% if '/production/manage' in request.path and 'tab=tab-categories' in request.get_full_path %}active{% endif %}">
+                        <i class="fa-solid fa-folder"></i>
+                        <span>Kategoriyalar</span>
+                    </a>
+                </li>
                 {% endif %}
 
                 {% if is_production_mgr and not is_superadmin %}
@@ -73,6 +80,13 @@
                         class="{% if '/production/manage' in request.path %}active{% endif %}">
                         <i class="fa-solid fa-box-open"></i>
                         <span data-i18n="nav_products">Mahsulotlar</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/production/manage/?tab=tab-categories" style="padding-left:32px;font-size:13px;"
+                        class="{% if '/production/manage' in request.path and 'tab=tab-categories' in request.get_full_path %}active{% endif %}">
+                        <i class="fa-solid fa-folder"></i>
+                        <span>Kategoriyalar</span>
                     </a>
                 </li>
                 {% endif %}
@@ -99,6 +113,12 @@
                     <a href="/hr/" class="{% if '/hr/' in request.path %}active{% endif %}">
                         <i class="fa-solid fa-users"></i>
                         <span data-i18n="nav_hr">HR Bo'limi</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/hr/?tab=positions" class="{% if '/hr/' in request.path and 'tab=positions' in request.get_full_path %}active{% endif %}" style="padding-left:32px;font-size:13px;">
+                        <i class="fa-solid fa-briefcase"></i>
+                        <span>Lavozimlar</span>
                     </a>
                 </li>
                 {% endif %}
@@ -128,6 +148,12 @@
                     </a>
                 </li>
                 <li>
+                    <a href="/production/manage/?tab=tab-categories" style="padding-left:32px;font-size:13px;">
+                        <i class="fa-solid fa-folder"></i>
+                        <span>Kategoriyalar</span>
+                    </a>
+                </li>
+                <li>
                     <a href="/sales/" class="{% if '/sales/' in request.path %}active{% endif %}">
                         <i class="fa-solid fa-cash-register"></i>
                         <span data-i18n="nav_sales">Sotuv</span>
@@ -145,6 +171,12 @@
                     <a href="/hr/" class="{% if '/hr/' in request.path %}active{% endif %}">
                         <i class="fa-solid fa-users"></i>
                         <span data-i18n="nav_hr">HR Bo'limi</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/hr/?tab=positions" style="padding-left:32px;font-size:13px;">
+                        <i class="fa-solid fa-briefcase"></i>
+                        <span>Lavozimlar</span>
                     </a>
                 </li>
                 <li>

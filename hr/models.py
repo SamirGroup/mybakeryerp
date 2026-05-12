@@ -3,6 +3,14 @@ from django.contrib.auth.models import User
 from decimal import Decimal
 
 
+class Position(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Shift(models.Model):
     name = models.CharField(max_length=100, unique=True, help_text="e.g., 1-smena, 2-smena")
     start_time = models.TimeField()
@@ -44,6 +52,14 @@ class Employee(models.Model):
 
 
 class DailyReport(models.Model):
+    ABSENCE_REASON_CHOICES = [
+        ('', '—'),
+        ('sick', 'Kasal'),
+        ('personal', 'Shaxsiy masala'),
+        ('approved', 'Sababli (tasdiqlangan)'),
+        ('no_reason', 'Sababsiz'),
+    ]
+
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='daily_reports')
     date = models.DateField()
     shift = models.ForeignKey(Shift, null=True, blank=True, on_delete=models.SET_NULL)
@@ -60,6 +76,10 @@ class DailyReport(models.Model):
     hours_absent = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Kelmagan vaqt")
     hours_left_early = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Erta ketgan vaqt")
     was_present = models.BooleanField(default=True, help_text="False bo'lsa — kelmagan kun")
+    absence_reason = models.CharField(
+        max_length=20, choices=ABSENCE_REASON_CHOICES, blank=True, default='',
+        help_text="Kelmagan sababi"
+    )
 
     class Meta:
         unique_together = ('employee', 'date', 'shift')

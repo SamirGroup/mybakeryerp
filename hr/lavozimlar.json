@@ -1,0 +1,14 @@
+[
+  {"name": "Sotuvchi", "description": "Mahsulotlarni sotish bilan shug'ullanadi"},
+  {"name": "Non yopuvchi", "description": "Non va non mahsulotlarini yopadi"},
+  {"name": "Xamir korish", "description": "Xamir tayyorlash va korish jarayoni"},
+  {"name": "Tarozi+yoyish", "description": "Xamirni tarozida o'lchab yoyish"},
+  {"name": "Zuvala+taxlash", "description": "Zuvala tayyorlash va taxlash"},
+  {"name": "Tkach urish", "description": "Tkach urish jarayoni"},
+  {"name": "2-chi patir yopuvchi", "description": "Ikkinchi smena patir yopuvchi"},
+  {"name": "Patir urash", "description": "Patir urash va shakllantirish"},
+  {"name": "Gushtli+qizil non qilish", "description": "Gushtli va qizil non tayyorlash"},
+  {"name": "Zagotovshchik", "description": "Xom ashyo va materiallarni tayyorlash"},
+  {"name": "Boshqaruvchi", "description": "Bo'lim yoki smena boshqaruvchisi"},
+  {"name": "Dostavshchik", "description": "Mahsulotlarni yetkazib berish"}
+]

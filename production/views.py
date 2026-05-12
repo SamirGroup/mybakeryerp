@@ -379,6 +379,28 @@ def manage_products(request):
             else:
                 messages.error(request, "Kategoriya nomi majburiy.")
 
+        elif action == 'edit_category':
+            cid = request.POST.get('category_id')
+            try:
+                cat = ProductCategory.objects.get(id=cid)
+                new_name = request.POST.get('cat_name', '').strip()
+                if new_name:
+                    cat.name = new_name
+                    cat.save()
+                    messages.success(request, f"Kategoriya '{cat.name}' yangilandi.")
+                else:
+                    messages.error(request, "Kategoriya nomi majburiy.")
+            except ProductCategory.DoesNotExist:
+                messages.error(request, "Kategoriya topilmadi.")
+
+        elif action == 'delete_category':
+            cid = request.POST.get('category_id')
+            try:
+                ProductCategory.objects.get(id=cid).delete()
+                messages.success(request, "Kategoriya o'chirildi.")
+            except ProductCategory.DoesNotExist:
+                messages.error(request, "Kategoriya topilmadi.")
+
         elif action == 'add_product':
             name = request.POST.get('name', '').strip()
             price_raw = request.POST.get('price', '').strip()
@@ -871,9 +893,464 @@ def recipe_print(request, recipe_id):
     return HttpResponse(html_content, content_type='text/html')
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# HELPERS
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _xlsx_response(wb, filename):
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    r = HttpResponse(buf.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    r['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return r
+
+
+def _xlsx_header(ws, headers, color='D4A373'):
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    fill = PatternFill('solid', fgColor=color)
+    bold = Font(bold=True)
+    for col, h in enumerate(headers, 1):
+        c = ws.cell(row=1, column=col, value=h)
+        c.font = bold; c.fill = fill
+        c.alignment = Alignment(horizontal='center')
+    return ws
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RETSEPT — JSON export / import
+# ─────────────────────────────────────────────────────────────────────────────
+
+@login_required
+def recipe_export_json(request):
+    if not _can_access(request.user, 'seller', 'production_manager'):
+        return JsonResponse({'ok': False}, status=403)
+    data = []
+    for recipe in Recipe.objects.select_related('product').prefetch_related('items__raw_material'):
+        data.append({
+            'product': recipe.product.name,
+            'batch_size': recipe.batch_size,
+            'items': [
+                {
+                    'ingredient': item.raw_material.name,
+                    'unit': item.raw_material.unit,
+                    'qty': str(item.quantity),
+                    'grams': str(item.quantity_grams) if item.quantity_grams else None,
+                }
+                for item in recipe.items.all()
+            ],
+        })
+    resp = HttpResponse(json.dumps(data, ensure_ascii=False, indent=2), content_type='application/json')
+    resp['Content-Disposition'] = 'attachment; filename="recipes.json"'
+    return resp
+
+
+@login_required
+def recipe_import_json(request):
+    if not _can_access(request.user, 'seller', 'production_manager'):
+        return redirect('dashboard')
+    if request.method != 'POST':
+        return redirect('manage_products')
+    f = request.FILES.get('recipe_json_file')
+    if not f:
+        messages.error(request, "JSON fayl tanlanmadi.")
+        return redirect('/production/manage/?tab=tab-recipes')
+    try:
+        data = json.loads(f.read().decode('utf-8'))
+    except Exception as e:
+        messages.error(request, f"JSON o'qishda xato: {e}")
+        return redirect('/production/manage/?tab=tab-recipes')
+    created = updated = 0
+    with transaction.atomic():
+        for entry in data:
+            prod_name = str(entry.get('product', '')).strip()
+            if not prod_name:
+                continue
+            product = Product.objects.filter(name=prod_name).first()
+            if not product:
+                product = Product.objects.create(name=prod_name, price=Decimal('0'))
+                FinishedGoodsInventory.objects.create(product=product, stock=0)
+            recipe, is_new = Recipe.objects.get_or_create(product=product, defaults={'batch_size': entry.get('batch_size', 1)})
+            recipe.batch_size = entry.get('batch_size', 1)
+            recipe.save()
+            recipe.items.all().delete()
+            for item in entry.get('items', []):
+                mat, _ = RawMaterial.objects.get_or_create(
+                    name=str(item['ingredient']).strip(),
+                    defaults={'unit': item.get('unit', 'kg'), 'stock': Decimal('0')}
+                )
+                RecipeItem.objects.create(
+                    recipe=recipe, raw_material=mat,
+                    quantity=Decimal(str(item.get('qty', 0))),
+                    quantity_grams=Decimal(str(item['grams'])) if item.get('grams') else None,
+                )
+            if is_new: created += 1
+            else: updated += 1
+    messages.success(request, f"JSON import: {created} yangi, {updated} yangilandi.")
+    return redirect('/production/manage/?tab=tab-recipes')
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MAHSULOTLAR — Excel + JSON export / import
+# ─────────────────────────────────────────────────────────────────────────────
+
+@login_required
+def products_export_excel(request):
+    if not _can_access(request.user, 'seller', 'production_manager'):
+        return redirect('dashboard')
+    import openpyxl
+    wb = openpyxl.Workbook()
+    ws = _xlsx_header(wb.active, ['Nomi', 'Kategoriya', 'Narx (UZS)'])
+    ws.title = 'Mahsulotlar'
+    for i, p in enumerate(Product.objects.select_related('category').order_by('name'), 2):
+        ws.cell(i, 1, p.name)
+        ws.cell(i, 2, p.category.name if p.category else '')
+        ws.cell(i, 3, float(p.price))
+    for col in ws.columns:
+        ws.column_dimensions[col[0].column_letter].width = 24
+    return _xlsx_response(wb, 'products.xlsx')
+
+
+@login_required
+def products_export_json(request):
+    if not _can_access(request.user, 'seller', 'production_manager'):
+        return redirect('dashboard')
+    data = [
+        {'name': p.name, 'category': p.category.name if p.category else '', 'price': str(p.price)}
+        for p in Product.objects.select_related('category').order_by('name')
+    ]
+    resp = HttpResponse(json.dumps(data, ensure_ascii=False, indent=2), content_type='application/json')
+    resp['Content-Disposition'] = 'attachment; filename="products.json"'
+    return resp
+
+
+@login_required
+def products_import_excel(request):
+    if not _can_access(request.user, 'seller', 'production_manager'):
+        return redirect('dashboard')
+    if request.method != 'POST':
+        return redirect('manage_products')
+    import openpyxl
+    f = request.FILES.get('products_excel_file')
+    if not f:
+        messages.error(request, "Fayl tanlanmadi.")
+        return redirect('/production/manage/?tab=tab-overview')
+    try:
+        ws = openpyxl.load_workbook(f).active
+        rows = list(ws.iter_rows(min_row=2, values_only=True))
+    except Exception as e:
+        messages.error(request, f"Fayl xato: {e}")
+        return redirect('/production/manage/?tab=tab-overview')
+    created = updated = 0
+    with transaction.atomic():
+        for row in rows:
+            if not row or not row[0]:
+                continue
+            name = str(row[0]).strip()
+            cat_name = str(row[1]).strip() if row[1] else ''
+            try:
+                price = Decimal(str(row[2])) if row[2] else Decimal('0')
+            except Exception:
+                price = Decimal('0')
+            cat = ProductCategory.objects.filter(name=cat_name).first() if cat_name else None
+            if not cat and cat_name:
+                cat = ProductCategory.objects.create(name=cat_name)
+            p, is_new = Product.objects.get_or_create(name=name, defaults={'price': price, 'category': cat})
+            if not is_new:
+                p.price = price; p.category = cat; p.save()
+                updated += 1
+            else:
+                FinishedGoodsInventory.objects.get_or_create(product=p)
+                created += 1
+    messages.success(request, f"Mahsulotlar import: {created} yangi, {updated} yangilandi.")
+    return redirect('/production/manage/?tab=tab-overview')
+
+
+@login_required
+def products_import_json(request):
+    if not _can_access(request.user, 'seller', 'production_manager'):
+        return redirect('dashboard')
+    if request.method != 'POST':
+        return redirect('manage_products')
+    f = request.FILES.get('products_json_file')
+    if not f:
+        messages.error(request, "JSON fayl tanlanmadi.")
+        return redirect('/production/manage/?tab=tab-overview')
+    try:
+        data = json.loads(f.read().decode('utf-8'))
+    except Exception as e:
+        messages.error(request, f"JSON xato: {e}")
+        return redirect('/production/manage/?tab=tab-overview')
+    created = updated = 0
+    with transaction.atomic():
+        for entry in data:
+            name = str(entry.get('name', '')).strip()
+            if not name:
+                continue
+            cat_name = str(entry.get('category', '')).strip()
+            try:
+                price = Decimal(str(entry.get('price', 0)))
+            except Exception:
+                price = Decimal('0')
+            cat = None
+            if cat_name:
+                cat, _ = ProductCategory.objects.get_or_create(name=cat_name)
+            p, is_new = Product.objects.get_or_create(name=name, defaults={'price': price, 'category': cat})
+            if not is_new:
+                p.price = price; p.category = cat; p.save()
+                updated += 1
+            else:
+                FinishedGoodsInventory.objects.get_or_create(product=p)
+                created += 1
+    messages.success(request, f"JSON import: {created} yangi, {updated} yangilandi.")
+    return redirect('/production/manage/?tab=tab-overview')
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# XOM ASHYO — Excel + JSON export / import
+# ─────────────────────────────────────────────────────────────────────────────
+
+@login_required
+def materials_export_excel(request):
+    if not _can_access(request.user, 'seller', 'production_manager'):
+        return redirect('dashboard')
+    import openpyxl
+    wb = openpyxl.Workbook()
+    ws = _xlsx_header(wb.active, ['Nomi', 'Birlik', 'Qoldiq'])
+    ws.title = 'Xom ashyo'
+    for i, m in enumerate(RawMaterial.objects.order_by('name'), 2):
+        ws.cell(i, 1, m.name)
+        ws.cell(i, 2, m.unit)
+        ws.cell(i, 3, float(m.stock))
+    for col in ws.columns:
+        ws.column_dimensions[col[0].column_letter].width = 22
+    return _xlsx_response(wb, 'materials.xlsx')
+
+
+@login_required
+def materials_export_json(request):
+    if not _can_access(request.user, 'seller', 'production_manager'):
+        return redirect('dashboard')
+    data = [
+        {'name': m.name, 'unit': m.unit, 'stock': str(m.stock)}
+        for m in RawMaterial.objects.order_by('name')
+    ]
+    resp = HttpResponse(json.dumps(data, ensure_ascii=False, indent=2), content_type='application/json')
+    resp['Content-Disposition'] = 'attachment; filename="materials.json"'
+    return resp
+
+
+@login_required
+def materials_import_excel(request):
+    if not _can_access(request.user, 'seller', 'production_manager'):
+        return redirect('dashboard')
+    if request.method != 'POST':
+        return redirect('manage_products')
+    import openpyxl
+    f = request.FILES.get('materials_excel_file')
+    if not f:
+        messages.error(request, "Fayl tanlanmadi.")
+        return redirect('/production/manage/?tab=tab-add-material')
+    try:
+        ws = openpyxl.load_workbook(f).active
+        rows = list(ws.iter_rows(min_row=2, values_only=True))
+    except Exception as e:
+        messages.error(request, f"Fayl xato: {e}")
+        return redirect('/production/manage/?tab=tab-add-material')
+    created = updated = 0
+    with transaction.atomic():
+        for row in rows:
+            if not row or not row[0]:
+                continue
+            name = str(row[0]).strip()
+            unit = str(row[1]).strip() if row[1] else 'kg'
+            try:
+                stock = Decimal(str(row[2])) if row[2] not in (None, '') else Decimal('0')
+            except Exception:
+                stock = Decimal('0')
+            m, is_new = RawMaterial.objects.get_or_create(name=name, defaults={'unit': unit, 'stock': stock})
+            if not is_new:
+                m.unit = unit; m.stock = stock; m.save()
+                updated += 1
+            else:
+                created += 1
+    messages.success(request, f"Xom ashyo import: {created} yangi, {updated} yangilandi.")
+    return redirect('/production/manage/?tab=tab-add-material')
+
+
+@login_required
+def materials_import_json(request):
+    if not _can_access(request.user, 'seller', 'production_manager'):
+        return redirect('dashboard')
+    if request.method != 'POST':
+        return redirect('manage_products')
+    f = request.FILES.get('materials_json_file')
+    if not f:
+        messages.error(request, "JSON fayl tanlanmadi.")
+        return redirect('/production/manage/?tab=tab-add-material')
+    try:
+        data = json.loads(f.read().decode('utf-8'))
+    except Exception as e:
+        messages.error(request, f"JSON xato: {e}")
+        return redirect('/production/manage/?tab=tab-add-material')
+    created = updated = 0
+    with transaction.atomic():
+        for entry in data:
+            name = str(entry.get('name', '')).strip()
+            if not name:
+                continue
+            unit = str(entry.get('unit', 'kg')).strip()
+            try:
+                stock = Decimal(str(entry.get('stock', 0)))
+            except Exception:
+                stock = Decimal('0')
+            m, is_new = RawMaterial.objects.get_or_create(name=name, defaults={'unit': unit, 'stock': stock})
+            if not is_new:
+                m.unit = unit; m.stock = stock; m.save()
+                updated += 1
+            else:
+                created += 1
+    messages.success(request, f"JSON import: {created} yangi, {updated} yangilandi.")
+    return redirect('/production/manage/?tab=tab-add-material')
+
+
+@login_required
+def recipe_import_template(request):
+    """Namuna Excel fayl yuklab olish."""
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment
+    except ImportError:
+        return HttpResponse("openpyxl o'rnatilmagan.", status=500)
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Retseptlar"
+    fill = PatternFill("solid", fgColor="D4A373")
+    bold = Font(bold=True)
+    headers = ['Mahsulot', 'Ingredient', 'Miqdor', 'Birlik', 'Gramm']
+    for col, h in enumerate(headers, 1):
+        c = ws.cell(row=1, column=col, value=h)
+        c.font = bold
+        c.fill = fill
+        c.alignment = Alignment(horizontal='center')
+    # Namuna qatorlar
+    samples = [
+        ['Obi Non', 'Un', 0.5, 'kg', ''],
+        ['Obi Non', 'Suv', 0.3, 'liter', ''],
+        ['Obi Non', 'Tuz', 0.01, 'kg', ''],
+        ['Patir Non', 'Un', 0.4, 'kg', ''],
+        ['Patir Non', 'Yog', 0.05, 'kg', ''],
+    ]
+    for i, row in enumerate(samples, 2):
+        for j, val in enumerate(row, 1):
+            ws.cell(row=i, column=j, value=val)
+    for col in ws.columns:
+        ws.column_dimensions[col[0].column_letter].width = 20
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    resp = HttpResponse(buf.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    resp['Content-Disposition'] = 'attachment; filename="recipe_import_template.xlsx"'
+    return resp
+
+
+@login_required
+def recipe_import(request):
+    """Excel fayldan retseptlarni import qilish."""
+    if not _can_access(request.user, 'seller', 'production_manager'):
+        return redirect('dashboard')
+    if request.method != 'POST':
+        return redirect('manage_products')
+
+    try:
+        import openpyxl
+    except ImportError:
+        messages.error(request, "openpyxl o'rnatilmagan. pip install openpyxl")
+        return redirect('/production/manage/#tab-recipes')
+
+    f = request.FILES.get('recipe_file')
+    if not f:
+        messages.error(request, "Fayl tanlanmadi.")
+        return redirect('/production/manage/#tab-recipes')
+
+    try:
+        wb = openpyxl.load_workbook(f)
+        ws = wb.active
+        rows = list(ws.iter_rows(min_row=2, values_only=True))
+    except Exception as e:
+        messages.error(request, f"Faylni o'qishda xato: {e}")
+        return redirect('/production/manage/#tab-recipes')
+
+    # Mahsulot nomi bo'yicha guruhlash
+    from collections import defaultdict
+    recipe_data = defaultdict(list)
+    for row in rows:
+        if not row or not row[0]:
+            continue
+        prod_name = str(row[0]).strip()
+        ing_name  = str(row[1]).strip() if row[1] else ''
+        qty_raw   = row[2]
+        unit      = str(row[3]).strip() if row[3] else 'kg'
+        grams_raw = row[4]
+        if not ing_name:
+            continue
+        try:
+            qty = Decimal(str(qty_raw)) if qty_raw not in (None, '') else Decimal('0')
+        except Exception:
+            qty = Decimal('0')
+        try:
+            grams = Decimal(str(grams_raw)) if grams_raw not in (None, '') else None
+        except Exception:
+            grams = None
+        recipe_data[prod_name].append({'ing_name': ing_name, 'qty': qty, 'unit': unit, 'grams': grams})
+
+    created_count = 0
+    updated_count = 0
+    errors = []
+
+    with transaction.atomic():
+        for prod_name, items in recipe_data.items():
+            product = Product.objects.filter(name=prod_name).first()
+            if not product:
+                # Mahsulot yo'q bo'lsa avtomatik yaratamiz
+                product = Product.objects.create(name=prod_name, price=Decimal('0'))
+                FinishedGoodsInventory.objects.create(product=product, stock=0)
+
+            recipe, created = Recipe.objects.get_or_create(product=product, defaults={'batch_size': 1})
+            recipe.batch_size = 1
+            recipe.save()
+            recipe.items.all().delete()
+
+            added = 0
+            for item in items:
+                mat, _ = RawMaterial.objects.get_or_create(
+                    name=item['ing_name'],
+                    defaults={'unit': item['unit'], 'stock': Decimal('0')}
+                )
+                RecipeItem.objects.create(
+                    recipe=recipe,
+                    raw_material=mat,
+                    quantity=item['qty'],
+                    quantity_grams=item['grams'],
+                )
+                added += 1
+
+            if created:
+                created_count += 1
+            else:
+                updated_count += 1
+
+    msg = f"Import tugadi: {created_count} ta yangi, {updated_count} ta yangilangan retsept."
+    if errors:
+        msg += " Xatolar: " + "; ".join(errors)
+    messages.success(request, msg)
+    return redirect('/production/manage/#tab-recipes')
+
+
 @login_required
 def recipe_json(request, recipe_id):
-    """AJAX: Get recipe details as JSON for modal forms."""
     if not _can_access(request.user, 'seller', 'production_manager'):
         return JsonResponse({'ok': False}, status=403)
     

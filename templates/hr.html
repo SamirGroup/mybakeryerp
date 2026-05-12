@@ -222,6 +222,9 @@
             <div class="tab-link" onclick="switchTab('reports', this)">
                 <i class="fa-solid fa-clipboard-list"></i> <span>Smena va kunlik hisobot</span>
             </div>
+            <div class="tab-link" onclick="switchTab('positions', this)">
+                <i class="fa-solid fa-briefcase"></i> <span>Lavozimlar</span>
+            </div>
         </div>
     </div>
 
@@ -262,6 +265,7 @@
 
                         <div style="display:flex; gap:8px; align-items:center;">
                             <button type="button" class="action-btn" style="background:var(--warm-1);color:#5c4b3a;width:auto;padding:0 12px;font-weight:700;font-size:12px;" onclick="openEditEmployeeModal({{ emp.id }})">Tahrirlash</button>
+                            <a href="/hr/employee/{{ emp.id }}/report/" class="action-btn" style="background:#eef2ff;color:#4f46e5;width:auto;padding:0 12px;font-weight:700;font-size:12px;text-decoration:none;">Hisobot</a>
                             <form method="POST" style="display:inline;">
                                 {% csrf_token %}
                                 <input type="hidden" name="action" value="change_status">
@@ -593,6 +597,129 @@
         </section>
     </div>
 
+    <div id="pane-positions" class="tab-pane" style="grid-column: span 12; display: none;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 22px;">
+            <section class="panel">
+                <h3 class="hero-title" style="font-size:18px; margin-bottom:18px;">Yangi lavozim qo'shish</h3>
+                <form method="POST" class="premium-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_position">
+                    <div class="form-group">
+                        <label>Lavozim nomi</label>
+                        <input type="text" name="position_name" class="form-control" required placeholder="Masalan: Novvoy">
+                    </div>
+                    <div class="form-group">
+                        <label>Tavsif (ixtiyoriy)</label>
+                        <textarea name="position_desc" class="form-control" rows="2" placeholder="Qisqacha tavsif"></textarea>
+                    </div>
+                    <button type="submit" class="submit-btn"><i class="fa-solid fa-plus"></i> Qo'shish</button>
+                </form>
+            </section>
+
+            <section class="panel">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+                    <h3 class="hero-title" style="font-size:18px;margin:0;">Mavjud lavozimlar
+                        <span style="font-size:13px;font-weight:600;color:var(--muted-ink);margin-left:8px;">{{ positions|length }} ta</span>
+                    </h3>
+                    <div style="display:flex;gap:8px;">
+                        <a href="/hr/positions-export-json/"
+                           style="padding:7px 14px;border-radius:8px;background:#2a7f42;color:white;font-size:12px;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:6px;">
+                            <i class="fa-solid fa-file-arrow-down"></i> JSON Export
+                        </a>
+                        <button type="button"
+                            onclick="document.getElementById('importPositionsModal').style.display='flex'"
+                            style="padding:7px 14px;border-radius:8px;background:#4f46e5;color:white;font-size:12px;font-weight:700;border:none;cursor:pointer;display:flex;align-items:center;gap:6px;">
+                            <i class="fa-solid fa-file-arrow-up"></i> JSON Import
+                        </button>
+                    </div>
+                </div>
+                {% for pos in positions %}
+                <div class="emp-row">
+                    <div class="emp-main">
+                        <div class="emp-avatar" style="background:#eef2ff;color:#4f46e5;"><i class="fa-solid fa-briefcase" style="font-size:16px;"></i></div>
+                        <div>
+                            <div class="emp-name">{{ pos.name }}</div>
+                            {% if pos.description %}<div class="emp-pos">{{ pos.description }}</div>{% endif %}
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:8px;">
+                        <button type="button" class="action-btn" style="background:var(--warm-1);color:#5c4b3a;width:auto;padding:0 12px;font-weight:700;font-size:12px;"
+                            onclick="openEditPositionModal({{ pos.id }}, '{{ pos.name|escapejs }}', '{{ pos.description|escapejs }}')">Tahrirlash</button>
+                        <form method="POST" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_position">
+                            <input type="hidden" name="position_id" value="{{ pos.id }}">
+                            <button type="submit" class="action-btn btn-delete" onclick="return confirm('Lavozim o\'chirilsinmi?')"><i class="fa-solid fa-trash"></i></button>
+                        </form>
+                    </div>
+                </div>
+                {% empty %}
+                <div style="text-align:center;padding:40px 0;color:var(--muted-ink);"><i class="fa-solid fa-briefcase" style="font-size:32px;opacity:0.3;"></i><p style="margin-top:12px;">Lavozimlar yo'q</p></div>
+                {% endfor %}
+            </section>
+        </div>
+    </div>
+
+    <!-- Import Positions Modal -->
+    <div id="importPositionsModal" style="display:none;position:fixed;inset:0;background:rgba(47,42,37,0.52);z-index:10002;align-items:center;justify-content:center;padding:16px;"
+         onclick="if(event.target===this)this.style.display='none';">
+        <div style="background:#fffdf7;border-radius:18px;max-width:480px;width:100%;padding:26px 28px;border:1px solid var(--line-soft);box-shadow:0 24px 48px rgba(47,42,37,0.14);"
+             onclick="event.stopPropagation();">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                <h3 style="margin:0;font-family:'Lexend',sans-serif;font-size:18px;color:var(--ink);"><i class="fa-solid fa-file-arrow-up" style="color:#4f46e5;"></i> Lavozimlarni JSON import</h3>
+                <button onclick="document.getElementById('importPositionsModal').style.display='none'" style="border:none;background:none;font-size:22px;cursor:pointer;color:#888;">&times;</button>
+            </div>
+            <div style="background:#f0f4ff;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#2d3a8c;">
+                <strong>Format:</strong> Avval <a href="/hr/positions-export-json/" style="color:#4f46e5;font-weight:700;">JSON export</a> qilib olingan faylni yuklang.<br>
+                <span style="font-size:12px;color:#555;margin-top:4px;display:block;">
+                    Mavjud lavozim yangilanadi, yangilari qo'shiladi.
+                </span>
+            </div>
+            <form method="POST" enctype="multipart/form-data" action="/hr/positions-import-json/">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label style="font-size:13px;font-weight:700;color:var(--muted-ink);">JSON fayl (.json)</label>
+                    <input type="file" name="positions_json_file" accept=".json" class="form-control" required style="margin-top:6px;">
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+                    <button type="button" onclick="document.getElementById('importPositionsModal').style.display='none'"
+                        style="padding:10px 18px;border:1px solid #ccc;border-radius:8px;background:#f5f5f5;cursor:pointer;font-weight:700;">Bekor</button>
+                    <button type="submit"
+                        style="padding:10px 18px;border:none;border-radius:8px;background:#4f46e5;color:white;cursor:pointer;font-weight:700;">
+                        <i class="fa-solid fa-file-arrow-up"></i> Import qilish
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Position Modal -->
+    <div id="editPositionModal" role="dialog" aria-modal="true" style="display:none;position:fixed;inset:0;background:rgba(47,42,37,0.48);z-index:10001;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)closeEditPositionModal();">
+        <div style="background:#fffdf7;border-radius:18px;max-width:480px;width:100%;padding:26px 28px;border:1px solid var(--line-soft);box-shadow:0 24px 48px rgba(47,42,37,0.14);" onclick="event.stopPropagation();">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                <h3 style="margin:0;font-family:'Lexend',sans-serif;font-size:20px;color:var(--ink);">Lavozimni tahrirlash</h3>
+                <button type="button" class="action-btn" style="background:var(--line-soft);color:var(--ink);" onclick="closeEditPositionModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form method="POST" class="premium-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_position">
+                <input type="hidden" name="position_id" id="ep_id">
+                <div class="form-group">
+                    <label>Lavozim nomi</label>
+                    <input type="text" name="position_name" id="ep_name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Tavsif</label>
+                    <textarea name="position_desc" id="ep_desc" class="form-control" rows="2"></textarea>
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;">
+                    <button type="button" class="submit-btn" style="width:auto;background:#e8e4dc;color:var(--ink);box-shadow:none;" onclick="closeEditPositionModal()">Bekor</button>
+                    <button type="submit" class="submit-btn" style="width:auto;"><i class="fa-solid fa-floppy-disk"></i> Saqlash</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="editEmployeeModal" role="dialog" aria-modal="true" style="display:none;position:fixed;inset:0;background:rgba(47,42,37,0.48);z-index:10001;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)closeEditEmployeeModal();">
         <div style="background:#fffdf7;border-radius:18px;max-width:720px;width:100%;max-height:92vh;overflow-y:auto;padding:26px 28px;border:1px solid var(--line-soft);box-shadow:0 24px 48px rgba(47,42,37,0.14);" onclick="event.stopPropagation();">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px;">
@@ -694,6 +821,17 @@
 
 {% block extra_scripts %}
 <script>
+    function openEditPositionModal(id, name, desc) {
+        document.getElementById('ep_id').value = id;
+        document.getElementById('ep_name').value = name;
+        document.getElementById('ep_desc').value = desc;
+        document.getElementById('editPositionModal').style.display = 'flex';
+    }
+
+    function closeEditPositionModal() {
+        document.getElementById('editPositionModal').style.display = 'none';
+    }
+
     function switchTab(tabId, btn) {
         document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
         document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
@@ -706,6 +844,16 @@
         activePane.style.opacity = 0;
         setTimeout(() => { activePane.style.transition = 'opacity 0.3s'; activePane.style.opacity = 1; }, 10);
     }
+
+    // URL parametr orqali tab ochish
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        if (tabParam) {
+            const btn = document.querySelector(`.tab-link[onclick*="'${tabParam}'"]`);
+            if (btn) switchTab(tabParam, btn);
+        }
+    });
 
     function toggleSalaryFields(checkbox) {
         document.getElementById('piecework-row').style.display = checkbox.checked ? 'block' : 'none';

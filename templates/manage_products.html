@@ -583,19 +583,35 @@
 
     <div class="manage-tabs">
         <button class="manage-tab-btn active" onclick="showManageTab('tab-overview', this)">Katalog</button>
+        <button class="manage-tab-btn" onclick="showManageTab('tab-categories', this)">📂 Kategoriyalar</button>
         <button class="manage-tab-btn" onclick="showManageTab('tab-add-product', this)">Yangi mahsulot</button>
         <button class="manage-tab-btn" onclick="showManageTab('tab-add-material', this)">Yangi xom ashyo</button>
         <button class="manage-tab-btn" onclick="showManageTab('tab-recipes', this)">Retseptlar</button>
         <button class="manage-tab-btn" onclick="showManageTab('tab-day-balance', this)">Kunlik ombor</button>
     </div>
 
-    <div id="tab-overview" class="manage-tab-content grid-2 active">
-        <div class="mg-card">
+    <div id="tab-overview" class="manage-tab-content active" style="grid-template-columns:1fr;">
+        <!-- Sub-tab tugmalari -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button id="sub-btn-products" class="manage-tab-btn active" onclick="switchOverviewSub('products')">
+                <i class="fa-solid fa-box-open"></i> Mahsulotlar ro'yxati
+                <span class="count-pill" style="margin-left:6px;background:rgba(255,255,255,0.35);">{{ product_count }}</span>
+            </button>
+            <button id="sub-btn-materials" class="manage-tab-btn" onclick="switchOverviewSub('materials')">
+                <i class="fa-solid fa-wheat-awn"></i> Xom ashyo ombori
+                <span class="count-pill" style="margin-left:6px;">{{ material_count }}</span>
+            </button>
+        </div>
+
+        <!-- Mahsulotlar panel -->
+        <div id="sub-products" class="mg-card">
             <div class="section-head">
                 <h3>Mahsulotlar ro'yxati</h3>
                 <div class="section-tools">
                     <input id="productsSearch" class="table-search" type="text" placeholder="Mahsulot qidirish...">
-                    <span class="count-pill">{{ product_count }} ta</span>
+                    <a href="/production/products-export-excel/" class="receive-btn" style="background:#555;text-decoration:none;">📊 Excel</a>
+                    <a href="/production/products-export-json/" class="receive-btn" style="background:#2a7f42;text-decoration:none;">📄 JSON</a>
+                    <button type="button" class="receive-btn" style="background:#4f46e5;" onclick="document.getElementById('importProductsModal').style.display='flex'">📥 Import</button>
                 </div>
             </div>
             <div class="table-wrap">
@@ -647,12 +663,15 @@
             </div>
         </div>
 
-        <div class="mg-card">
+        <!-- Xom ashyo panel -->
+        <div id="sub-materials" class="mg-card" style="display:none;">
             <div class="section-head">
                 <h3>Xom ashyo ombori</h3>
                 <div class="section-tools">
                     <input id="materialsSearch" class="table-search" type="text" placeholder="Xom ashyo qidirish...">
-                    <span class="count-pill">{{ material_count }} ta</span>
+                    <a href="/production/materials-export-excel/" class="receive-btn" style="background:#555;text-decoration:none;">📊 Excel</a>
+                    <a href="/production/materials-export-json/" class="receive-btn" style="background:#2a7f42;text-decoration:none;">📄 JSON</a>
+                    <button type="button" class="receive-btn" style="background:#4f46e5;" onclick="document.getElementById('importMaterialsModal').style.display='flex'">📥 Import</button>
                 </div>
             </div>
             <div class="mg-sub">Tayyor mahsulot taxminiy qiymati: <strong>{{ inventory_value|floatformat:0 }} UZS</strong></div>
@@ -691,6 +710,8 @@
                                 </form>
                             </td>
                             <td>
+                                <button type="button" class="receive-btn" style="background:#d4a373;margin-right:4px;"
+                                    onclick="openEditMaterialModal({{ mat.id }}, '{{ mat.name|escapejs }}', '{{ mat.unit }}', '{{ mat.stock }}')">Tahrirlash</button>
                                 <form method="POST" style="display:inline;">
                                     {% csrf_token %}
                                     <input type="hidden" name="action" value="delete_material">
@@ -708,21 +729,59 @@
         </div>
     </div>
 
+    <!-- ═══ TAB: KATEGORIYALAR ═══ -->
+    <div id="tab-categories" class="manage-tab-content grid-main">
+        <div class="mg-card">
+            <h3>Yangi kategoriya qo'shish</h3>
+            <div class="mg-sub">Mahsulotlarni guruhlash uchun kategoriyalar yarating.</div>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_category">
+                <div class="form-group">
+                    <label>Kategoriya nomi</label>
+                    <input type="text" name="cat_name" class="form-control" required placeholder="Masalan: Non, Shirinlik, Ichimlik">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;">
+                    <i class="fa-solid fa-plus"></i> Kategoriya qo'shish
+                </button>
+            </form>
+        </div>
+        <div class="mg-card">
+            <div class="section-head">
+                <h3>Mavjud kategoriyalar</h3>
+                <span class="count-pill">{{ categories|length }} ta</span>
+            </div>
+            <div class="mg-sub">Kategoriyani tahrirlash yoki o'chirish uchun tugmalardan foydalaning.</div>
+            {% for cat in categories %}
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fdfaf5;border-radius:12px;margin-bottom:8px;border:1px solid rgba(120,97,74,0.15);">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="width:32px;height:32px;border-radius:8px;background:rgba(212,163,115,0.18);display:flex;align-items:center;justify-content:center;font-size:14px;">📂</span>
+                    <div>
+                        <div style="font-weight:700;color:#3b322a;font-size:14px;">{{ cat.name }}</div>
+                        <div style="font-size:11px;color:#8a7f73;">{{ cat.products.count }} ta mahsulot</div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:6px;">
+                    <button type="button" class="receive-btn" style="background:#d4a373;padding:6px 12px;font-size:12px;"
+                        onclick="openEditCategoryModal({{ cat.id }}, '{{ cat.name|escapejs }}')">✏️ Tahrirlash</button>
+                    <form method="POST" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="delete_category">
+                        <input type="hidden" name="category_id" value="{{ cat.id }}">
+                        <button type="submit" class="danger-btn" onclick="return confirm('Kategoriya o\'chirilsinmi? Mahsulotlar kategoriyasiz qoladi.')">🗑 O'chirish</button>
+                    </form>
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-box">Kategoriyalar hozircha yo'q.</div>
+            {% endfor %}
+        </div>
+    </div>
+
     <div id="tab-add-product" class="manage-tab-content grid-main">
         <div class="mg-card">
             <h3>Yangi mahsulot qo'shish</h3>
             <div class="mg-sub">Mahsulot qo'shilganda avtomatik 0 qoldiq bilan inventar yaratiladi.</div>
-            <form method="POST" style="margin-bottom:14px;">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="add_category">
-                <div class="form-group">
-                    <label>Kategoriya qo'shish</label>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                        <input type="text" name="cat_name" class="form-control" placeholder="Yangi kategoriya nomi" style="flex:1;min-width:180px;">
-                        <button type="submit" class="btn btn-primary">Saqlash</button>
-                    </div>
-                </div>
-            </form>
             <form method="POST" enctype="multipart/form-data" id="add-product-form">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="add_product">
@@ -965,7 +1024,9 @@
                 <h3>Mavjud retseptlar</h3>
                 <div class="section-tools">
                     <input id="recipesSearch" class="table-search" type="text" placeholder="Retsept qidirish...">
-                    <a href="?export=excel" class="btn-icon" title="Excel yuklab olish">📊</a>
+                    <a href="?export=excel" class="receive-btn" style="background:#555;text-decoration:none;">📊 Excel</a>
+                    <a href="/production/recipe-export-json/" class="receive-btn" style="background:#2a7f42;text-decoration:none;">📄 JSON</a>
+                    <button type="button" class="receive-btn" style="background:#4f46e5;" onclick="document.getElementById('importRecipeModal').style.display='flex'">📥 Import</button>
                     <span class="count-pill">{{ recipe_count }} ta</span>
                 </div>
             </div>
@@ -1094,6 +1155,26 @@
         </div>
     </div>
 
+    <!-- Edit Category Modal -->
+    <div id="editCategoryModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+        <div style="background:white;padding:26px;border-radius:14px;max-width:400px;width:92%;">
+            <h3 style="margin-top:0;">Kategoriyani tahrirlash</h3>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_category">
+                <input type="hidden" name="category_id" id="editCatId">
+                <div class="form-group">
+                    <label>Kategoriya nomi</label>
+                    <input type="text" name="cat_name" id="editCatName" class="form-control" required>
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+                    <button type="button" onclick="document.getElementById('editCategoryModal').style.display='none'" style="padding:10px 18px;border:1px solid #ccc;border-radius:8px;background:#f5f5f5;cursor:pointer;font-weight:700;">Bekor</button>
+                    <button type="submit" style="padding:10px 18px;border:none;border-radius:8px;background:#d4a373;color:white;cursor:pointer;font-weight:700;">Saqlash</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
         <!-- Edit product modal -->
     <div id="editProductModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9998; align-items:center; justify-content:center;">
         <div style="background:white; padding:26px; border-radius:14px; max-width:480px; width:92%; max-height:90vh; overflow-y:auto;">
@@ -1144,6 +1225,111 @@
         </div>
     </div>
 
+    <!-- Import Products Modal -->
+    <div id="importProductsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:10000;align-items:center;justify-content:center;">
+        <div style="background:white;padding:28px;border-radius:16px;max-width:520px;width:94%;max-height:90vh;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h3 style="margin:0;font-size:18px;color:#2f2a25;">📥 Mahsulotlar import</h3>
+                <button onclick="document.getElementById('importProductsModal').style.display='none'" style="border:none;background:none;font-size:22px;cursor:pointer;color:#888;">&times;</button>
+            </div>
+            <div style="border:1px solid #e0d5c8;border-radius:12px;padding:16px;margin-bottom:14px;">
+                <div style="font-weight:700;color:#3b322a;margin-bottom:8px;">📊 Excel (.xlsx)</div>
+                <div style="background:#f0f7ff;border-radius:8px;padding:8px;margin-bottom:10px;font-size:12px;color:#1a4a7a;">Format: <code>Nomi | Kategoriya | Narx (UZS)</code></div>
+                <form method="POST" enctype="multipart/form-data" action="/production/products-import-excel/">
+                    {% csrf_token %}
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <input type="file" name="products_excel_file" accept=".xlsx,.xls" class="form-control" required style="flex:1;">
+                        <button type="submit" style="padding:9px 16px;border:none;border-radius:8px;background:#4f46e5;color:white;cursor:pointer;font-weight:700;">Import</button>
+                    </div>
+                </form>
+            </div>
+            <div style="border:1px solid #e0d5c8;border-radius:12px;padding:16px;">
+                <div style="font-weight:700;color:#3b322a;margin-bottom:8px;">📄 JSON</div>
+                <div style="background:#f0fff4;border-radius:8px;padding:8px;margin-bottom:10px;font-size:12px;color:#1a5c2a;">Avval <a href="/production/products-export-json/" style="color:#2a7f42;font-weight:700;">JSON export</a> qilib olingan faylni yuklang.</div>
+                <form method="POST" enctype="multipart/form-data" action="/production/products-import-json/">
+                    {% csrf_token %}
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <input type="file" name="products_json_file" accept=".json" class="form-control" required style="flex:1;">
+                        <button type="submit" style="padding:9px 16px;border:none;border-radius:8px;background:#2a7f42;color:white;cursor:pointer;font-weight:700;">Import</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Materials Modal -->
+    <div id="importMaterialsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:10000;align-items:center;justify-content:center;">
+        <div style="background:white;padding:28px;border-radius:16px;max-width:520px;width:94%;max-height:90vh;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h3 style="margin:0;font-size:18px;color:#2f2a25;">📥 Xom ashyo import</h3>
+                <button onclick="document.getElementById('importMaterialsModal').style.display='none'" style="border:none;background:none;font-size:22px;cursor:pointer;color:#888;">&times;</button>
+            </div>
+            <div style="border:1px solid #e0d5c8;border-radius:12px;padding:16px;margin-bottom:14px;">
+                <div style="font-weight:700;color:#3b322a;margin-bottom:8px;">📊 Excel (.xlsx)</div>
+                <div style="background:#f0f7ff;border-radius:8px;padding:8px;margin-bottom:10px;font-size:12px;color:#1a4a7a;">Format: <code>Nomi | Birlik | Qoldiq</code></div>
+                <form method="POST" enctype="multipart/form-data" action="/production/materials-import-excel/">
+                    {% csrf_token %}
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <input type="file" name="materials_excel_file" accept=".xlsx,.xls" class="form-control" required style="flex:1;">
+                        <button type="submit" style="padding:9px 16px;border:none;border-radius:8px;background:#4f46e5;color:white;cursor:pointer;font-weight:700;">Import</button>
+                    </div>
+                </form>
+            </div>
+            <div style="border:1px solid #e0d5c8;border-radius:12px;padding:16px;">
+                <div style="font-weight:700;color:#3b322a;margin-bottom:8px;">📄 JSON</div>
+                <div style="background:#f0fff4;border-radius:8px;padding:8px;margin-bottom:10px;font-size:12px;color:#1a5c2a;">Avval <a href="/production/materials-export-json/" style="color:#2a7f42;font-weight:700;">JSON export</a> qilib olingan faylni yuklang.</div>
+                <form method="POST" enctype="multipart/form-data" action="/production/materials-import-json/">
+                    {% csrf_token %}
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <input type="file" name="materials_json_file" accept=".json" class="form-control" required style="flex:1;">
+                        <button type="submit" style="padding:9px 16px;border:none;border-radius:8px;background:#2a7f42;color:white;cursor:pointer;font-weight:700;">Import</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Recipe Modal -->
+    <div id="importRecipeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:10000;align-items:center;justify-content:center;">
+        <div style="background:white;padding:28px;border-radius:16px;max-width:560px;width:94%;max-height:90vh;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h3 style="margin:0;font-size:18px;color:#2f2a25;">📥 Retsept import qilish</h3>
+                <button onclick="document.getElementById('importRecipeModal').style.display='none'" style="border:none;background:none;font-size:22px;cursor:pointer;color:#888;">&times;</button>
+            </div>
+
+            <!-- Excel import -->
+            <div style="border:1px solid #e0d5c8;border-radius:12px;padding:16px;margin-bottom:14px;">
+                <div style="font-weight:700;color:#3b322a;margin-bottom:8px;">📊 Excel (.xlsx) orqali import</div>
+                <div style="background:#f0f7ff;border-radius:8px;padding:10px;margin-bottom:10px;font-size:12px;color:#1a4a7a;">
+                    Format: <code>Mahsulot | Ingredient | Miqdor | Birlik | Gramm</code>
+                </div>
+                <a href="/production/recipe-import-template/" class="receive-btn" style="background:#2a7f42;text-decoration:none;display:inline-block;margin-bottom:10px;font-size:12px;">📄 Namuna xlsx</a>
+                <form method="POST" enctype="multipart/form-data" action="/production/recipe-import/">
+                    {% csrf_token %}
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <input type="file" name="recipe_file" accept=".xlsx,.xls" class="form-control" required style="flex:1;">
+                        <button type="submit" style="padding:9px 16px;border:none;border-radius:8px;background:#4f46e5;color:white;cursor:pointer;font-weight:700;white-space:nowrap;">Import</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- JSON import -->
+            <div style="border:1px solid #e0d5c8;border-radius:12px;padding:16px;">
+                <div style="font-weight:700;color:#3b322a;margin-bottom:8px;">📄 JSON orqali import</div>
+                <div style="background:#f0fff4;border-radius:8px;padding:10px;margin-bottom:10px;font-size:12px;color:#1a5c2a;">
+                    Avval <a href="/production/recipe-export-json/" style="color:#2a7f42;font-weight:700;">JSON export</a> qilib, boshqa serverdan olingan faylni yuklang.
+                </div>
+                <form method="POST" enctype="multipart/form-data" action="/production/recipe-import-json/">
+                    {% csrf_token %}
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <input type="file" name="recipe_json_file" accept=".json" class="form-control" required style="flex:1;">
+                        <button type="submit" style="padding:9px 16px;border:none;border-radius:8px;background:#2a7f42;color:white;cursor:pointer;font-weight:700;white-space:nowrap;">Import</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal for Recipe Editing -->
     <div id="editRecipeModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
         <div style="background:white; padding:30px; border-radius:10px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto;">
@@ -1183,6 +1369,14 @@
         { id: {{ m.id }}, name: "{{ m.name }}", unit: "{{ m.unit }}" }{% if not forloop.last %},{% endif %}
         {% endfor %}
     ];
+
+    function switchOverviewSub(name) {
+        ['products', 'materials'].forEach(n => {
+            document.getElementById('sub-' + n).style.display = n === name ? '' : 'none';
+            document.getElementById('sub-btn-' + n).classList.toggle('active', n === name);
+        });
+        localStorage.setItem('overviewSub', name);
+    }
 
     function showManageTab(tabId, btn) {
         document.querySelectorAll('.manage-tab-content').forEach(t => t.classList.remove('active'));
@@ -1243,6 +1437,12 @@
             }
         };
         return false;
+    }
+
+    function openEditCategoryModal(cid, name) {
+        document.getElementById('editCatId').value = cid;
+        document.getElementById('editCatName').value = name;
+        document.getElementById('editCategoryModal').style.display = 'flex';
     }
 
     function openEditMaterialModal(mid, name, unit, stock) {
@@ -1527,11 +1727,18 @@
             if (event.target === m2) m2.style.display = 'none';
             const m3 = document.getElementById('balanceEditModal');
             if (event.target === m3) m3.style.display = 'none';
+            const m4 = document.getElementById('editCategoryModal');
+            if (event.target === m4) m4.style.display = 'none';
+            ['importRecipeModal','importProductsModal','importMaterialsModal'].forEach(id => {
+                const el = document.getElementById(id);
+                if (event.target === el) el.style.display = 'none';
+            });
         });
 
         const savedTab = localStorage.getItem('manageProductsActiveTab');
         const hashTab = location.hash.replace('#', '');
-        const activeTabId = hashTab && document.getElementById(hashTab) ? hashTab : savedTab;
+        const urlTab = new URLSearchParams(location.search).get('tab');
+        const activeTabId = urlTab || (hashTab && document.getElementById(hashTab) ? hashTab : savedTab);
         if (activeTabId) {
             const targetTab = document.getElementById(activeTabId);
             const targetBtn = Array.from(document.querySelectorAll('.manage-tab-btn')).find((btn) => btn.getAttribute('onclick')?.includes(activeTabId));
@@ -1539,6 +1746,10 @@
                 showManageTab(activeTabId, targetBtn);
             }
         }
+
+        // Overview sub-tab holatini tiklash
+        const savedSub = localStorage.getItem('overviewSub');
+        if (savedSub === 'materials') switchOverviewSub('materials');
 
         const productsSearch = document.getElementById('productsSearch');
         const materialsSearch = document.getElementById('materialsSearch');

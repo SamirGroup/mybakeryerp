@@ -1,4 +1,5 @@
 import io
+import json
 from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 
@@ -10,7 +11,7 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 from urllib.parse import urlencode
 
-from .models import AdvancePayment, DailyReport, Employee, Shift
+from .models import AdvancePayment, DailyReport, Employee, Position, Shift
 
 
 def _can_access(user, *roles):
@@ -51,6 +52,7 @@ def hr_dashboard(request):
 
     employees = Employee.objects.select_related('shift').all()
     shifts = Shift.objects.all().order_by('name')
+    positions = Position.objects.all().order_by('name')
     advances = AdvancePayment.objects.select_related('employee').order_by('-date')[:15]
 
     date_from, date_to = _date_range(request)
@@ -99,6 +101,39 @@ def hr_dashboard(request):
                 messages.success(request, "Smena o'chirildi.")
             except Shift.DoesNotExist:
                 messages.error(request, "Smena topilmadi.")
+
+        elif action == 'add_position':
+            name = request.POST.get('position_name', '').strip()
+            desc = request.POST.get('position_desc', '').strip()
+            if name:
+                _, created = Position.objects.get_or_create(name=name, defaults={'description': desc})
+                if created:
+                    messages.success(request, f"Lavozim '{name}' qo'shildi.")
+                else:
+                    messages.warning(request, f"'{name}' lavozimi allaqachon mavjud.")
+            else:
+                messages.error(request, "Lavozim nomi majburiy.")
+
+        elif action == 'edit_position':
+            pid = request.POST.get('position_id')
+            try:
+                pos = Position.objects.get(id=pid)
+                new_name = request.POST.get('position_name', '').strip()
+                if new_name:
+                    pos.name = new_name
+                pos.description = request.POST.get('position_desc', '').strip()
+                pos.save()
+                messages.success(request, f"Lavozim '{pos.name}' yangilandi.")
+            except Position.DoesNotExist:
+                messages.error(request, "Lavozim topilmadi.")
+
+        elif action == 'delete_position':
+            pid = request.POST.get('position_id')
+            try:
+                Position.objects.get(id=pid).delete()
+                messages.success(request, "Lavozim o'chirildi.")
+            except Position.DoesNotExist:
+                messages.error(request, "Lavozim topilmadi.")
 
         elif action == 'add_employee':
             name = request.POST.get('name', '').strip()
@@ -289,6 +324,7 @@ def hr_dashboard(request):
         'seller_users': seller_users,
         'employee_edit_payload': employee_edit_payload,
         'shifts': shifts,
+        'positions': positions,
         'advances': advances,
         'daily_reports': daily_reports,
         'today': timezone.localdate(),
@@ -300,6 +336,440 @@ def hr_dashboard(request):
         'pos_filter': pos_filter,
     }
     return render(request, 'hr.html', context)
+
+
+@login_required
+def employee_report(request, emp_id):
+    if not _can_access(request.user, 'hr'):
+        return redirect('dashboard')
+
+    emp = Employee.objects.select_related('shift').get(id=emp_id)
+
+    # --- Sana oralig'i ---
+    period = request.GET.get('period', 'month')
+    today = timezone.localdate()
+    if period == 'today':
+        date_from = date_to = today
+    elif period == 'week':
+        date_from = today - timedelta(days=6)
+        date_to = today
+    elif period == 'custom':
+        try:
+            date_from = date.fromisoformat(request.GET.get('date_from', ''))
+            date_to = date.fromisoformat(request.GET.get('date_to', ''))
+        except ValueError:
+            date_from = today.replace(day=1)
+            date_to = today
+    else:  # month
+        date_from = today.replace(day=1)
+        date_to = today
+
+    # --- POST: hisobot tahrirlash ---
+    if request.method == 'POST':
+        action = request.POST.get('action', '')
+        if action == 'edit_report':
+            rid = request.POST.get('report_id')
+            try:
+                r = DailyReport.objects.get(id=rid, employee=emp)
+                r.check_in = request.POST.get('check_in') or None
+                r.check_out = request.POST.get('check_out') or None
+                r.was_present = request.POST.get('was_present') == '1'
+                r.absence_reason = request.POST.get('absence_reason', '') if not r.was_present else ''
+                r.units_produced = int(request.POST.get('units_produced', 0) or 0)
+                r.hours_expected = _parse_decimal(request.POST.get('hours_expected'), Decimal('8')) or Decimal('8')
+                r.hours_present = _parse_decimal(request.POST.get('hours_present'))
+                r.notes = request.POST.get('notes', '')
+                r.save()
+                messages.success(request, f"{r.date} hisoboti yangilandi.")
+            except DailyReport.DoesNotExist:
+                messages.error(request, "Hisobot topilmadi.")
+        elif action == 'add_report':
+            rdate = request.POST.get('report_date', str(today))
+            shift_id = request.POST.get('shift_id', '')
+            shift = Shift.objects.filter(id=shift_id).first() if shift_id else None
+            was_present = request.POST.get('was_present') == '1'
+            absence_reason = request.POST.get('absence_reason', '') if not was_present else ''
+            DailyReport.objects.update_or_create(
+                employee=emp, date=rdate, shift=shift,
+                defaults={
+                    'check_in': request.POST.get('check_in') or None,
+                    'check_out': request.POST.get('check_out') or None,
+                    'was_present': was_present,
+                    'absence_reason': absence_reason,
+                    'units_produced': int(request.POST.get('units_produced', 0) or 0),
+                    'hours_expected': _parse_decimal(request.POST.get('hours_expected'), Decimal('8')) or Decimal('8'),
+                    'hours_present': _parse_decimal(request.POST.get('hours_present')),
+                    'notes': request.POST.get('notes', ''),
+                }
+            )
+            messages.success(request, "Hisobot saqlandi.")
+        from urllib.parse import urlencode as _ue
+        return redirect('/hr/employee/{}/report/?'.format(emp_id) + _ue({
+            'period': period,
+            'date_from': str(date_from),
+            'date_to': str(date_to),
+        }))
+
+    # --- Hisobotlar ---
+    reports = (
+        DailyReport.objects
+        .filter(employee=emp, date__gte=date_from, date__lte=date_to)
+        .order_by('date')
+    )
+
+    # --- Statistika ---
+    total_days = (date_to - date_from).days + 1
+    present_days = reports.filter(was_present=True).count()
+    absent_days = reports.filter(was_present=False).count()
+    absent_sick = reports.filter(was_present=False, absence_reason='sick').count()
+    absent_personal = reports.filter(was_present=False, absence_reason='personal').count()
+    absent_approved = reports.filter(was_present=False, absence_reason='approved').count()
+    absent_no_reason = reports.filter(was_present=False, absence_reason='no_reason').count()
+
+    total_units = sum(
+        (r.units_produced or 0) + (r.units_from_sales or 0) for r in reports
+    )
+    total_hours = sum(
+        float(r.hours_present or 0) for r in reports
+    )
+
+    # --- Oylik hisob ---
+    if emp.is_piecework:
+        # Ishbay: jami dona × stavka
+        salary_calc = Decimal(str(total_units)) * (emp.piecework_rate or Decimal('0'))
+        salary_type = 'piecework'
+    else:
+        # Kunlik: kelgan kunlar × (oylik / ish kunlari)
+        work_days_in_period = total_days
+        if work_days_in_period > 0:
+            daily_rate = (emp.base_salary or Decimal('0')) / Decimal(str(work_days_in_period))
+            salary_calc = daily_rate * Decimal(str(present_days))
+        else:
+            salary_calc = Decimal('0')
+        salary_type = 'daily'
+
+    # Avans chegirib tashlash
+    advances = AdvancePayment.objects.filter(
+        employee=emp,
+        date__gte=date_from,
+        date__lte=date_to
+    )
+    total_advance = sum(a.amount for a in advances) or Decimal('0')
+    net_salary = salary_calc - total_advance
+
+    context = {
+        'emp': emp,
+        'reports': reports,
+        'shifts': Shift.objects.all().order_by('name'),
+        'date_from': date_from,
+        'date_to': date_to,
+        'period': period,
+        'today': today,
+        'total_days': total_days,
+        'present_days': present_days,
+        'absent_days': absent_days,
+        'absent_sick': absent_sick,
+        'absent_personal': absent_personal,
+        'absent_approved': absent_approved,
+        'absent_no_reason': absent_no_reason,
+        'total_units': total_units,
+        'total_hours': round(total_hours, 2),
+        'salary_calc': salary_calc,
+        'salary_type': salary_type,
+        'total_advance': total_advance,
+        'net_salary': net_salary,
+        'advances': advances,
+        'absence_reasons': DailyReport.ABSENCE_REASON_CHOICES,
+    }
+    return render(request, 'hr_employee_report.html', context)
+
+
+@login_required
+def employee_report(request, emp_id):
+    if not _can_access(request.user, 'hr'):
+        return redirect('dashboard')
+    try:
+        emp = Employee.objects.select_related('shift').get(id=emp_id)
+    except Employee.DoesNotExist:
+        return redirect('hr_dashboard')
+
+    today = timezone.localdate()
+    period = request.GET.get('period', 'month')
+
+    if period == 'today':
+        date_from = date_to = today
+    elif period == 'week':
+        date_from = today - timedelta(days=6)
+        date_to = today
+    elif period == 'custom':
+        try:
+            date_from = date.fromisoformat(request.GET.get('date_from', ''))
+            date_to = date.fromisoformat(request.GET.get('date_to', ''))
+        except ValueError:
+            date_from = today.replace(day=1)
+            date_to = today
+    else:  # month
+        date_from = today.replace(day=1)
+        date_to = today
+
+    # POST: hisobot qo'shish yoki tahrirlash
+    if request.method == 'POST':
+        action = request.POST.get('action', '')
+        shift_id = request.POST.get('shift_id', '')
+        shift = Shift.objects.filter(id=shift_id).first() if shift_id else None
+        was_present = request.POST.get('was_present') == '1'
+        absence_reason = '' if was_present else request.POST.get('absence_reason', '')
+        defaults = {
+            'check_in': request.POST.get('check_in') or None,
+            'check_out': request.POST.get('check_out') or None,
+            'was_present': was_present,
+            'absence_reason': absence_reason,
+            'units_produced': int(request.POST.get('units_produced', 0) or 0),
+            'hours_expected': _parse_decimal(request.POST.get('hours_expected'), Decimal('8')) or Decimal('8'),
+            'hours_present': _parse_decimal(request.POST.get('hours_present')),
+            'notes': request.POST.get('notes', ''),
+        }
+        if action == 'edit_report':
+            rid = request.POST.get('report_id')
+            try:
+                r = DailyReport.objects.get(id=rid, employee=emp)
+                for k, v in defaults.items():
+                    setattr(r, k, v)
+                r.save()
+                messages.success(request, f"{r.date} hisoboti yangilandi.")
+            except DailyReport.DoesNotExist:
+                messages.error(request, "Hisobot topilmadi.")
+        elif action == 'add_report':
+            rdate = request.POST.get('report_date', str(today))
+            DailyReport.objects.update_or_create(
+                employee=emp, date=rdate, shift=shift,
+                defaults=defaults
+            )
+            messages.success(request, "Hisobot saqlandi.")
+        return redirect(f'/hr/employee/{emp_id}/report/?period={period}&date_from={date_from}&date_to={date_to}')
+
+    reports = (
+        DailyReport.objects
+        .filter(employee=emp, date__gte=date_from, date__lte=date_to)
+        .order_by('date')
+    )
+
+    present_days = reports.filter(was_present=True).count()
+    absent_days  = reports.filter(was_present=False).count()
+    absent_sick      = reports.filter(was_present=False, absence_reason='sick').count()
+    absent_personal  = reports.filter(was_present=False, absence_reason='personal').count()
+    absent_approved  = reports.filter(was_present=False, absence_reason='approved').count()
+    absent_no_reason = reports.filter(was_present=False, absence_reason='no_reason').count()
+
+    total_units = sum((r.units_produced or 0) + (r.units_from_sales or 0) for r in reports)
+    total_hours = round(sum(float(r.hours_present or 0) for r in reports), 2)
+
+    # Oylik hisob
+    total_days = (date_to - date_from).days + 1
+    if emp.is_piecework:
+        salary_calc = Decimal(str(total_units)) * (emp.piecework_rate or Decimal('0'))
+        salary_type = 'piecework'
+    else:
+        daily_rate = (emp.base_salary or Decimal('0')) / Decimal(str(total_days)) if total_days else Decimal('0')
+        salary_calc = daily_rate * Decimal(str(present_days))
+        salary_type = 'daily'
+
+    advances = AdvancePayment.objects.filter(employee=emp, date__gte=date_from, date__lte=date_to)
+    total_advance = sum(a.amount for a in advances) or Decimal('0')
+    net_salary = salary_calc - total_advance
+
+    context = {
+        'emp': emp,
+        'reports': reports,
+        'shifts': Shift.objects.all().order_by('name'),
+        'date_from': date_from,
+        'date_to': date_to,
+        'period': period,
+        'today': today,
+        'total_days': total_days,
+        'present_days': present_days,
+        'absent_days': absent_days,
+        'absent_sick': absent_sick,
+        'absent_personal': absent_personal,
+        'absent_approved': absent_approved,
+        'absent_no_reason': absent_no_reason,
+        'total_units': total_units,
+        'total_hours': total_hours,
+        'salary_calc': salary_calc,
+        'salary_type': salary_type,
+        'total_advance': total_advance,
+        'net_salary': net_salary,
+        'advances': advances,
+        'absence_reasons': DailyReport.ABSENCE_REASON_CHOICES,
+    }
+    return render(request, 'hr_employee_report.html', context)
+
+
+@login_required
+def employee_report(request, emp_id):
+    if not _can_access(request.user, 'hr'):
+        return redirect('dashboard')
+    try:
+        emp = Employee.objects.select_related('shift').get(id=emp_id)
+    except Employee.DoesNotExist:
+        return redirect('hr_dashboard')
+
+    today = timezone.localdate()
+    period = request.GET.get('period', 'month')
+
+    if period == 'today':
+        date_from = date_to = today
+    elif period == 'week':
+        date_from = today - timedelta(days=6)
+        date_to = today
+    elif period == 'custom':
+        try:
+            date_from = date.fromisoformat(request.GET.get('date_from', ''))
+            date_to   = date.fromisoformat(request.GET.get('date_to', ''))
+        except ValueError:
+            date_from = today.replace(day=1)
+            date_to   = today
+    else:  # month
+        date_from = today.replace(day=1)
+        date_to   = today
+
+    if request.method == 'POST':
+        action   = request.POST.get('action', '')
+        shift_id = request.POST.get('shift_id', '')
+        shift    = Shift.objects.filter(id=shift_id).first() if shift_id else None
+        was_present    = request.POST.get('was_present') == '1'
+        absence_reason = '' if was_present else request.POST.get('absence_reason', '')
+        defaults = {
+            'check_in':       request.POST.get('check_in') or None,
+            'check_out':      request.POST.get('check_out') or None,
+            'was_present':    was_present,
+            'absence_reason': absence_reason,
+            'units_produced': int(request.POST.get('units_produced', 0) or 0),
+            'hours_expected': _parse_decimal(request.POST.get('hours_expected'), Decimal('8')) or Decimal('8'),
+            'hours_present':  _parse_decimal(request.POST.get('hours_present')),
+            'notes':          request.POST.get('notes', ''),
+        }
+        if action == 'edit_report':
+            rid = request.POST.get('report_id')
+            try:
+                r = DailyReport.objects.get(id=rid, employee=emp)
+                for k, v in defaults.items():
+                    setattr(r, k, v)
+                r.save()
+                messages.success(request, f"{r.date} hisoboti yangilandi.")
+            except DailyReport.DoesNotExist:
+                messages.error(request, "Hisobot topilmadi.")
+        elif action == 'add_report':
+            rdate = request.POST.get('report_date', str(today))
+            DailyReport.objects.update_or_create(
+                employee=emp, date=rdate, shift=shift,
+                defaults=defaults
+            )
+            messages.success(request, "Hisobot saqlandi.")
+        return redirect(f'/hr/employee/{emp_id}/report/?period={period}&date_from={date_from}&date_to={date_to}')
+
+    reports = (
+        DailyReport.objects
+        .filter(employee=emp, date__gte=date_from, date__lte=date_to)
+        .order_by('date')
+    )
+
+    present_days     = reports.filter(was_present=True).count()
+    absent_days      = reports.filter(was_present=False).count()
+    absent_sick      = reports.filter(was_present=False, absence_reason='sick').count()
+    absent_personal  = reports.filter(was_present=False, absence_reason='personal').count()
+    absent_approved  = reports.filter(was_present=False, absence_reason='approved').count()
+    absent_no_reason = reports.filter(was_present=False, absence_reason='no_reason').count()
+
+    total_units = sum((r.units_produced or 0) + (r.units_from_sales or 0) for r in reports)
+    total_hours = round(sum(float(r.hours_present or 0) for r in reports), 2)
+    total_days  = (date_to - date_from).days + 1
+
+    if emp.is_piecework:
+        salary_calc = Decimal(str(total_units)) * (emp.piecework_rate or Decimal('0'))
+        salary_type = 'piecework'
+    else:
+        daily_rate  = (emp.base_salary or Decimal('0')) / Decimal(str(total_days)) if total_days else Decimal('0')
+        salary_calc = daily_rate * Decimal(str(present_days))
+        salary_type = 'daily'
+
+    advances      = AdvancePayment.objects.filter(employee=emp, date__gte=date_from, date__lte=date_to)
+    total_advance = sum(a.amount for a in advances) or Decimal('0')
+    net_salary    = salary_calc - total_advance
+
+    context = {
+        'emp': emp,
+        'reports': reports,
+        'shifts': Shift.objects.all().order_by('name'),
+        'date_from': date_from,
+        'date_to': date_to,
+        'period': period,
+        'today': today,
+        'total_days': total_days,
+        'present_days': present_days,
+        'absent_days': absent_days,
+        'absent_sick': absent_sick,
+        'absent_personal': absent_personal,
+        'absent_approved': absent_approved,
+        'absent_no_reason': absent_no_reason,
+        'total_units': total_units,
+        'total_hours': total_hours,
+        'salary_calc': salary_calc,
+        'salary_type': salary_type,
+        'total_advance': total_advance,
+        'net_salary': net_salary,
+        'advances': advances,
+        'absence_reasons': DailyReport.ABSENCE_REASON_CHOICES,
+    }
+    return render(request, 'hr_employee_report.html', context)
+
+
+@login_required
+def positions_export_json(request):
+    if not _can_access(request.user, 'hr'):
+        return redirect('dashboard')
+    data = [
+        {'name': p.name, 'description': p.description}
+        for p in Position.objects.order_by('name')
+    ]
+    resp = HttpResponse(
+        json.dumps(data, ensure_ascii=False, indent=2),
+        content_type='application/json'
+    )
+    resp['Content-Disposition'] = 'attachment; filename="positions.json"'
+    return resp
+
+
+@login_required
+def positions_import_json(request):
+    if not _can_access(request.user, 'hr'):
+        return redirect('dashboard')
+    if request.method != 'POST':
+        return redirect('hr_dashboard')
+    f = request.FILES.get('positions_json_file')
+    if not f:
+        messages.error(request, "JSON fayl tanlanmadi.")
+        return redirect('/hr/?tab=positions')
+    try:
+        data = json.loads(f.read().decode('utf-8'))
+    except Exception as e:
+        messages.error(request, f"JSON o'qishda xato: {e}")
+        return redirect('/hr/?tab=positions')
+    created = updated = 0
+    for entry in data:
+        name = str(entry.get('name', '')).strip()
+        if not name:
+            continue
+        desc = str(entry.get('description', '')).strip()
+        pos, is_new = Position.objects.get_or_create(name=name, defaults={'description': desc})
+        if not is_new:
+            pos.description = desc
+            pos.save(update_fields=['description'])
+            updated += 1
+        else:
+            created += 1
+    messages.success(request, f"Import tugadi: {created} yangi, {updated} yangilandi.")
+    return redirect('/hr/?tab=positions')
 
 
 def _export_hr_excel(employees, date_from, date_to):
