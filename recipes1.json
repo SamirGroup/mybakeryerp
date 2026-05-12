@@ -1,0 +1,190 @@
+[
+  {
+    "product": "Obi Non",
+    "batch_size": 1,
+    "items": [
+      {
+        "ingredient": "Premium un",
+        "unit": "kg",
+        "qty": "0.200",
+        "grams": "200.000"
+      },
+      {
+        "ingredient": "Xamirturush",
+        "unit": "g",
+        "qty": "0.020",
+        "grams": "20.000"
+      },
+      {
+        "ingredient": "Tuz",
+        "unit": "kg",
+        "qty": "0.020",
+        "grams": "20.000"
+      },
+      {
+        "ingredient": "Osimlik yogi",
+        "unit": "liter",
+        "qty": "0.200",
+        "grams": "200.000"
+      },
+      {
+        "ingredient": "Qora sedana",
+        "unit": "kg",
+        "qty": "0.015",
+        "grams": "15.000"
+      }
+    ]
+  },
+  {
+    "product": "Patir Non",
+    "batch_size": 80,
+    "items": [
+      {
+        "ingredient": "Premium un",
+        "unit": "kg",
+        "qty": "62.000",
+        "grams": null
+      },
+      {
+        "ingredient": "Margarin",
+        "unit": "kg",
+        "qty": "4.500",
+        "grams": null
+      },
+      {
+        "ingredient": "Tuz",
+        "unit": "kg",
+        "qty": "0.800",
+        "grams": null
+      },
+      {
+        "ingredient": "Xamirturush",
+        "unit": "g",
+        "qty": "1.000",
+        "grams": null
+      },
+      {
+        "ingredient": "Kunjut",
+        "unit": "kg",
+        "qty": "0.400",
+        "grams": null
+      }
+    ]
+  },
+  {
+    "product": "Buxanka",
+    "batch_size": 120,
+    "items": [
+      {
+        "ingredient": "1-nav un",
+        "unit": "kg",
+        "qty": "70.000",
+        "grams": null
+      },
+      {
+        "ingredient": "Xamirturush",
+        "unit": "g",
+        "qty": "1.500",
+        "grams": null
+      },
+      {
+        "ingredient": "Tuz",
+        "unit": "kg",
+        "qty": "1.100",
+        "grams": null
+      },
+      {
+        "ingredient": "Shakar",
+        "unit": "kg",
+        "qty": "1.200",
+        "grams": null
+      },
+      {
+        "ingredient": "Sut",
+        "unit": "liter",
+        "qty": "8.000",
+        "grams": null
+      }
+    ]
+  },
+  {
+    "product": "Bulochka",
+    "batch_size": 1,
+    "items": [
+      {
+        "ingredient": "Yog'",
+        "unit": "liter",
+        "qty": "1.000",
+        "grams": null
+      },
+      {
+        "ingredient": "Xamirturush",
+        "unit": "g",
+        "qty": "10.000",
+        "grams": null
+      },
+      {
+        "ingredient": "Un",
+        "unit": "kg",
+        "qty": "0.000",
+        "grams": "500.000"
+      },
+      {
+        "ingredient": "Sut",
+        "unit": "liter",
+        "qty": "0.000",
+        "grams": "300.000"
+      }
+    ]
+  },
+  {
+    "product": "Qatlama Non",
+    "batch_size": 1,
+    "items": []
+  },
+  {
+    "product": "Sutli non",
+    "batch_size": 1,
+    "items": []
+  },
+  {
+    "product": "Qora non",
+    "batch_size": 1,
+    "items": []
+  },
+  {
+    "product": "Payir non",
+    "batch_size": 1,
+    "items": []
+  },
+  {
+    "product": "Qovoqli non",
+    "batch_size": 1,
+    "items": []
+  },
+  {
+    "product": "Qizil patir",
+    "batch_size": 1,
+    "items": []
+  },
+  {
+    "product": "Qatlama",
+    "batch_size": 1,
+    "items": []
+  },
+  {
+    "product": "Piyozli non",
+    "batch_size": 1,
+    "items": []
+  },
+  {
+    "product": "Go'shtli non 35",
+    "batch_size": 1,
+    "items": []
+  },
+  {
+    "product": "Go'shtli non 50",
+    "batch_size": 1,
+    "items": []
+  }
+]

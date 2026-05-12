@@ -1,0 +1,50 @@
+[
+  {
+    "name": "2 чи патир ёпувчи",
+    "description": "Ikkinchi patir yopuvchi"
+  },
+  {
+    "name": "Бошқарувчи",
+    "description": "Hamma ishni boshqaruvchi"
+  },
+  {
+    "name": "Гуштли+кизил нон килиш",
+    "description": "Go'shtli va qizil non qiluvchi"
+  },
+  {
+    "name": "Доставщик",
+    "description": "Yetkazib beruvchi"
+  },
+  {
+    "name": "Загатовщик",
+    "description": "Tayyorlab beruvchi"
+  },
+  {
+    "name": "Зувала+тахлаш",
+    "description": "Zuvala qiluvchi va taxlovchi"
+  },
+  {
+    "name": "Нон ёпувчи",
+    "description": "Non yopuvchi"
+  },
+  {
+    "name": "Патир ураш",
+    "description": "Patir o'rovchi, yoki uruvchi"
+  },
+  {
+    "name": "Сотувчи",
+    "description": "Sotuvchi"
+  },
+  {
+    "name": "Тарози+йойиш",
+    "description": "Tarozidan tekshiruvchi va xamir yoyuvchi"
+  },
+  {
+    "name": "Ткач уриш",
+    "description": "Tkach uruvchi"
+  },
+  {
+    "name": "Хамир кориш",
+    "description": "Xamiro qoruvchi"
+  }
+]
