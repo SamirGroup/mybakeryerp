@@ -145,7 +145,7 @@ def hr_dashboard(request):
             base_salary = request.POST.get('base_salary', 0) or 0
             piecework_rate = request.POST.get('piecework_rate', 0) or 0
             daily_target = request.POST.get('daily_target', 0) or 0
-            photo = request.FILES.get('photo')
+            # photo = request.FILES.get('photo')
 
             if name and position and date_joined:
                 shift = Shift.objects.filter(id=shift_id).first() if shift_id else None
@@ -160,7 +160,7 @@ def hr_dashboard(request):
                         'daily_target': daily_target,
                         'status': 'active',
                         'shift': shift,
-                        'photo': photo,
+                        # 'photo': photo,
                     }
                 )
                 if created:
@@ -210,8 +210,8 @@ def hr_dashboard(request):
                         messages.error(request, "Noto'g'ri foydalanuvchi tanlandi.")
                 else:
                     emp.user_account_id = None
-                if request.FILES.get('photo'):
-                    emp.photo = request.FILES['photo']
+                # if request.FILES.get('photo'):
+                #     emp.photo = request.FILES['photo']
                 emp.save()
                 messages.success(request, f"{emp.name} yangilandi.")
             except Employee.DoesNotExist:

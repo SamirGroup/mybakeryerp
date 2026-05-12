@@ -242,11 +242,11 @@
                 {% for emp in employees %}
                 <div class="emp-row">
                     <div class="emp-main">
-                        {% if emp.photo %}
-                        <img src="{{ emp.photo.url }}" alt="" style="width:44px;height:44px;border-radius:12px;object-fit:cover;">
-                        {% else %}
+                        {# {% if emp.photo %} #}
+                        {# <img src="{{ emp.photo.url }}" alt="" style="width:44px;height:44px;border-radius:12px;object-fit:cover;"> #}
+                        {# {% else %} #}
                         <div class="emp-avatar">{{ emp.name|first|upper }}</div>
-                        {% endif %}
+                        {# {% endif %} #}
                         <div>
                             <div class="emp-name">{{ emp.name }}</div>
                             <div class="emp-pos">{{ emp.position }} • {{ emp.shift.name|default:"Smenasiz" }} • <span style="opacity:0.7;">{{ emp.phone }}</span></div>
@@ -405,10 +405,10 @@
                         <label>Kunlik nagruzka (reja, dona)</label>
                         <input type="number" name="daily_target" class="form-control" value="0" min="0">
                     </div>
-                    <div class="form-group" style="grid-column: span 2;">
+                    {# <div class="form-group" style="grid-column: span 2;">
                         <label>Xodim rasmi</label>
                         <input type="file" name="photo" accept="image/*" class="form-control">
-                    </div>
+                    </div> #}
                     <div class="form-group" style="grid-column: span 2;">
                         <label>Tizim foydalanuvchisi (sotuv — ishbay avtomatik uchun)</label>
                         <select name="user_account_id" class="form-control">
@@ -781,10 +781,10 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="form-group" style="grid-column:span 2;margin-bottom:14px;">
+                    {# <div class="form-group" style="grid-column:span 2;margin-bottom:14px;">
                         <label>Yangi rasm (ixtiyoriy)</label>
                         <input type="file" name="photo" id="ee_photo" accept="image/*" class="form-control">
-                    </div>
+                    </div> #}
                 </div>
                 <div style="background:#fdfaf5;padding:18px;border-radius:14px;margin-bottom:18px;border:1px solid var(--warm-1);">
                     <div class="form-group" style="margin-bottom:10px;">
@@ -894,8 +894,8 @@
         document.getElementById('ee_piecework_rate').value = row.piecework_rate != null ? row.piecework_rate : '0';
         document.getElementById('ee_daily_target').value = row.daily_target != null ? row.daily_target : '0';
         document.getElementById('ee_user_account_id').value = row.user_account_id ? String(row.user_account_id) : '';
-        var ph = document.getElementById('ee_photo');
-        if (ph) ph.value = '';
+        // var ph = document.getElementById('ee_photo');
+        // if (ph) ph.value = '';
         var modal = document.getElementById('editEmployeeModal');
         if (modal) modal.style.display = 'flex';
     }

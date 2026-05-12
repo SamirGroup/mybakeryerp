@@ -523,11 +523,11 @@
     <!-- Header -->
     <header class="panel hero">
         <div class="emp-info">
-            {% if emp.photo %}
-            <img src="{{ emp.photo.url }}" alt="" style="width:70px;height:70px;border-radius:16px;object-fit:cover;">
-            {% else %}
+            {# {% if emp.photo %} #}
+            {# <img src="{{ emp.photo.url }}" alt="" style="width:70px;height:70px;border-radius:16px;object-fit:cover;"> #}
+            {# {% else %} #}
             <div class="emp-avatar-large">{{ emp.name|first|upper }}</div>
-            {% endif %}
+            {# {% endif %} #}
             <div class="emp-details">
                 <h2>
                     {{ emp.name }}

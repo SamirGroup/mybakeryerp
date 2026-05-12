@@ -38,61 +38,12 @@
             gap: 20px;
         }
 
-        /* ── TOP BAR: logo + language ── */
+        /* ── TOP BAR: language ── */
         .top-bar {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-end;
             padding: 0 4px;
-        }
-
-        .logo-area {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        /* PNG logo — place file at static/images/logo.png */
-        .logo-img {
-            height: 48px;
-            width: auto;
-            object-fit: contain;
-        }
-
-        /* Fallback icon logo shown when PNG missing */
-        .logo-icon-wrap {
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, #D4A373, #b88656);
-            border-radius: 13px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            color: white;
-            box-shadow: 0 6px 18px rgba(212, 163, 115, 0.4);
-            flex-shrink: 0;
-        }
-
-        .logo-text-wrap {
-            line-height: 1.15;
-        }
-
-        .logo-name {
-            font-size: 22px;
-            font-weight: 800;
-            color: #2f2a25;
-            letter-spacing: -0.3px;
-        }
-
-        .logo-name span {
-            color: #D4A373;
-        }
-
-        .logo-sub {
-            font-size: 11px;
-            color: #9a8a72;
-            font-weight: 500;
         }
 
         /* Language switcher */
@@ -435,19 +386,7 @@
 
         <!-- ── Top bar: logo + language ── -->
         <div class="top-bar">
-            <div class="logo-area">
-                <!-- Replace logo.png with your own file in static/images/ -->
-                <img src="{% static 'images/logo.png' %}" alt="Logo" class="logo-img"
-                    onerror="this.style.display='none';document.getElementById('logoFallback').style.display='flex';">
-                <div id="logoFallback" style="display:none;align-items:center;gap:10px;">
-                    <div class="logo-icon-wrap"><i class="fa-solid fa-wheat-awn"></i></div>
-                    <div class="logo-text-wrap">
-                        <div class="logo-name">Bunyod<span>NON</span></div>
-                        <div class="logo-sub">CRM · nonvoyxona boshqaruvi</div>
-                    </div>
-                </div>
-            </div>
-
+            {# Logo section removed #}
             <!-- Language selector -->
             <div class="lang-bar">
                 <button class="lang-btn" data-lang="uz" onclick="setLang('uz')">UZ</button>
