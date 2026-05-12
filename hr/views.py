@@ -566,6 +566,7 @@ def employee_report(request, emp_id):
 
     # Oylik hisob
     total_days = (date_to - date_from).days + 1
+    daily_rate = Decimal('0')
     if emp.is_piecework:
         salary_calc = Decimal(str(total_units)) * (emp.piecework_rate or Decimal('0'))
         salary_type = 'piecework'
@@ -574,7 +575,11 @@ def employee_report(request, emp_id):
         salary_calc = daily_rate * Decimal(str(present_days))
         salary_type = 'daily'
 
-    advances = AdvancePayment.objects.filter(employee=emp, date__gte=date_from, date__lte=date_to)
+    advances = AdvancePayment.objects.filter(
+        employee=emp,
+        date__gte=date_from,
+        date__lte=date_to
+    )
     total_advance = sum(a.amount for a in advances) or Decimal('0')
     net_salary = salary_calc - total_advance
 
@@ -594,9 +599,10 @@ def employee_report(request, emp_id):
         'absent_approved': absent_approved,
         'absent_no_reason': absent_no_reason,
         'total_units': total_units,
-        'total_hours': total_hours,
+        'total_hours': round(total_hours, 2),
         'salary_calc': salary_calc,
         'salary_type': salary_type,
+        'daily_rate': daily_rate,
         'total_advance': total_advance,
         'net_salary': net_salary,
         'advances': advances,

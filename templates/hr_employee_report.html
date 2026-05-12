@@ -1,0 +1,983 @@
+{% extends 'base.html' %}
+
+{% block breadcrumb %}
+    <a href="/hr/" style="color: var(--warm-2); text-decoration: none;">Kadrlar bo'limi</a> 
+    <span style="color: var(--muted-ink);">›</span> 
+    <span>{{ emp.name }} - Hisobot</span>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    .content-wrapper {
+        --paper: #fffdf7;
+        --ink: #2f2a25;
+        --muted-ink: #746a60;
+        --warm-1: #f2dcc2;
+        --warm-2: #d4a373;
+        --warm-3: #b8860b;
+        --olive-1: #d7debc;
+        --olive-2: #a6b07f;
+        --line-soft: rgba(111, 89, 65, 0.2);
+        --danger-soft: rgba(231, 76, 60, 0.1);
+        --success-soft: rgba(46, 204, 113, 0.1);
+        
+        font-family: 'Manrope', sans-serif;
+        background: 
+            radial-gradient(1100px 460px at -2% -5%, rgba(212, 163, 115, 0.22), transparent),
+            radial-gradient(900px 420px at 101% 12%, rgba(167, 176, 127, 0.2), transparent),
+            linear-gradient(180deg, #fffdf7 0%, #f7f6f1 62%, #f2f3ee 100%) !important;
+        min-height: calc(100vh - 70px);
+        padding: 24px !important;
+    }
+
+    .dashboard-shell {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 22px;
+    }
+
+    .panel {
+        border-radius: 22px;
+        border: 1px solid var(--line-soft);
+        background: linear-gradient(170deg, rgba(255, 255, 255, 0.95), rgba(252, 250, 245, 0.95));
+        box-shadow: 0 14px 36px rgba(78, 60, 41, 0.09);
+        padding: 24px;
+        animation: panelIn 380ms ease both;
+    }
+
+    @keyframes panelIn {
+        from { opacity: 0; transform: translateY(12px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero {
+        grid-column: span 12;
+        padding: 28px 32px;
+        background: 
+            linear-gradient(118deg, rgba(255, 252, 245, 0.97), rgba(250, 245, 236, 0.97)),
+            repeating-linear-gradient(45deg, rgba(212, 163, 115, 0.08) 0 2px, transparent 2px 12px);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .hero:before, .hero:after {
+        content: ""; position: absolute; border-radius: 999px; pointer-events: none;
+    }
+    .hero:before { width: 180px; height: 180px; right: -40px; top: -40px; background: radial-gradient(circle, rgba(212, 163, 115, 0.22), transparent 65%); }
+    .hero:after { width: 140px; height: 140px; right: 120px; bottom: -70px; background: radial-gradient(circle, rgba(166, 176, 127, 0.2), transparent 68%); }
+
+    .hero-title {
+        font-family: 'Lexend', sans-serif;
+        font-size: clamp(24px, 2.8vw, 32px);
+        line-height: 1.15;
+        color: var(--ink);
+        margin: 0 0 8px 0;
+        letter-spacing: -0.015em;
+        font-weight: 700;
+    }
+    .hero-subtitle { color: var(--muted-ink); font-size: 15px; margin: 0; }
+
+    .emp-info {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .emp-avatar-large {
+        width: 70px;
+        height: 70px;
+        border-radius: 16px;
+        background: var(--warm-1);
+        color: var(--warm-3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 28px;
+    }
+
+    .emp-details h2 {
+        margin: 0 0 4px 0;
+        font-family: 'Lexend', sans-serif;
+        font-size: 24px;
+        color: var(--ink);
+    }
+
+    .emp-details p {
+        margin: 0;
+        color: var(--muted-ink);
+        font-size: 14px;
+    }
+
+    .emp-details .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-left: 10px;
+    }
+
+    .badge-active { background: var(--success-soft); color: #27ae60; }
+    .badge-vacation { background: #fff5e6; color: #d35400; }
+    .badge-left { background: var(--danger-soft); color: #c0392b; }
+
+    /* Filters */
+    .filters-bar {
+        grid-column: span 12;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .filter-btn {
+        padding: 10px 20px;
+        border-radius: 12px;
+        border: 1px solid var(--line-soft);
+        background: white;
+        color: var(--muted-ink);
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .filter-btn:hover {
+        border-color: var(--warm-2);
+        color: var(--warm-2);
+        transform: translateY(-1px);
+    }
+
+    .filter-btn.active {
+        background: var(--warm-2);
+        color: white;
+        border-color: var(--warm-2);
+        box-shadow: 0 4px 12px rgba(212,163,115,0.25);
+    }
+
+    .date-inputs {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .date-inputs input {
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1.5px solid var(--line-soft);
+        background: #fdfcf9;
+        font-family: 'Manrope', sans-serif;
+        font-weight: 600;
+        color: var(--ink);
+    }
+
+    .date-inputs input:focus {
+        border-color: var(--warm-2);
+        outline: none;
+    }
+
+    /* Stats Cards */
+    .stats-grid {
+        grid-column: span 12;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        border: 1px solid var(--line-soft);
+    }
+
+    .stat-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted-ink);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
+    }
+
+    .stat-value {
+        font-family: 'Lexend', sans-serif;
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--ink);
+    }
+
+    .stat-value.green { color: #27ae60; }
+    .stat-value.red { color: #e74c3c; }
+    .stat-value.orange { color: #d35400; }
+    .stat-value.blue { color: #4f46e5; }
+
+    /* Salary Card */
+    .salary-card {
+        grid-column: span 12;
+        background: linear-gradient(135deg, var(--olive-1), var(--olive-2));
+        border: none;
+        color: white;
+    }
+
+    .salary-card .stat-label {
+        color: rgba(255,255,255,0.85);
+    }
+
+    .salary-card .stat-value {
+        color: white;
+    }
+
+    .salary-details {
+        display: flex;
+        gap: 30px;
+        margin-top: 12px;
+        font-size: 14px;
+        opacity: 0.9;
+    }
+
+    /* Table */
+    .report-table-container {
+        grid-column: span 12;
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 8px;
+        font-size: 14px;
+    }
+
+    .report-table th {
+        text-align: left;
+        padding: 12px 16px;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--muted-ink);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 2px solid var(--line-soft);
+    }
+
+    .report-table td {
+        padding: 14px 16px;
+        background: white;
+        vertical-align: middle;
+    }
+
+    .report-table tr td:first-child {
+        border-radius: 12px 0 0 12px;
+    }
+
+    .report-table tr td:last-child {
+        border-radius: 0 12px 12px 0;
+    }
+
+    .report-table tbody tr {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        transition: all 0.2s;
+    }
+
+    .report-table tbody tr:hover {
+        transform: translateX(4px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .time-display {
+        font-family: 'Manrope', sans-serif;
+        font-weight: 600;
+    }
+
+    .time-in { color: #27ae60; }
+    .time-out { color: #e74c3c; }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .status-present { background: var(--success-soft); color: #27ae60; }
+    .status-absent { background: var(--danger-soft); color: #c0392b; }
+
+    .reason-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .reason-sick { background: #fff5f5; color: #e74c3c; }
+    .reason-personal { background: #fff8e1; color: #f39c12; }
+    .reason-approved { background: #e8f5e9; color: #27ae60; }
+    .reason-no_reason { background: #f5f5f5; color: #7f8c8d; }
+
+    .units-cell {
+        font-weight: 600;
+        color: var(--ink);
+    }
+
+    .units-cell .total {
+        color: #4f46e5;
+    }
+
+    .edit-btn {
+        padding: 6px 12px;
+        border-radius: 8px;
+        border: none;
+        background: var(--warm-1);
+        color: #5c4b3a;
+        font-weight: 600;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .edit-btn:hover {
+        background: var(--warm-2);
+        color: white;
+    }
+
+    .add-btn {
+        padding: 8px 16px;
+        border-radius: 10px;
+        border: none;
+        background: var(--warm-2);
+        color: white;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .add-btn:hover {
+        filter: brightness(1.1);
+    }
+
+    /* Modal */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(47, 42, 37, 0.5);
+        z-index: 10000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .modal-overlay.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background: #fffdf7;
+        border-radius: 20px;
+        max-width: 500px;
+        width: 100%;
+        padding: 28px;
+        border: 1px solid var(--line-soft);
+        box-shadow: 0 24px 48px rgba(47, 42, 37, 0.2);
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-title {
+        font-family: 'Lexend', sans-serif;
+        font-size: 20px;
+        color: var(--ink);
+        margin: 0 0 20px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: var(--muted-ink);
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted-ink);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        margin-bottom: 6px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 10px;
+        border: 1.5px solid var(--line-soft);
+        background: #fdfcf9;
+        font-family: 'Manrope', sans-serif;
+        font-weight: 600;
+        color: var(--ink);
+        transition: all 0.2s;
+        box-sizing: border-box;
+    }
+
+    .form-control:focus {
+        border-color: var(--warm-2);
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(212,163,115,0.12);
+        background: white;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .checkbox-group input {
+        width: 20px;
+        height: 20px;
+        accent-color: var(--warm-2);
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 20px;
+    }
+
+    .btn-cancel {
+        padding: 12px 20px;
+        border-radius: 10px;
+        border: 1px solid #ccc;
+        background: #f5f5f5;
+        color: var(--ink);
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .btn-save {
+        padding: 12px 24px;
+        border-radius: 10px;
+        border: none;
+        background: var(--warm-2);
+        color: white;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .btn-save:hover {
+        filter: brightness(1.1);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--muted-ink);
+    }
+
+    .empty-state i {
+        font-size: 48px;
+        opacity: 0.3;
+        margin-bottom: 16px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-shell">
+    <!-- Header -->
+    <header class="panel hero">
+        <div class="emp-info">
+            {% if emp.photo %}
+            <img src="{{ emp.photo.url }}" alt="" style="width:70px;height:70px;border-radius:16px;object-fit:cover;">
+            {% else %}
+            <div class="emp-avatar-large">{{ emp.name|first|upper }}</div>
+            {% endif %}
+            <div class="emp-details">
+                <h2>
+                    {{ emp.name }}
+                    {% if emp.status == 'active' %}
+                        <span class="badge badge-active">Faol</span>
+                    {% elif emp.status == 'vacation' %}
+                        <span class="badge badge-vacation">Ta'tilda</span>
+                    {% else %}
+                        <span class="badge badge-left">Ketgan</span>
+                    {% endif %}
+                </h2>
+                <p>{{ emp.position }} • {{ emp.shift.name|default:"Smena yo'q" }} • {{ emp.phone }}</p>
+                <p style="margin-top:4px; font-size:12px;">
+                    {% if emp.is_piecework %}
+                        <strong>Ishbay:</strong> {{ emp.piecework_rate|floatformat:0 }} UZS/dona
+                    {% else %}
+                        <strong>Oylik:</strong> {{ emp.base_salary|floatformat:0 }} UZS
+                    {% endif %}
+                    • Kunlik reja: {{ emp.daily_target }} dona
+                </p>
+            </div>
+        </div>
+        <div style="text-align:right;">
+            <a href="/hr/" class="filter-btn" style="text-decoration:none;">
+                <i class="fa-solid fa-arrow-left"></i> Orqaga
+            </a>
+        </div>
+    </header>
+
+    <!-- Filters -->
+    <div class="filters-bar">
+        <a href="?period=today" class="filter-btn {% if period == 'today' %}active{% endif %}">
+            <i class="fa-solid fa-calendar-day"></i> Bugun
+        </a>
+        <a href="?period=week" class="filter-btn {% if period == 'week' %}active{% endif %}">
+            <i class="fa-solid fa-calendar-week"></i> Hafta
+        </a>
+        <a href="?period=month" class="filter-btn {% if period == 'month' %}active{% endif %}">
+            <i class="fa-solid fa-calendar"></i> Oy
+        </a>
+        
+        <div class="date-inputs">
+            <span style="font-weight:600;color:var(--muted-ink);">Sanlar:</span>
+            <input type="date" id="dateFrom" value="{{ date_from|date:'Y-m-d' }}">
+            <span>—</span>
+            <input type="date" id="dateTo" value="{{ date_to|date:'Y-m-d' }}">
+            <a href="#" class="add-btn" onclick="applyDateFilter()">
+                <i class="fa-solid fa-filter"></i> Filtr
+            </a>
+        </div>
+
+        <button class="add-btn" style="margin-left:auto;" onclick="openAddModal()">
+            <i class="fa-solid fa-plus"></i> Kun qo'shish
+        </button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="panel stat-card">
+            <div class="stat-label">Jami kunlar</div>
+            <div class="stat-value">{{ total_days }}</div>
+        </div>
+        <div class="panel stat-card">
+            <div class="stat-label">Kelgan kunlar</div>
+            <div class="stat-value green">{{ present_days }}</div>
+        </div>
+        <div class="panel stat-card">
+            <div class="stat-label">Kelmagan kunlar</div>
+            <div class="stat-value red">{{ absent_days }}</div>
+        </div>
+        <div class="panel stat-card">
+            <div class="stat-label">Kasal</div>
+            <div class="stat-value orange">{{ absent_sick }}</div>
+        </div>
+        <div class="panel stat-card">
+            <div class="stat-label">Shaxsiy masala</div>
+            <div class="stat-value orange">{{ absent_personal }}</div>
+        </div>
+        <div class="panel stat-card">
+            <div class="stat-label">Sababli</div>
+            <div class="stat-value blue">{{ absent_approved }}</div>
+        </div>
+        <div class="panel stat-card">
+            <div class="stat-label">Sababsiz</div>
+            <div class="stat-value red">{{ absent_no_reason }}</div>
+        </div>
+        <div class="panel stat-card">
+            <div class="stat-label">Jami ishlab chiqargan</div>
+            <div class="stat-value blue">{{ total_units }} dona</div>
+        </div>
+        <div class="panel stat-card">
+            <div class="stat-label">Jami ish vaqti</div>
+            <div class="stat-value">{{ total_hours }} soat</div>
+        </div>
+    </div>
+
+    <!-- Salary Calculation -->
+    <div class="panel salary-card">
+        <div class="stat-label">Hisoblangan oylik ( {{ date_from|date:"d M" }} — {{ date_to|date:"d M" }} )</div>
+        <div class="stat-value" style="font-size:36px;">{{ salary_calc|floatformat:0 }} UZS</div>
+        <div class="salary-details">
+            {% if salary_type == 'piecework' %}
+                <span><i class="fa-solid fa-cube"></i> {{ total_units }} dona × {{ emp.piecework_rate|floatformat:0 }} UZS/dona</span>
+            {% else %}
+                <span><i class="fa-solid fa-user-check"></i> {{ present_days }} kun × {{ daily_rate|floatformat:0 }} UZS/kun</span>
+            {% endif %}
+            <span><i class="fa-solid fa-hand-holding-dollar"></i> Avans: -{{ total_advance|floatformat:0 }} UZS</span>
+            <span><strong><i class="fa-solid fa-wallet"></i> To'lanadi: {{ net_salary|floatformat:0 }} UZS</strong></span>
+        </div>
+    </div>
+
+    <!-- Reports Table -->
+    <div class="panel report-table-container">
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Sana</th>
+                    <th>Smena</th>
+                    <th>Keldi/Kelmadi</th>
+                    <th>Sabab (agar kelmagan)</th>
+                    <th>Kirish</th>
+                    <th>Chiqish</th>
+                    <th>Ish vaqti</th>
+                    <th>Mahsulot (dona)</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in reports %}
+                <tr>
+                    <td style="font-weight:600;">{{ r.date|date:"d M" }}</td>
+                    <td>{{ r.shift.name|default:"—" }}</td>
+                    <td>
+                        {% if r.was_present %}
+                            <span class="status-badge status-present">Keldi</span>
+                        {% else %}
+                            <span class="status-badge status-absent">Kelmadi</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if not r.was_present %}
+                            {% if r.absence_reason == 'sick' %}
+                                <span class="reason-badge reason-sick">Kasal</span>
+                            {% elif r.absence_reason == 'personal' %}
+                                <span class="reason-badge reason-personal">Shaxsiy masala</span>
+                            {% elif r.absence_reason == 'approved' %}
+                                <span class="reason-badge reason-approved">Sababli</span>
+                            {% elif r.absence_reason == 'no_reason' %}
+                                <span class="reason-badge reason-no_reason">Sababsiz</span>
+                            {% else %}
+                                <span style="color:var(--muted-ink);font-size:12px;">—</span>
+                            {% endif %}
+                        {% else %}
+                            <span style="color:var(--muted-ink);font-size:12px;">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if r.check_in %}
+                            <span class="time-display time-in">{{ r.check_in|time:"H:i" }}</span>
+                        {% else %}
+                            <span style="color:var(--muted-ink);">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if r.check_out %}
+                            <span class="time-display time-out">{{ r.check_out|time:"H:i" }}</span>
+                        {% else %}
+                            <span style="color:var(--muted-ink);">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if r.hours_present %}
+                            {{ r.hours_present }} soat
+                        {% else %}
+                            <span style="color:var(--muted-ink);">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="units-cell">
+                        <span class="total">{{ r.piecework_units_total }}</span> dona
+                        {% if r.units_produced > 0 %}
+                            <br><small style="color:var(--muted-ink);">qo'lda: {{ r.units_produced }}</small>
+                        {% endif %}
+                        {% if r.units_from_sales > 0 %}
+                            <br><small style="color:var(--muted-ink);">sotuv: {{ r.units_from_sales }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="edit-btn" onclick="openEditModal({{ r.id }}, '{{ r.date }}', '{{ r.check_in|time:"H:i" }}', '{{ r.check_out|time:"H:i" }}', {{ r.was_present|yesno:"true,false" }}, '{{ r.absence_reason }}', {{ r.units_produced }}, '{{ r.notes|escapejs }}', {{ r.shift_id|default:'null' }})">
+                            <i class="fa-solid fa-pen"></i> Tahrirlash
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9">
+                        <div class="empty-state">
+                            <i class="fa-solid fa-clipboard-list"></i>
+                            <p>Bu davr uchun yozuvlar yo'q</p>
+                            <button class="add-btn" onclick="openAddModal()">
+                                <i class="fa-solid fa-plus"></i> Birinchi yozuvni qo'shing
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="modal-overlay" onclick="closeModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-title">
+            Hisobotni tahrirlash
+            <button class="modal-close" onclick="closeEditModal()">&times;</button>
+        </div>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit_report">
+            <input type="hidden" name="report_id" id="edit_report_id">
+            
+            <div class="form-group">
+                <label>Sana</label>
+                <input type="date" name="report_date" id="edit_date" class="form-control" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Smena</label>
+                <select name="shift_id" id="edit_shift_id" class="form-control">
+                    <option value="">— Tanlang —</option>
+                    {% for s in shifts %}
+                    <option value="{{ s.id }}">{{ s.name }} ({{ s.start_time|time:"H:i" }}-{{ s.end_time|time:"H:i" }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" name="was_present" id="edit_was_present" value="1" onchange="toggleReasonField()">
+                    <label for="edit_was_present" style="margin:0;text-transform:none;font-size:14px;">Keldi (ishladi)</label>
+                </div>
+            </div>
+
+            <div class="form-group" id="reasonGroup" style="display:none;">
+                <label>Kelmagan sababi</label>
+                <select name="absence_reason" id="edit_absence_reason" class="form-control">
+                    <option value="">— Tanlang —</option>
+                    <option value="sick">Kasal</option>
+                    <option value="personal">Shaxsiy masala</option>
+                    <option value="approved">Sababli (tasdiqlangan)</option>
+                    <option value="no_reason">Sababsiz</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Kirish vaqti</label>
+                    <input type="time" name="check_in" id="edit_check_in" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Chiqish vaqti</label>
+                    <input type="time" name="check_out" id="edit_check_out" class="form-control">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Ishlagan soat</label>
+                <input type="number" step="0.01" name="hours_present" id="edit_hours_present" class="form-control" placeholder="8">
+            </div>
+
+            <div class="form-group">
+                <label>Ishlab chiqargan mahsulot (dona)</label>
+                <input type="number" name="units_produced" id="edit_units_produced" class="form-control" value="0" min="0">
+            </div>
+
+            <div class="form-group">
+                <label>Izoh</label>
+                <textarea name="notes" id="edit_notes" class="form-control" rows="2" placeholder="Qo'shimcha ma'lumot..."></textarea>
+            </div>
+
+            <div class="btn-group">
+                <button type="button" class="btn-cancel" onclick="closeEditModal()">Bekor</button>
+                <button type="submit" class="btn-save"><i class="fa-solid fa-floppy-disk"></i> Saqlash</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add Modal -->
+<div id="addModal" class="modal-overlay" onclick="closeModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-title">
+            Yangi kun hisoboti
+            <button class="modal-close" onclick="closeAddModal()">&times;</button>
+        </div>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_report">
+            
+            <div class="form-group">
+                <label>Sana</label>
+                <input type="date" name="report_date" id="add_date" class="form-control" value="{{ today|date:'Y-m-d' }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Smena</label>
+                <select name="shift_id" id="add_shift_id" class="form-control">
+                    <option value="">— Tanlang —</option>
+                    {% for s in shifts %}
+                    <option value="{{ s.id }}" {% if emp.shift_id == s.id %}selected{% endif %}>{{ s.name }} ({{ s.start_time|time:"H:i" }}-{{ s.end_time|time:"H:i" }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" name="was_present" id="add_was_present" value="1" checked onchange="toggleAddReasonField()">
+                    <label for="add_was_present" style="margin:0;text-transform:none;font-size:14px;">Keldi (ishladi)</label>
+                </div>
+            </div>
+
+            <div class="form-group" id="addReasonGroup" style="display:none;">
+                <label>Kelmagan sababi</label>
+                <select name="absence_reason" id="add_absence_reason" class="form-control">
+                    <option value="">— Tanlang —</option>
+                    <option value="sick">Kasal</option>
+                    <option value="personal">Shaxsiy masala</option>
+                    <option value="approved">Sababli (tasdiqlangan)</option>
+                    <option value="no_reason">Sababsiz</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Kirish vaqti</label>
+                    <input type="time" name="check_in" id="add_check_in" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Chiqish vaqti</label>
+                    <input type="time" name="check_out" id="add_check_out" class="form-control">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Ishlagan soat</label>
+                <input type="number" step="0.01" name="hours_present" id="add_hours_present" class="form-control" placeholder="8">
+            </div>
+
+            <div class="form-group">
+                <label>Ishlab chiqargan mahsulot (dona)</label>
+                <input type="number" name="units_produced" id="add_units_produced" class="form-control" value="0" min="0">
+            </div>
+
+            <div class="form-group">
+                <label>Izoh</label>
+                <textarea name="notes" id="add_notes" class="form-control" rows="2" placeholder="Qo'shimcha ma'lumot..."></textarea>
+            </div>
+
+            <div class="btn-group">
+                <button type="button" class="btn-cancel" onclick="closeAddModal()">Bekor</button>
+                <button type="submit" class="btn-save"><i class="fa-solid fa-plus"></i> Qo'shish</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Get existing shifts data from context
+    const empShiftId = {{ emp.shift_id|default:"null" }};
+    const shiftsData = [
+        {% for s in shifts %}
+        { id: {{ s.id }}, name: "{{ s.name }}" }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    // Date filter
+    function applyDateFilter() {
+        const from = document.getElementById('dateFrom').value;
+        const to = document.getElementById('dateTo').value;
+        if (from && to) {
+            window.location.href = '?period=custom&date_from=' + from + '&date_to=' + to;
+        }
+    }
+
+    // Edit Modal
+    function openEditModal(id, date, checkIn, checkOut, wasPresent, reason, units, notes, shiftId) {
+        document.getElementById('edit_report_id').value = id;
+        document.getElementById('edit_date').value = date;
+        
+        // Set shift - use saved shift or default
+        if (shiftId) {
+            document.getElementById('edit_shift_id').value = shiftId;
+        } else if (empShiftId) {
+            document.getElementById('edit_shift_id').value = empShiftId;
+        }
+        
+        document.getElementById('edit_check_in').value = checkIn || '';
+        document.getElementById('edit_check_out').value = checkOut || '';
+        document.getElementById('edit_was_present').checked = wasPresent === true || wasPresent === 'true';
+        document.getElementById('edit_absence_reason').value = reason || '';
+        document.getElementById('edit_units_produced').value = units || 0;
+        document.getElementById('edit_notes').value = notes || '';
+        
+        toggleReasonField();
+        document.getElementById('editModal').classList.add('active');
+    }
+
+    function closeEditModal() {
+        document.getElementById('editModal').classList.remove('active');
+    }
+
+    function toggleReasonField() {
+        const wasPresent = document.getElementById('edit_was_present').checked;
+        document.getElementById('reasonGroup').style.display = wasPresent ? 'none' : 'block';
+    }
+
+    // Add Modal
+    function openAddModal() {
+        // Set default shift
+        if (empShiftId) {
+            document.getElementById('add_shift_id').value = empShiftId;
+        }
+        toggleAddReasonField();
+        document.getElementById('addModal').classList.add('active');
+    }
+
+    function closeAddModal() {
+        document.getElementById('addModal').classList.remove('active');
+    }
+
+    function toggleAddReasonField() {
+        const wasPresent = document.getElementById('add_was_present').checked;
+        document.getElementById('addReasonGroup').style.display = wasPresent ? 'none' : 'block';
+    }
+
+    // Close modal on overlay click
+    function closeModal(event) {
+        if (event.target.classList.contains('modal-overlay')) {
+            event.target.classList.remove('active');
+        }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set date inputs
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('period') === 'custom') {
+            document.querySelector('.filters-bar .add-btn').classList.add('active');
+        }
+    });
+</script>
+{% endblock %}
