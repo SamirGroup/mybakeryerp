@@ -2,6 +2,25 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
+class TelegramSettings(models.Model):
+    """Telegram bot sozlamalari — yagona qator (singleton)."""
+    bot_token = models.CharField(max_length=200, blank=True, verbose_name="Bot Token")
+    chat_id   = models.CharField(max_length=50, blank=True, verbose_name="Chat ID")
+    is_active = models.BooleanField(default=True, verbose_name="Faol")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Telegram Sozlamalari"
+
+    def __str__(self):
+        return f"Telegram Bot {'✅' if self.is_active and self.bot_token else '❌'}"
+
+    @classmethod
+    def get(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
 class UserProfile(models.Model):
     user        = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     branch      = models.ForeignKey(

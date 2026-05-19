@@ -278,6 +278,22 @@ def _handle_multi_sale(request):
     emp_id = request.POST.get('seller_employee_id')
     _credit_piecework_for_sale(sale, employee_id=emp_id)
 
+    # Mijoz chek ma'lumotlarini sessionga saqlash
+    request.session['last_sale'] = {
+        'sale_id': sale.id,
+        'total': str(total),
+        'payment_method': sale.get_payment_method_display(),
+        'shift_name': shift_name,
+        'items': [
+            {
+                'name': inv.product.name,
+                'qty': qty,
+                'total': str(qty * price)
+            }
+            for inv, qty, price in items_data
+        ]
+    }
+
 
 def _handle_quick_sale(request):
     product_id = request.POST.get("product")
@@ -306,6 +322,21 @@ def _handle_quick_sale(request):
     messages.success(request, f"{qty} x {inv.product.name} = {total:,.0f} UZS.")
     emp_id = request.POST.get('seller_employee_id')
     _credit_piecework_for_sale(sale, employee_id=emp_id)
+
+    # Mijoz chek ma'lumotlarini sessionga saqlash
+    request.session['last_sale'] = {
+        'sale_id': sale.id,
+        'total': str(total),
+        'payment_method': sale.get_payment_method_display(),
+        'shift_name': shift_name,
+        'items': [
+            {
+                'name': inv.product.name,
+                'qty': qty,
+                'total': str(qty * price)
+            }
+        ]
+    }
 
 
 def _handle_return(request):
@@ -494,6 +525,7 @@ def _sales_context(date_from, date_to, request=None):
         ],
         'finished_goods_raw': finished_goods_qs,
         'recent_sales': recent_sales,
+        'today_sales': today_sales,
         'today_sales_count': today_count,
         'today_revenue': today_revenue,
         'month_revenue': month_revenue,
@@ -525,6 +557,7 @@ def _sales_context(date_from, date_to, request=None):
         'period_revenue': period_revenue,
         'preserve_query': preserve_query,
         'sale_cart_products': sale_cart_products,
+        'last_sale': request.session.pop('last_sale', None),
     }
 
 
@@ -575,3 +608,145 @@ def _export_sales_excel(date_from, date_to):
     resp = HttpResponse(buf.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     resp['Content-Disposition'] = f'attachment; filename="sales_{date_from}_{date_to}.xlsx"'
     return resp
+
+
+@login_required
+def quick_sale_view(request):
+    """Tezkor sotuv — alohida sahifa."""
+    if not _can_access(request.user, 'seller'):
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        try:
+            _handle_multi_sale(request)
+        except FinishedGoodsInventory.DoesNotExist:
+            messages.error(request, "Bu mahsulot uchun tayyor qoldiq topilmadi.")
+        except Product.DoesNotExist:
+            messages.error(request, "Mahsulot topilmadi.")
+        except ValueError as e:
+            messages.error(request, str(e))
+        return redirect('quick_sale')
+
+    today = timezone.localdate()
+    products = list(Product.objects.select_related('category').order_by('category__name', 'name'))
+    finished_goods = list(FinishedGoodsInventory.objects.select_related('product__category'))
+    inv_map = {fg.product_id: fg for fg in finished_goods}
+
+    product_options = [
+        {
+            'product': p,
+            'stock': inv_map[p.id].stock if p.id in inv_map else 0,
+            'has_inventory': p.id in inv_map,
+        }
+        for p in products
+    ]
+
+    categories = ProductCategory.objects.prefetch_related('products').order_by('name')
+
+    from hr.models import Shift, Employee
+    shifts = list(Shift.objects.order_by('name'))
+    employees = list(Employee.objects.filter(status='active').select_related('shift').order_by('name'))
+
+    today_sales = (
+        Sale.objects.filter(date__date=today)
+        .select_related('seller')
+        .order_by('-date')[:15]
+    )
+
+    last_sale = request.session.pop('last_sale', None)
+
+    context = {
+        'product_options': product_options,
+        'categories': categories,
+        'shifts': shifts,
+        'employees': employees,
+        'today_sales': today_sales,
+        'today': today,
+        'last_sale': last_sale,
+    }
+    return render(request, 'quick_sale.html', context)
+
+
+@login_required
+def customer_display_view(request):
+    """Mijoz uchun ko'rsatish ekrani + chek pechat qilish"""
+    if not _can_access(request.user, 'seller', 'hr', 'admin', 'accountant', 'branch_admin'):
+        return redirect('dashboard')
+    
+    last_sale = request.session.pop('last_sale', None)
+    
+    # Agar last_sale bo'lsa va items yo'q bo'lsa, to'g'rilaymiz
+    if last_sale and 'items' not in last_sale:
+        last_sale['items'] = []
+    
+    context = {
+        'last_sale': last_sale,
+        'branch_name': 'Asosiy filial',
+        'date': timezone.now(),
+    }
+    
+    return render(request, 'customer_display.html', context)
+
+
+@login_required
+def print_receipt_view(request, sale_id):
+    """Chekni printerga yuborish (HTML formatda)"""
+    if not _can_access(request.user, 'seller', 'admin', 'branch_admin'):
+        return redirect('dashboard')
+    
+    try:
+        sale = Sale.objects.prefetch_related('items__product').get(id=sale_id)
+    except Sale.DoesNotExist:
+        messages.error(request, "Chek topilmadi.")
+        return redirect('sales_dashboard')
+    
+    # Printerga yuborish (agar Windows va printer sozlangan bo'lsa)
+    printer_error = None
+    if request.GET.get('direct_print') == '1':
+        try:
+            import win32print
+            import win32api
+            printer_name = win32print.GetDefaultPrinter()
+            hPrinter = win32print.OpenPrinter(printer_name)
+            try:
+                hJob = win32print.StartDocPrinter(hPrinter, 1, ("Receipt", None, "RAW"))
+                win32print.StartPagePrinter(hPrinter)
+                
+                # ESC/POS formatida chek
+                receipt_text = f"""
+================================
+     BUNYOD NON - CHEK
+================================
+Chek #: {sale.id}
+Sana: {sale.date.strftime('%d.%m.%Y %H:%M')}
+Sotuvchi: {sale.seller.username if sale.seller else '-'}
+Smena: {sale.shift_name or '-'}
+--------------------------------
+"""
+                for item in sale.items.all():
+                    line = f"{item.product.name[:20]:<20} {item.quantity:>3} x {item.price_at_sale:>8,.0f}\n"
+                    receipt_text += line
+                
+                receipt_text += f"""--------------------------------
+JAMI: {sale.total_amount:>20,.0f} UZS
+To'lov: {sale.get_payment_method_display()}
+================================
+     RAHMAT!
+================================
+\n\n\n\x1d\x56\x00\n"""
+                
+                win32print.WritePrinter(hPrinter, receipt_text.encode('utf-8'))
+                win32print.EndPagePrinter(hPrinter)
+            finally:
+                win32print.EndDocPrinter(hPrinter)
+                win32print.ClosePrinter(hPrinter)
+            messages.success(request, "Chek printerga yuborildi!")
+        except Exception as e:
+            printer_error = str(e)
+            messages.warning(request, f"Printer xatosi: {e}. HTML chek ochiladi.")
+    
+    context = {
+        'sale': sale,
+        'printer_error': printer_error,
+    }
+    return render(request, 'print_receipt.html', context)

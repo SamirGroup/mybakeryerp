@@ -771,6 +771,77 @@
         .chart-wrap.sm { height: 200px; }
         .shift-ready-grid { grid-template-columns: 1fr; }
     }
+
+    /* ── POS Fullscreen ── */
+    body.pos-fullscreen .sidebar,
+    body.pos-fullscreen .topbar,
+    body.pos-fullscreen .hero,
+    body.pos-fullscreen .metric-strip { display: none !important; }
+    body.pos-fullscreen .main-content { min-height: 100vh; }
+    body.pos-fullscreen .content-wrapper { padding: 8px !important; }
+    body.pos-fullscreen .tab-container { border-radius: 0; }
+    body.pos-fullscreen .tab-nav button:not([data-tab="pos"]) { display: none; }
+
+    /* ── POS Korzinka ───────────────────────────────── */
+    .pos-cart-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        background: #fff;
+        border: 1.5px solid rgba(212,163,115,.2);
+        border-radius: 12px;
+        margin-bottom: 6px;
+        transition: border-color .15s;
+    }
+    .pos-cart-item:hover { border-color: #D4A373; }
+    .pos-cart-thumb {
+        width: 48px; height: 48px;
+        border-radius: 8px;
+        object-fit: cover;
+        background: #f0ece4;
+        flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        color: #ccc; font-size: 20px;
+        overflow: hidden;
+    }
+    .pos-cart-thumb img { width:100%; height:100%; object-fit:cover; border-radius:8px; }
+    .pos-cart-name  { font-size:13px; font-weight:700; color:#2f2a25; line-height:1.2; }
+    .pos-cart-price { font-size:11.5px; color:#9a7a5a; margin-top:2px; }
+    .pos-qty-wrap   { display:flex; align-items:center; gap:6px; margin-left:auto; flex-shrink:0; }
+    .pos-qty-btn {
+        width:28px; height:28px; border-radius:8px;
+        border: 1.5px solid #D4A373; background: none;
+        color:#D4A373; font-size:14px; font-weight:800;
+        cursor:pointer; display:flex; align-items:center; justify-content:center;
+        transition: all .15s; line-height:1;
+    }
+    .pos-qty-btn:hover { background:#D4A373; color:#fff; }
+    .pos-qty-val {
+        font-family:'Lexend',sans-serif;
+        font-size:15px; font-weight:800;
+        color:#2f2a25; min-width:28px; text-align:center;
+    }
+    .pos-cart-sub  { font-size:13px; font-weight:800; color:#D4A373; min-width:80px; text-align:right; flex-shrink:0; }
+    .pos-del-btn   {
+        width:28px; height:28px; border-radius:8px;
+        border:none; background:#fff0f0; color:#e74c3c;
+        cursor:pointer; font-size:13px; display:flex;
+        align-items:center; justify-content:center;
+        transition: background .15s; flex-shrink:0;
+    }
+    .pos-del-btn:hover { background:#e74c3c; color:#fff; }
+
+    /* Product card click feedback */
+    .product-card:active { transform: scale(0.96) !important; }
+    .product-card .pc-added-badge {
+        position:absolute; top:6px; right:6px;
+        background:#D4A373; color:#fff;
+        border-radius:20px; font-size:11px;
+        font-weight:800; padding:2px 8px;
+        display:none;
+    }
+    .product-card.in-cart .pc-added-badge { display:block; }
 </style>
 {% endblock %}
 
@@ -989,6 +1060,15 @@
 
         <!-- POS Tab -->
         <div class="tab-content active" id="pos">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+                <button onclick="togglePosFull()" id="posFsBtn"
+                    style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;
+                           border:1.5px solid var(--line-soft);border-radius:8px;background:rgba(255,255,255,.8);
+                           font-size:12px;font-weight:700;color:#746a60;cursor:pointer;">
+                    <i class="fa-solid fa-expand" id="posFsIcon"></i>
+                    <span id="posFsLabel">Katta ekran</span>
+                </button>
+            </div>
             <div class="grid-2">
                 <div>
                     <h3 class="section-title">
@@ -1027,13 +1107,26 @@
                             </select>
                         </div>
 
-                        <div id="multiCartLines" class="form-group"></div>
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-                            <button type="button" class="btn btn-primary" style="padding:9px 16px;font-size:13px;" onclick="addMultiCartLine()">
-                                <i class="fa-solid fa-plus"></i> Mahsulot qo'shish
-                            </button>
-                            <span id="cartTotalDisplay" style="font-family:'Lexend',sans-serif;font-size:15px;font-weight:800;color:#2f2a25;">0 UZS</span>
+                        <!-- ── Vizual POS Korzinka ── -->
+                        <div id="posCartEmpty" style="text-align:center;padding:28px 0;color:#b8a898;border:2px dashed #e8d5b8;border-radius:14px;margin-bottom:10px;">
+                            <i class="fa-solid fa-cart-shopping" style="font-size:36px;display:block;margin-bottom:10px;opacity:.45;"></i>
+                            <div style="font-size:14px;font-weight:600;">O'ngdagi mahsulot rasmiga bosing</div>
+                            <div style="font-size:12px;margin-top:4px;opacity:.7;">Har bir bosish 1 ta qo'shadi</div>
                         </div>
+
+                        <div id="posCartList" style="display:none;max-height:340px;overflow-y:auto;margin-bottom:8px;"></div>
+
+                        <div id="posCartFooter" style="display:none;justify-content:space-between;align-items:center;
+                             padding:10px 14px;background:#FAEDCD;border-radius:12px;margin-bottom:12px;">
+                            <span style="font-size:13px;color:#7a5a2a;font-weight:700;">
+                                <i class="fa-solid fa-basket-shopping"></i>
+                                <span id="posItemCount">0</span> ta mahsulot
+                            </span>
+                            <span id="cartTotalDisplay" style="font-family:'Lexend',sans-serif;font-size:18px;font-weight:800;color:#D4A373;">0 UZS</span>
+                        </div>
+
+                        <!-- Yashirin inputs — submit vaqtida JS to'ldiradi -->
+                        <div id="posHiddenInputs"></div>
 
                         <div class="form-group">
                             <label><i class="fa-solid fa-credit-card"></i> To'lov usuli</label>
@@ -1060,116 +1153,70 @@
                         </button>
                     </form>
 
-                    <details style="margin-top:20px;">
-                        <summary style="cursor:pointer;font-weight:700;color:#4f463e;">Bitta mahsulot (tezkor)</summary>
-                    <form method="POST" id="quickSaleForm" style="margin-top:12px;">
-                        {% csrf_token %}
-                        <input type="hidden" name="quick_sale" value="1">
-                        <input type="hidden" name="preserve_query" value="{{ preserve_query }}">
-                        <input type="hidden" name="payment_method" id="selected_payment" value="cash">
-
-                        <div class="form-group">
-                            <label>Smena</label>
-                            {% if shifts %}
-                            <select name="shift_name" class="form-control shift-select">
-                                {% for s in shifts %}
-                                <option value="{{ s.name }}" {% if s.name == focus_shift %}selected{% endif %}>{{ s.name }}</option>
-                                {% endfor %}
-                            </select>
-                            {% else %}
-                            <input type="text" name="shift_name" class="form-control" placeholder="1-smena" value="{{ focus_shift }}">
-                            {% endif %}
-                        </div>
-
-                        <div class="form-group">
-                            <label><i class="fa-solid fa-user"></i> Sotuvchi (Xodim)</label>
-                            <select name="seller_employee_id" class="form-control seller-select" required>
-                                <option value="">-- Xodimni tanlang --</option>
-                                {% for emp in employees %}
-                                <option value="{{ emp.id }}" data-shift="{{ emp.shift.name }}" {% if emp.shift.name == focus_shift %}selected{% endif %}>{{ emp.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <i class="fa-solid fa-box-open"></i> Mahsulot tanlang
-                            </label>
-                            <select name="product" class="form-control" id="saleProduct" required>
-                                <option value="">-- Mahsulotni tanlang --</option>
-                                {% for item in product_options %}
-                                    <option
-                                        value="{{ item.product.id }}"
-                                        data-price="{{ item.product.price }}"
-                                        data-stock="{{ item.stock }}"
-                                        {% if item.stock <= 0 or not item.has_inventory %}disabled{% endif %}
-                                    >
-                                        {{ item.product.name }} - {{ item.product.price|floatformat:0 }} UZS
-                                        {% if item.has_inventory %}
-                                            (qoldiq: {{ item.stock }})
-                                        {% else %}
-                                            (qoldiq yaratilmagan)
-                                        {% endif %}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                            <div class="field-hint" id="productHint">Mahsulot tanlanganda narx va qoldiq avtomatik hisoblanadi.</div>
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <i class="fa-solid fa-hashtag"></i> Miqdor
-                            </label>
-                            <input type="number" name="quantity" id="saleQuantity" class="form-control" required min="1" value="1" style="font-size: 18px; text-align: center;">
-                        </div>
-
-                        <div class="sale-summary" aria-live="polite">
-                            <div class="sale-summary-item">
-                                <div class="sale-summary-label">Narx</div>
-                                <div class="sale-summary-value" id="previewPrice">0 UZS</div>
+                    <!-- Tezkor sotuv alohida sahifaga ko'chirildi -->
+                    <div style="margin-top:16px;padding:14px 16px;background:var(--gold-l,#FAEDCD);
+                         border-radius:12px;border:1.5px solid rgba(212,163,115,.35);
+                         display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                        <div>
+                            <div style="font-size:13.5px;font-weight:800;color:#5c4020;">
+                                <i class="fa-solid fa-bolt" style="color:#D4A373;"></i> Tezkor Sotuv
                             </div>
-                            <div class="sale-summary-item">
-                                <div class="sale-summary-label">Qoldiq</div>
-                                <div class="sale-summary-value" id="previewStock">0 dona</div>
-                            </div>
-                            <div class="sale-summary-item">
-                                <div class="sale-summary-label">Jami</div>
-                                <div class="sale-summary-value" id="previewTotal">0 UZS</div>
+                            <div style="font-size:12px;color:#9a7a5a;margin-top:2px;">
+                                Bitta mahsulot — tez tasdiq
                             </div>
                         </div>
+                        <a href="/sales/quick/" style="display:inline-flex;align-items:center;gap:7px;
+                           padding:10px 18px;background:#D4A373;color:#fff;border-radius:10px;
+                           font-size:13px;font-weight:800;text-decoration:none;
+                           transition:background .18s;" onmouseover="this.style.background='#b88656'" onmouseout="this.style.background='#D4A373'">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Tezkor sotuvga o'tish
+                        </a>
+                    </div>
+                </div>
 
-                        <div class="form-group">
-                            <label>
-                                <i class="fa-solid fa-credit-card"></i> To'lov usuli
-                            </label>
-                            <div class="payment-methods">
-                                <button type="button" class="payment-btn selected" id="pay-cash" onclick="selectPayment(this, 'cash')">
-                                    <i class="fa-solid fa-money-bill"></i>
-                                    <span>Naqd pul</span>
-                                </button>
-                                <button type="button" class="payment-btn" id="pay-terminal" onclick="selectPayment(this, 'terminal')">
-                                    <i class="fa-solid fa-credit-card"></i>
-                                    <span>Terminal</span>
-                                </button>
-                                <button type="button" class="payment-btn" id="pay-electronic" onclick="selectPayment(this, 'electronic')">
-                                    <i class="fa-solid fa-mobile-screen"></i>
-                                    <span>Click/Payme</span>
-                                </button>
-                            </div>
+                <!-- Mijoz Chek Paneli - Sotuvchi kiritgan ma'lumotlar mijozga ko'rinadi -->
+                <div>
+                    <h3 class="section-title" style="margin-bottom:8px;">
+                        <i class="fa-solid fa-receipt"></i> Mijoz Chek (Chop uchun)
+                    </h3>
+                    <p style="font-size:13px;color:#8a7f73;margin-bottom:12px;">
+                        Sotuv tasdiqlangandan keyin bu yerda chek ko'rinadi. POS printer uchun moslashtirilgan.
+                    </p>
+                    
+                    <div id="customerReceipt" style="background:#fff;border:2px dashed #d4a373;border-radius:12px;padding:16px;min-height:200px;display:flex;align-items:center;justify-content:center;">
+                        <div style="text-align:center;color:#8a7f73;">
+                            <i class="fa-solid fa-receipt" style="font-size:48px;margin-bottom:12px;opacity:0.3;"></i>
+                            <p>Sotuvni yakunlanganda chek shu yerda ko'rinadi</p>
+                            <p style="font-size:12px;">POS printer uchun mos format</p>
                         </div>
+                    </div>
 
-                        <div class="warning-box">
-                            <i class="fa-solid fa-ban"></i>
-                            <strong>Nasiya (qarz) qat'iyan taqiqlanadi!</strong>
-                        </div>
-
-                        <button type="submit" class="btn btn-success btn-full" id="saleSubmit">
-                            <i class="fa-solid fa-check-circle"></i>
-                            Sotuvni Yakunlash
+                    <div style="margin-top:12px;">
+                        <button type="button" class="btn btn-primary" style="width:100%;padding:12px;" onclick="printCustomerReceipt()">
+                            <i class="fa-solid fa-print"></i> Cheknini chop etish (POS printer)
                         </button>
-                    </form>
+                    </div>
+
+                    <details style="margin-top:20px;">
+                        <summary style="cursor:pointer;font-weight:700;color:#4f463e;">Sotuv tarixi (bugun)</summary>
+                        <div id="todaySalesList" style="margin-top:12px;max-height:300px;overflow-y:auto;">
+                            {% for sale in today_sales %}
+                            <div style="border-bottom:1px solid rgba(212,163,115,0.2);padding:8px 0;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;">
+                                    <strong>Chek #{{ sale.id }}</strong>
+                                    <span style="font-family:'Lexend',sans-serif;font-weight:800;color:#d4a373;">{{ sale.total_amount|floatformat:0 }} UZS</span>
+                                </div>
+                                <div style="font-size:12px;color:#8a7f73;margin-top:4px;">{{ sale.date|date:"H:i" }} | {{ sale.get_payment_method_display }}</div>
+                                <div style="font-size:11px;color:#7f7468;margin-top:2px;">{{ sale.shift_name|default:"-" }}</div>
+                            </div>
+                            {% empty %}
+                            <div style="text-align:center;color:#8a7f73;padding:10px;">Bugun sotuvlar yo'q</div>
+                            {% endfor %}
+                        </div>
                     </details>
                 </div>
+            </div>
+        </div>
 
                 <!-- Product Catalog -->
                 <div>
@@ -1197,11 +1244,13 @@
                                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px;">
                                     {% for item in sale_cart_products %}
                                         {% if item.category == category.name %}
-                                            <div class="product-card" 
-                                                 style="border: 1px solid rgba(212, 163, 115, 0.25); border-radius: 12px; background: rgba(255, 255, 255, 0.9); overflow: hidden; display: flex; flex-direction: column; cursor: pointer; transition: all 0.2s;"
-                                                 {% if not item.disabled %}onclick="addSpecificProductToCart({{ item.id }})"{% endif %}
+                                            <div class="product-card"
+                                                 id="pc-{{ item.id }}"
+                                                 style="border: 1px solid rgba(212, 163, 115, 0.25); border-radius: 12px; background: rgba(255, 255, 255, 0.9); overflow: hidden; display: flex; flex-direction: column; cursor: pointer; transition: all 0.2s; position:relative;"
+                                                 {% if not item.disabled %}onclick="posAddProduct({{ item.id }}, '{{ item.name|escapejs }}', {{ item.price }}, {{ item.stock }}, '{% if item.image_url %}{{ item.image_url }}{% endif %}')"{% endif %}
                                                  onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(212, 163, 115, 0.15)'"
                                                  onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                                                <span class="pc-added-badge" id="badge-{{ item.id }}">0</span>
                                                 
                                                 <div style="height: 120px; background: #f8f9fa; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">
                                                     {% if item.image_url %}
@@ -1836,14 +1885,36 @@
             });
         }
 
-        // Initialize multi cart with one line
-        addMultiCartLine();
+        // POS korzinka boshlang'ich holati
+        posRender();
+
+        // Agar oxirgi sotuv bo'lsa, mijoz chekni ko'rsatish
+        {% if last_sale %}
+        const lastSaleItems = JSON.parse(document.getElementById('last-sale-items').textContent || '[]');
+        window.showCustomerReceipt({{ last_sale.sale_id }}, lastSaleItems, {{ last_sale.total }}, "{{ last_sale.payment_method }}", "{{ last_sale.shift_name|default:'' }}");
+        {% endif %}
     });
 
+    /* ── POS Fullscreen ── */
+    function togglePosFull() {
+        const body  = document.body;
+        const icon  = document.getElementById('posFsIcon');
+        const label = document.getElementById('posFsLabel');
+        if (body.classList.contains('pos-fullscreen')) {
+            body.classList.remove('pos-fullscreen');
+            icon.className  = 'fa-solid fa-expand';
+            label.textContent = 'Katta ekran';
+        } else {
+            body.classList.add('pos-fullscreen');
+            icon.className  = 'fa-solid fa-compress';
+            label.textContent = 'Kichraytirish';
+        }
+    }
+
     function selectPayment(btn, method) {
-        document.querySelectorAll('#quickSaleForm .payment-btn').forEach(b => b.classList.remove('selected'));
+        document.querySelectorAll('#multiSaleForm .payment-btn').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
-        document.getElementById('selected_payment').value = method;
+        document.getElementById('multi_selected_payment').value = method;
     }
 
     function selectMultiPayment(btn, method) {
@@ -1852,85 +1923,149 @@
         document.getElementById('multi_selected_payment').value = method;
     }
 
-    function updateMultiCartTotal() {
-        let total = 0;
-        document.querySelectorAll('.cart-line-select').forEach(sel => {
-            if(sel.value) {
-                const opt = sel.options[sel.selectedIndex];
-                const price = parseFloat(opt.dataset.price) || 0;
-                const qtyInput = sel.closest('.cart-line').querySelector('.cart-line-qty');
-                const qty = parseInt(qtyInput.value) || 0;
-                total += price * qty;
-            }
-        });
-        document.getElementById('cartTotalDisplay').textContent = total.toLocaleString('ru-RU') + ' UZS';
-    }
+    /* ═══════════════════════════════════════════════════
+       POS KORZINKA TIZIMI
+    ═══════════════════════════════════════════════════ */
+    // cartItems = [{id, name, price, stock, image_url, qty}]
+    let posCart = [];
 
-    function removeMultiCartLine(btn) {
-        btn.closest('.cart-line').remove();
-        updateMultiCartTotal();
-    }
+    function posRender() {
+        const list   = document.getElementById('posCartList');
+        const empty  = document.getElementById('posCartEmpty');
+        const footer = document.getElementById('posCartFooter');
 
-    function addMultiCartLine(selectedProductId = null) {
-        const container = document.getElementById('multiCartLines');
-        const div = document.createElement('div');
-        div.className = 'cart-line';
-        div.style.display = 'flex';
-        div.style.gap = '8px';
-        div.style.marginBottom = '8px';
-        div.style.alignItems = 'center';
-
-        let optionsHtml = '<option value="">-- Tanlang --</option>';
-        saleCartProducts.forEach(p => {
-            const disabled = p.disabled ? 'disabled' : '';
-            const selected = (selectedProductId && p.id == selectedProductId) ? 'selected' : '';
-            optionsHtml += `<option value="${p.id}" data-price="${p.price}" data-stock="${p.stock}" ${disabled} ${selected}>
-                ${p.name} - ${p.price} UZS (Qoldiq: ${p.stock})
-            </option>`;
-        });
-
-        div.innerHTML = `
-            <select name="product_id" class="form-control cart-line-select" required style="flex:1;" onchange="updateMultiCartTotal()">
-                ${optionsHtml}
-            </select>
-            <input type="number" name="quantity" class="form-control cart-line-qty" required min="1" value="1" style="width:80px;" oninput="updateMultiCartTotal()">
-            <button type="button" class="btn btn-warning" style="padding:10px 14px;" onclick="removeMultiCartLine(this)"><i class="fa-solid fa-trash"></i></button>
-        `;
-        container.appendChild(div);
-        updateMultiCartTotal();
-    }
-
-    window.addSpecificProductToCart = function(productId) {
-        // Find if product is already in the cart list and increment
-        let added = false;
-        document.querySelectorAll('.cart-line').forEach(line => {
-            const sel = line.querySelector('.cart-line-select');
-            if(sel.value == productId) {
-                const qtyInput = line.querySelector('.cart-line-qty');
-                const maxStock = parseInt(sel.options[sel.selectedIndex].dataset.stock) || 0;
-                if(parseInt(qtyInput.value) < maxStock) {
-                    qtyInput.value = parseInt(qtyInput.value) + 1;
-                }
-                added = true;
-            }
-        });
-        
-        // If not in cart, add a new line
-        if (!added) {
-            // Find empty line
-            let emptyFound = false;
-            document.querySelectorAll('.cart-line').forEach(line => {
-                if(!emptyFound && !line.querySelector('.cart-line-select').value) {
-                    line.querySelector('.cart-line-select').value = productId;
-                    emptyFound = true;
-                }
-            });
-            if(!emptyFound) {
-                addMultiCartLine(productId);
-            }
+        if (posCart.length === 0) {
+            list.style.display   = 'none';
+            empty.style.display  = 'block';
+            footer.style.display = 'none';
+            document.getElementById('cartTotalDisplay').textContent = '0 UZS';
+            document.getElementById('posItemCount').textContent = '0';
+            return;
         }
-        updateMultiCartTotal();
-    };
+
+        list.style.display   = 'block';
+        empty.style.display  = 'none';
+        footer.style.display = 'flex';
+
+        let total = 0;
+        let html  = '';
+        posCart.forEach((item, idx) => {
+            const sub = item.price * item.qty;
+            total += sub;
+            const thumb = item.image_url
+                ? `<div class="pos-cart-thumb"><img src="${item.image_url}" alt="${item.name}"></div>`
+                : `<div class="pos-cart-thumb"><i class="fa-solid fa-bread-slice"></i></div>`;
+
+            html += `
+            <div class="pos-cart-item" id="pci-${item.id}">
+                ${thumb}
+                <div style="flex:1;min-width:0;">
+                    <div class="pos-cart-name">${item.name}</div>
+                    <div class="pos-cart-price">${item.price.toLocaleString('ru-RU')} UZS / dona</div>
+                </div>
+                <div class="pos-qty-wrap">
+                    <button class="pos-qty-btn" onclick="posQty(${item.id}, -1)">−</button>
+                    <span class="pos-qty-val">${item.qty}</span>
+                    <button class="pos-qty-btn" onclick="posQty(${item.id}, +1)">+</button>
+                </div>
+                <div class="pos-cart-sub">${sub.toLocaleString('ru-RU')} UZS</div>
+                <button class="pos-del-btn" onclick="posRemove(${item.id})" title="O'chirish">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </div>`;
+        });
+
+        list.innerHTML = html;
+        document.getElementById('cartTotalDisplay').textContent = total.toLocaleString('ru-RU') + ' UZS';
+        document.getElementById('posItemCount').textContent = posCart.reduce((s,i) => s + i.qty, 0);
+
+        // Catalog badge yangilash
+        document.querySelectorAll('[id^="pc-"]').forEach(card => {
+            const pid = parseInt(card.id.replace('pc-', ''));
+            const found = posCart.find(i => i.id === pid);
+            const badge = document.getElementById('badge-' + pid);
+            if (found && badge) {
+                badge.textContent = found.qty;
+                badge.style.display = 'block';
+                card.classList.add('in-cart');
+            } else if (badge) {
+                badge.style.display = 'none';
+                card.classList.remove('in-cart');
+            }
+        });
+    }
+
+    function posAddProduct(id, name, price, stock, image_url) {
+        const existing = posCart.find(i => i.id === id);
+        if (existing) {
+            if (existing.qty < stock) {
+                existing.qty += 1;
+            } else {
+                // Qoldiq tugagan - qisqacha chayqatish
+                const card = document.getElementById('pc-' + id);
+                if (card) {
+                    card.style.outline = '2px solid #e74c3c';
+                    setTimeout(() => { card.style.outline = ''; }, 600);
+                }
+                return;
+            }
+        } else {
+            if (stock <= 0) return;
+            posCart.push({ id, name, price, stock, image_url, qty: 1 });
+        }
+
+        // Click feedback
+        const card = document.getElementById('pc-' + id);
+        if (card) {
+            card.style.outline = '2.5px solid #D4A373';
+            setTimeout(() => { card.style.outline = ''; }, 400);
+        }
+
+        posRender();
+
+        // Korzinkaga scroll
+        const list = document.getElementById('posCartList');
+        if (list) list.scrollTop = list.scrollHeight;
+    }
+
+    function posQty(id, delta) {
+        const item = posCart.find(i => i.id === id);
+        if (!item) return;
+        const newQty = item.qty + delta;
+        if (newQty <= 0) {
+            posRemove(id);
+        } else if (newQty <= item.stock) {
+            item.qty = newQty;
+            posRender();
+        }
+    }
+
+    function posRemove(id) {
+        posCart = posCart.filter(i => i.id !== id);
+        posRender();
+    }
+
+    // Form submit — yashirin input lar qo'shish
+    document.getElementById('multiSaleForm').addEventListener('submit', function(e) {
+        if (posCart.length === 0) {
+            e.preventDefault();
+            alert("Korzinka bo'sh! Kamida bitta mahsulot tanlang.");
+            return;
+        }
+        const container = document.getElementById('posHiddenInputs');
+        container.innerHTML = '';
+        posCart.forEach(item => {
+            const pid = document.createElement('input');
+            pid.type = 'hidden'; pid.name = 'product_id'; pid.value = item.id;
+            const qty = document.createElement('input');
+            qty.type = 'hidden'; qty.name = 'quantity'; qty.value = item.qty;
+            container.appendChild(pid);
+            container.appendChild(qty);
+        });
+    });
+
+    // Eski API ni saqlaymiz (catalog onclick uchun)
+    window.addSpecificProductToCart = posAddProduct;
 
     function toggleSaleDetail(id) {
         const el = document.getElementById('sale-items-' + id);
@@ -1998,5 +2133,158 @@
     function exportRecentExcel() {
         alert('Teparoqdagi Excel eksport tugmasidan (filtr ostidagi) foydalaning. Bu funksiya orqali to\'liq ma\'lumot yuklanadi.');
     }
+
+    // Mijoz chek chop etish funksiyasi - POS printer uchun
+    function printCustomerReceipt() {
+        const receiptContent = document.getElementById('customerReceipt').innerHTML;
+        if (receiptContent.includes('Sotuvni yakunlanganda')) {
+            alert('Avval sotuvni yakunlang!');
+            return;
+        }
+        const printWin = window.open('', '_blank');
+        printWin.document.write(`
+            <html>
+            <head>
+                <title>Cheknini Chop Etish</title>
+                <style>
+                    body {
+                        font-family: 'Courier New', monospace;
+                        font-size: 12px;
+                        padding: 20px;
+                        text-align: center;
+                    }
+                    .receipt {
+                        max-width: 400px;
+                        margin: 0 auto;
+                        text-align: left;
+                        border: 1px dashed #999;
+                        padding: 15px;
+                    }
+                    .receipt h2 {
+                        font-size: 18px;
+                        margin-bottom: 10px;
+                        text-align: center;
+                    }
+                    .receipt h3 {
+                        font-size: 14px;
+                        margin: 10px 0;
+                        border-bottom: 1px solid #333;
+                        padding-bottom: 5px;
+                    }
+                    .receipt-item {
+                        display: flex;
+                        justify-content: space-between;
+                        margin: 5px 0;
+                        font-size: 13px;
+                    }
+                    .receipt-total {
+                        font-weight: bold;
+                        font-size: 16px;
+                        margin: 15px 0;
+                        border-top: 2px solid #333;
+                        padding-top: 10px;
+                    }
+                    .receipt-footer {
+                        margin-top: 20px;
+                        font-size: 11px;
+                        color: #666;
+                    }
+                    @media print {
+                        .no-print { display: none; }
+                        .receipt { border: 1px dashed #000; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="receipt">
+                    <h2>BUNYOD NON</h2>
+                    <h3>Sotuv Cheki</h3>
+                    <div id="receiptBody"></div>
+                    <div class="receipt-footer">
+                        <p>Rahmat! Qaytib kelishingizni kutamiz</p>
+                        <p>Telefon: +998 90 000 00 00</p>
+                        <p>Sana: ${new Date().toLocaleDateString('uz-UZ')}</p>
+                    </div>
+                </div>
+                <div class="no-print" style="text-align: center; margin-top: 20px;">
+                    <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">Chop etish</button>
+                    <button onclick="window.close()" style="padding: 10px 20px; font-size: 16px; cursor: pointer; margin-left: 10px;">Yopish</button>
+                </div>
+                <script>
+                    document.getElementById('receiptBody').innerHTML = document.getElementById('customerReceipt').innerHTML;
+                    setTimeout(function() { window.print(); }, 500);
+                </script>
+            </body>
+            </html>
+        `);
+        printWin.document.close();
+    }
+
+    // Sotuv tasdiqlangandan keyin chekni ko'rsatish
+    window.showCustomerReceipt = function(saleId, items, total, paymentMethod, shiftName) {
+        // Korzinkani tozalash
+        posCart = [];
+        posRender();
+
+        const fmt = n => Number(n).toLocaleString('ru-RU');
+        const payLabels = { cash: 'Naqd', terminal: 'Terminal', electronic: 'Click/Payme' };
+
+        const receiptDiv = document.getElementById('customerReceipt');
+        let itemsHtml = '';
+        items.forEach(item => {
+            const sub = fmt(item.total);
+            itemsHtml += `
+            <div style="display:flex;justify-content:space-between;align-items:center;
+                        padding:9px 0;border-bottom:1px dashed rgba(212,163,115,.3);">
+                <div>
+                    <div style="font-weight:700;color:#2f2a25;font-size:13px;">${item.name}</div>
+                    <div style="font-size:11px;color:#9a7a5a;">${fmt(item.price)} × ${item.qty} dona</div>
+                </div>
+                <strong style="color:#D4A373;font-size:14px;">${sub} UZS</strong>
+            </div>`;
+        });
+
+        receiptDiv.innerHTML = `
+        <div style="font-family:'Manrope',sans-serif;max-width:340px;margin:0 auto;">
+            <div style="text-align:center;margin-bottom:16px;">
+                <div style="font-family:'Lexend',sans-serif;font-size:22px;font-weight:800;color:#D4A373;">★ BUNYOD NON ★</div>
+                <div style="font-size:12px;color:#9a7a5a;">Sotuv Cheki</div>
+            </div>
+            <div style="background:#fff8ef;border-radius:10px;padding:12px;margin-bottom:12px;font-size:13px;">
+                <div style="display:flex;justify-content:space-between;"><span style="color:#9a7a5a;">Chek #</span><strong>#${saleId}</strong></div>
+                <div style="display:flex;justify-content:space-between;margin-top:4px;"><span style="color:#9a7a5a;">Sana</span><span>${new Date().toLocaleDateString('uz-UZ')}</span></div>
+                <div style="display:flex;justify-content:space-between;margin-top:4px;"><span style="color:#9a7a5a;">Smena</span><span>${shiftName || '—'}</span></div>
+                <div style="display:flex;justify-content:space-between;margin-top:4px;"><span style="color:#9a7a5a;">To'lov</span><span>${payLabels[paymentMethod] || paymentMethod}</span></div>
+            </div>
+            <div style="margin-bottom:12px;">${itemsHtml}</div>
+            <div style="background:#D4A373;color:#fff;border-radius:10px;padding:14px;text-align:center;margin-bottom:12px;">
+                <div style="font-size:12px;opacity:.85;">JAMI TO'LOV</div>
+                <div style="font-family:'Lexend',sans-serif;font-size:24px;font-weight:800;">${fmt(total)} UZS</div>
+            </div>
+            <div style="text-align:center;">
+                <a href="/sales/receipt/${saleId}/?auto=1" target="_blank"
+                   style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;
+                          background:#2f2a25;color:#fff;border-radius:10px;
+                          font-weight:700;font-size:13px;text-decoration:none;margin-right:8px;">
+                    <i class="fa-solid fa-print"></i> Chek chop etish
+                </a>
+                <a href="/sales/receipt/${saleId}/" target="_blank"
+                   style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;
+                          background:var(--warm-1,#f2dcc2);color:#5c4b3a;border-radius:10px;
+                          font-weight:700;font-size:13px;text-decoration:none;">
+                    <i class="fa-solid fa-eye"></i> Ko'rish
+                </a>
+            </div>
+            <p style="text-align:center;color:#9a7a5a;font-size:12px;margin-top:12px;">
+                ★ Rahmat! Qaytib kelishingizni kutamiz ★
+            </p>
+        </div>`;
+
+        // Receipt paneliga scroll
+        const panel = document.getElementById('customerReceipt');
+        if (panel) {
+            panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    };
 </script>
 {% endblock %}

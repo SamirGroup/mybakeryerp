@@ -1,23 +1,41 @@
 import io
 import json
-from datetime import date, timedelta
+import requests as http_requests
+from datetime import date, timedelta, datetime, time
 from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.http import HttpResponse
+from django.conf import settings
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from urllib.parse import urlencode
 
-from .models import AdvancePayment, DailyReport, Employee, Position, Shift
+from .models import AdvancePayment, DailyReport, Employee, Position, Shift, Attendance, EmployeePhoto, FaceIDLog
 
+
+# ─── Helpers ──────────────────────────────────────────────────────────────────
 
 def _can_access(user, *roles):
     if user.is_superuser:
         return True
     return user.groups.filter(name__in=roles).exists()
+
+
+def _can_access_branch(user, branch_id=None):
+    if user.is_superuser:
+        return True
+    if 'branch_admin' in user.groups.values_list('name', flat=True):
+        try:
+            user_branch = user.profile.branch
+            if branch_id and user_branch.id != branch_id:
+                return False
+            return True
+        except Exception:
+            return False
+    return False
 
 
 def _parse_decimal(val, default=None):
@@ -45,19 +63,60 @@ def _date_range(request):
     return today, today
 
 
+def _send_telegram(message: str):
+    """Telegram bot orqali rahbarga xabar yuborish.
+    Avval database sozlamalarini, so'ng settings.py ni tekshiradi.
+    """
+    token = ''
+    chat_id = ''
+    try:
+        from core.models import TelegramSettings
+        cfg = TelegramSettings.get()
+        if cfg.is_active and cfg.bot_token and cfg.chat_id:
+            token = cfg.bot_token
+            chat_id = cfg.chat_id
+    except Exception:
+        pass
+
+    if not token:
+        token = getattr(settings, 'TELEGRAM_BOT_TOKEN', '')
+        chat_id = getattr(settings, 'TELEGRAM_CHAT_ID', '')
+
+    if not token or not chat_id:
+        return
+
+    try:
+        http_requests.post(
+            f'https://api.telegram.org/bot{token}/sendMessage',
+            json={'chat_id': chat_id, 'text': message, 'parse_mode': 'HTML'},
+            timeout=5,
+        )
+    except Exception:
+        pass
+
+
+# ─── HR Dashboard ─────────────────────────────────────────────────────────────
+
 @login_required
 def hr_dashboard(request):
-    if not _can_access(request.user, 'hr'):
+    if not _can_access(request.user, 'hr', 'branch_admin'):
         return redirect('dashboard')
 
-    employees = Employee.objects.select_related('shift').all()
+    if _can_access_branch(request.user) and not request.user.is_superuser:
+        try:
+            user_branch = request.user.profile.branch
+            employees = Employee.objects.select_related('shift', 'branch').filter(branch=user_branch)
+        except Exception:
+            employees = Employee.objects.none()
+    else:
+        employees = Employee.objects.select_related('shift').all()
+
     shifts = Shift.objects.all().order_by('name')
     positions = Position.objects.all().order_by('name')
     advances = AdvancePayment.objects.select_related('employee').order_by('-date')[:15]
 
     date_from, date_to = _date_range(request)
 
-    # ── Sort ──────────────────────────────────────────────────────────
     sort_by = request.GET.get('sort', 'name')
     sort_map = {
         'name': 'name',
@@ -68,12 +127,10 @@ def hr_dashboard(request):
     }
     employees = employees.order_by(sort_map.get(sort_by, 'name'))
 
-    # Filter by shift
     shift_filter = request.GET.get('shift_filter', '')
     if shift_filter:
         employees = employees.filter(shift_id=shift_filter)
 
-    # Filter by position
     pos_filter = request.GET.get('pos_filter', '')
     if pos_filter:
         employees = employees.filter(position__icontains=pos_filter)
@@ -145,7 +202,8 @@ def hr_dashboard(request):
             base_salary = request.POST.get('base_salary', 0) or 0
             piecework_rate = request.POST.get('piecework_rate', 0) or 0
             daily_target = request.POST.get('daily_target', 0) or 0
-            # photo = request.FILES.get('photo')
+            face_photos = request.FILES.getlist('face_photos')
+            branch_id = request.POST.get('branch_id', '')
 
             if name and position and date_joined:
                 shift = Shift.objects.filter(id=shift_id).first() if shift_id else None
@@ -160,7 +218,6 @@ def hr_dashboard(request):
                         'daily_target': daily_target,
                         'status': 'active',
                         'shift': shift,
-                        # 'photo': photo,
                     }
                 )
                 if created:
@@ -168,13 +225,36 @@ def hr_dashboard(request):
                     if uid:
                         try:
                             oid = int(uid)
-                            if Employee.objects.filter(user_account_id=oid).exists():
-                                messages.warning(request, "Xodim qo'shildi; tanlangan login boshqa kartada — biriktirish bekor qilindi.")
-                            else:
+                            if not Employee.objects.filter(user_account_id=oid).exists():
                                 emp.user_account_id = oid
                                 emp.save(update_fields=['user_account_id'])
                         except ValueError:
                             pass
+
+                    if branch_id:
+                        try:
+                            from branches.models import Branch
+                            emp.branch = Branch.objects.get(id=branch_id)
+                            emp.save(update_fields=['branch'])
+                        except Exception:
+                            pass
+                    elif _can_access_branch(request.user) and not request.user.is_superuser:
+                        try:
+                            emp.branch = request.user.profile.branch
+                            emp.save(update_fields=['branch'])
+                        except Exception:
+                            pass
+
+                    if face_photos:
+                        emp.face_id_enrolled = True
+                        emp.save(update_fields=['face_id_enrolled'])
+                        for i, photo_file in enumerate(face_photos[:5]):
+                            EmployeePhoto.objects.create(
+                                employee=emp,
+                                photo=photo_file,
+                                is_primary=(i == 0)
+                            )
+
                     messages.success(request, f"Xodim '{name}' qo'shildi.")
                 else:
                     messages.warning(request, "Bu xodim allaqachon mavjud.")
@@ -203,15 +283,20 @@ def hr_dashboard(request):
                     try:
                         oid = int(uid)
                         if Employee.objects.filter(user_account_id=oid).exclude(pk=emp.pk).exists():
-                            messages.error(request, "Bu login boshqa xodimga biriktirilgan — user_account saqlanmadi.")
+                            messages.error(request, "Bu login boshqa xodimga biriktirilgan.")
                         else:
                             emp.user_account_id = oid
                     except ValueError:
-                        messages.error(request, "Noto'g'ri foydalanuvchi tanlandi.")
+                        pass
                 else:
                     emp.user_account_id = None
-                # if request.FILES.get('photo'):
-                #     emp.photo = request.FILES['photo']
+                branch_id = request.POST.get('branch_id', '')
+                if branch_id:
+                    try:
+                        from branches.models import Branch
+                        emp.branch = Branch.objects.get(id=branch_id)
+                    except Exception:
+                        pass
                 emp.save()
                 messages.success(request, f"{emp.name} yangilandi.")
             except Employee.DoesNotExist:
@@ -290,15 +375,48 @@ def hr_dashboard(request):
         }
         return redirect('/hr/?' + urlencode(params))
 
-    # Daily reports for date range
-    daily_reports = (
-        DailyReport.objects
-        .select_related('employee', 'shift')
-        .filter(date__gte=date_from, date__lte=date_to)
-        .order_by('-date', 'employee__name')
-    )
+    # Daily reports
+    if _can_access_branch(request.user) and not request.user.is_superuser:
+        try:
+            user_branch = request.user.profile.branch
+            daily_reports = (
+                DailyReport.objects
+                .select_related('employee', 'shift')
+                .filter(date__gte=date_from, date__lte=date_to, employee__branch=user_branch)
+                .order_by('-date', 'employee__name')
+            )
+            face_logs = FaceIDLog.objects.select_related('employee').filter(
+                timestamp__date=timezone.localdate(),
+                employee__branch=user_branch
+            ).order_by('-timestamp')[:20]
+            attendances = Attendance.objects.select_related('employee').filter(
+                date=timezone.localdate(),
+                employee__branch=user_branch
+            )
+            enrolled_employees = Employee.objects.filter(face_id_enrolled=True, branch=user_branch)
+        except Exception:
+            daily_reports = DailyReport.objects.none()
+            face_logs = FaceIDLog.objects.none()
+            attendances = Attendance.objects.none()
+            enrolled_employees = Employee.objects.none()
+    else:
+        daily_reports = (
+            DailyReport.objects
+            .select_related('employee', 'shift')
+            .filter(date__gte=date_from, date__lte=date_to)
+            .order_by('-date', 'employee__name')
+        )
+        face_logs = FaceIDLog.objects.select_related('employee').filter(
+            timestamp__date=timezone.localdate()
+        ).order_by('-timestamp')[:20]
+        attendances = Attendance.objects.select_related('employee').filter(date=timezone.localdate())
+        enrolled_employees = Employee.objects.filter(face_id_enrolled=True)
 
+    late_arrivals = attendances.filter(late_minutes__gt=0)
     seller_users = User.objects.filter(is_active=True).order_by('username')
+
+    from branches.models import Branch
+    branches = Branch.objects.filter(is_active=True).order_by('name')
 
     employee_edit_payload = [
         {
@@ -314,15 +432,16 @@ def hr_dashboard(request):
             'piecework_rate': str(e.piecework_rate),
             'daily_target': e.daily_target,
             'user_account_id': e.user_account_id,
+            'branch_id': e.branch_id,
         }
-        for e in Employee.objects.select_related('shift').order_by('name')
+        for e in employees
     ]
 
     context = {
         'employees': employees,
-        'active_employees': Employee.objects.filter(status='active').order_by('name'),
+        'active_employees': employees.filter(status='active'),
         'seller_users': seller_users,
-        'employee_edit_payload': employee_edit_payload,
+        'employee_edit_payload': json.dumps(employee_edit_payload),
         'shifts': shifts,
         'positions': positions,
         'advances': advances,
@@ -334,286 +453,21 @@ def hr_dashboard(request):
         'sort_by': sort_by,
         'shift_filter': shift_filter,
         'pos_filter': pos_filter,
+        'face_logs': face_logs,
+        'late_arrivals': late_arrivals,
+        'enrolled_employees': enrolled_employees,
+        'attendances': attendances,
+        'branches': branches,
+        'telegram_configured': bool(getattr(settings, 'TELEGRAM_BOT_TOKEN', '')),
     }
     return render(request, 'hr.html', context)
 
 
-@login_required
-def employee_report(request, emp_id):
-    if not _can_access(request.user, 'hr'):
-        return redirect('dashboard')
-
-    emp = Employee.objects.select_related('shift').get(id=emp_id)
-
-    # --- Sana oralig'i ---
-    period = request.GET.get('period', 'month')
-    today = timezone.localdate()
-    if period == 'today':
-        date_from = date_to = today
-    elif period == 'week':
-        date_from = today - timedelta(days=6)
-        date_to = today
-    elif period == 'custom':
-        try:
-            date_from = date.fromisoformat(request.GET.get('date_from', ''))
-            date_to = date.fromisoformat(request.GET.get('date_to', ''))
-        except ValueError:
-            date_from = today.replace(day=1)
-            date_to = today
-    else:  # month
-        date_from = today.replace(day=1)
-        date_to = today
-
-    # --- POST: hisobot tahrirlash ---
-    if request.method == 'POST':
-        action = request.POST.get('action', '')
-        if action == 'edit_report':
-            rid = request.POST.get('report_id')
-            try:
-                r = DailyReport.objects.get(id=rid, employee=emp)
-                r.check_in = request.POST.get('check_in') or None
-                r.check_out = request.POST.get('check_out') or None
-                r.was_present = request.POST.get('was_present') == '1'
-                r.absence_reason = request.POST.get('absence_reason', '') if not r.was_present else ''
-                r.units_produced = int(request.POST.get('units_produced', 0) or 0)
-                r.hours_expected = _parse_decimal(request.POST.get('hours_expected'), Decimal('8')) or Decimal('8')
-                r.hours_present = _parse_decimal(request.POST.get('hours_present'))
-                r.notes = request.POST.get('notes', '')
-                r.save()
-                messages.success(request, f"{r.date} hisoboti yangilandi.")
-            except DailyReport.DoesNotExist:
-                messages.error(request, "Hisobot topilmadi.")
-        elif action == 'add_report':
-            rdate = request.POST.get('report_date', str(today))
-            shift_id = request.POST.get('shift_id', '')
-            shift = Shift.objects.filter(id=shift_id).first() if shift_id else None
-            was_present = request.POST.get('was_present') == '1'
-            absence_reason = request.POST.get('absence_reason', '') if not was_present else ''
-            DailyReport.objects.update_or_create(
-                employee=emp, date=rdate, shift=shift,
-                defaults={
-                    'check_in': request.POST.get('check_in') or None,
-                    'check_out': request.POST.get('check_out') or None,
-                    'was_present': was_present,
-                    'absence_reason': absence_reason,
-                    'units_produced': int(request.POST.get('units_produced', 0) or 0),
-                    'hours_expected': _parse_decimal(request.POST.get('hours_expected'), Decimal('8')) or Decimal('8'),
-                    'hours_present': _parse_decimal(request.POST.get('hours_present')),
-                    'notes': request.POST.get('notes', ''),
-                }
-            )
-            messages.success(request, "Hisobot saqlandi.")
-        from urllib.parse import urlencode as _ue
-        return redirect('/hr/employee/{}/report/?'.format(emp_id) + _ue({
-            'period': period,
-            'date_from': str(date_from),
-            'date_to': str(date_to),
-        }))
-
-    # --- Hisobotlar ---
-    reports = (
-        DailyReport.objects
-        .filter(employee=emp, date__gte=date_from, date__lte=date_to)
-        .order_by('date')
-    )
-
-    # --- Statistika ---
-    total_days = (date_to - date_from).days + 1
-    present_days = reports.filter(was_present=True).count()
-    absent_days = reports.filter(was_present=False).count()
-    absent_sick = reports.filter(was_present=False, absence_reason='sick').count()
-    absent_personal = reports.filter(was_present=False, absence_reason='personal').count()
-    absent_approved = reports.filter(was_present=False, absence_reason='approved').count()
-    absent_no_reason = reports.filter(was_present=False, absence_reason='no_reason').count()
-
-    total_units = sum(
-        (r.units_produced or 0) + (r.units_from_sales or 0) for r in reports
-    )
-    total_hours = sum(
-        float(r.hours_present or 0) for r in reports
-    )
-
-    # --- Oylik hisob ---
-    if emp.is_piecework:
-        # Ishbay: jami dona × stavka
-        salary_calc = Decimal(str(total_units)) * (emp.piecework_rate or Decimal('0'))
-        salary_type = 'piecework'
-    else:
-        # Kunlik: kelgan kunlar × (oylik / ish kunlari)
-        work_days_in_period = total_days
-        if work_days_in_period > 0:
-            daily_rate = (emp.base_salary or Decimal('0')) / Decimal(str(work_days_in_period))
-            salary_calc = daily_rate * Decimal(str(present_days))
-        else:
-            salary_calc = Decimal('0')
-        salary_type = 'daily'
-
-    # Avans chegirib tashlash
-    advances = AdvancePayment.objects.filter(
-        employee=emp,
-        date__gte=date_from,
-        date__lte=date_to
-    )
-    total_advance = sum(a.amount for a in advances) or Decimal('0')
-    net_salary = salary_calc - total_advance
-
-    context = {
-        'emp': emp,
-        'reports': reports,
-        'shifts': Shift.objects.all().order_by('name'),
-        'date_from': date_from,
-        'date_to': date_to,
-        'period': period,
-        'today': today,
-        'total_days': total_days,
-        'present_days': present_days,
-        'absent_days': absent_days,
-        'absent_sick': absent_sick,
-        'absent_personal': absent_personal,
-        'absent_approved': absent_approved,
-        'absent_no_reason': absent_no_reason,
-        'total_units': total_units,
-        'total_hours': round(total_hours, 2),
-        'salary_calc': salary_calc,
-        'salary_type': salary_type,
-        'total_advance': total_advance,
-        'net_salary': net_salary,
-        'advances': advances,
-        'absence_reasons': DailyReport.ABSENCE_REASON_CHOICES,
-    }
-    return render(request, 'hr_employee_report.html', context)
-
+# ─── Employee Report ───────────────────────────────────────────────────────────
 
 @login_required
 def employee_report(request, emp_id):
-    if not _can_access(request.user, 'hr'):
-        return redirect('dashboard')
-    try:
-        emp = Employee.objects.select_related('shift').get(id=emp_id)
-    except Employee.DoesNotExist:
-        return redirect('hr_dashboard')
-
-    today = timezone.localdate()
-    period = request.GET.get('period', 'month')
-
-    if period == 'today':
-        date_from = date_to = today
-    elif period == 'week':
-        date_from = today - timedelta(days=6)
-        date_to = today
-    elif period == 'custom':
-        try:
-            date_from = date.fromisoformat(request.GET.get('date_from', ''))
-            date_to = date.fromisoformat(request.GET.get('date_to', ''))
-        except ValueError:
-            date_from = today.replace(day=1)
-            date_to = today
-    else:  # month
-        date_from = today.replace(day=1)
-        date_to = today
-
-    # POST: hisobot qo'shish yoki tahrirlash
-    if request.method == 'POST':
-        action = request.POST.get('action', '')
-        shift_id = request.POST.get('shift_id', '')
-        shift = Shift.objects.filter(id=shift_id).first() if shift_id else None
-        was_present = request.POST.get('was_present') == '1'
-        absence_reason = '' if was_present else request.POST.get('absence_reason', '')
-        defaults = {
-            'check_in': request.POST.get('check_in') or None,
-            'check_out': request.POST.get('check_out') or None,
-            'was_present': was_present,
-            'absence_reason': absence_reason,
-            'units_produced': int(request.POST.get('units_produced', 0) or 0),
-            'hours_expected': _parse_decimal(request.POST.get('hours_expected'), Decimal('8')) or Decimal('8'),
-            'hours_present': _parse_decimal(request.POST.get('hours_present')),
-            'notes': request.POST.get('notes', ''),
-        }
-        if action == 'edit_report':
-            rid = request.POST.get('report_id')
-            try:
-                r = DailyReport.objects.get(id=rid, employee=emp)
-                for k, v in defaults.items():
-                    setattr(r, k, v)
-                r.save()
-                messages.success(request, f"{r.date} hisoboti yangilandi.")
-            except DailyReport.DoesNotExist:
-                messages.error(request, "Hisobot topilmadi.")
-        elif action == 'add_report':
-            rdate = request.POST.get('report_date', str(today))
-            DailyReport.objects.update_or_create(
-                employee=emp, date=rdate, shift=shift,
-                defaults=defaults
-            )
-            messages.success(request, "Hisobot saqlandi.")
-        return redirect(f'/hr/employee/{emp_id}/report/?period={period}&date_from={date_from}&date_to={date_to}')
-
-    reports = (
-        DailyReport.objects
-        .filter(employee=emp, date__gte=date_from, date__lte=date_to)
-        .order_by('date')
-    )
-
-    present_days = reports.filter(was_present=True).count()
-    absent_days  = reports.filter(was_present=False).count()
-    absent_sick      = reports.filter(was_present=False, absence_reason='sick').count()
-    absent_personal  = reports.filter(was_present=False, absence_reason='personal').count()
-    absent_approved  = reports.filter(was_present=False, absence_reason='approved').count()
-    absent_no_reason = reports.filter(was_present=False, absence_reason='no_reason').count()
-
-    total_units = sum((r.units_produced or 0) + (r.units_from_sales or 0) for r in reports)
-    total_hours = round(sum(float(r.hours_present or 0) for r in reports), 2)
-
-    # Oylik hisob
-    total_days = (date_to - date_from).days + 1
-    daily_rate = Decimal('0')
-    if emp.is_piecework:
-        salary_calc = Decimal(str(total_units)) * (emp.piecework_rate or Decimal('0'))
-        salary_type = 'piecework'
-    else:
-        daily_rate = (emp.base_salary or Decimal('0')) / Decimal(str(total_days)) if total_days else Decimal('0')
-        salary_calc = daily_rate * Decimal(str(present_days))
-        salary_type = 'daily'
-
-    advances = AdvancePayment.objects.filter(
-        employee=emp,
-        date__gte=date_from,
-        date__lte=date_to
-    )
-    total_advance = sum(a.amount for a in advances) or Decimal('0')
-    net_salary = salary_calc - total_advance
-
-    context = {
-        'emp': emp,
-        'reports': reports,
-        'shifts': Shift.objects.all().order_by('name'),
-        'date_from': date_from,
-        'date_to': date_to,
-        'period': period,
-        'today': today,
-        'total_days': total_days,
-        'present_days': present_days,
-        'absent_days': absent_days,
-        'absent_sick': absent_sick,
-        'absent_personal': absent_personal,
-        'absent_approved': absent_approved,
-        'absent_no_reason': absent_no_reason,
-        'total_units': total_units,
-        'total_hours': round(total_hours, 2),
-        'salary_calc': salary_calc,
-        'salary_type': salary_type,
-        'daily_rate': daily_rate,
-        'total_advance': total_advance,
-        'net_salary': net_salary,
-        'advances': advances,
-        'absence_reasons': DailyReport.ABSENCE_REASON_CHOICES,
-    }
-    return render(request, 'hr_employee_report.html', context)
-
-
-@login_required
-def employee_report(request, emp_id):
-    if not _can_access(request.user, 'hr'):
+    if not _can_access(request.user, 'hr', 'branch_admin'):
         return redirect('dashboard')
     try:
         emp = Employee.objects.select_related('shift').get(id=emp_id)
@@ -635,7 +489,7 @@ def employee_report(request, emp_id):
         except ValueError:
             date_from = today.replace(day=1)
             date_to   = today
-    else:  # month
+    else:
         date_from = today.replace(day=1)
         date_to   = today
 
@@ -703,6 +557,8 @@ def employee_report(request, emp_id):
     total_advance = sum(a.amount for a in advances) or Decimal('0')
     net_salary    = salary_calc - total_advance
 
+    daily_target_status = calculate_daily_target_status(emp, today) if emp.is_piecework else None
+
     context = {
         'emp': emp,
         'reports': reports,
@@ -726,13 +582,16 @@ def employee_report(request, emp_id):
         'net_salary': net_salary,
         'advances': advances,
         'absence_reasons': DailyReport.ABSENCE_REASON_CHOICES,
+        'daily_target_status': daily_target_status,
     }
     return render(request, 'hr_employee_report.html', context)
 
 
+# ─── Positions Export/Import ───────────────────────────────────────────────────
+
 @login_required
 def positions_export_json(request):
-    if not _can_access(request.user, 'hr'):
+    if not _can_access(request.user, 'hr', 'branch_admin'):
         return redirect('dashboard')
     data = [
         {'name': p.name, 'description': p.description}
@@ -748,7 +607,7 @@ def positions_export_json(request):
 
 @login_required
 def positions_import_json(request):
-    if not _can_access(request.user, 'hr'):
+    if not _can_access(request.user, 'hr', 'branch_admin'):
         return redirect('dashboard')
     if request.method != 'POST':
         return redirect('hr_dashboard')
@@ -788,7 +647,7 @@ def _export_hr_excel(employees, date_from, date_to):
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Xodimlar"
-    fill = PatternFill("solid", fgColor="D4A373")
+    fill = PatternFill("solid", fgColor="D4A373")  # #D4A373 asosiy rang
     bold = Font(bold=True)
     headers = ['Ism', 'Lavozim', 'Smena', 'Telefon', 'Qo\'shilgan sana', 'Holat', 'Nagruzka (kun)', 'Ishbay stavka']
     for col, h in enumerate(headers, 1):
@@ -816,3 +675,428 @@ def _export_hr_excel(employees, date_from, date_to):
     resp = HttpResponse(buf.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     resp['Content-Disposition'] = f'attachment; filename="employees_{date_from}_{date_to}.xlsx"'
     return resp
+
+
+# ─── Kunlik Nagruzka ───────────────────────────────────────────────────────────
+
+def calculate_daily_target_status(employee, report_date=None):
+    """Xodimning kunlik nagruzka bajarilishini hisoblash."""
+    if not report_date:
+        report_date = timezone.localdate()
+    try:
+        report = DailyReport.objects.get(employee=employee, date=report_date)
+    except DailyReport.DoesNotExist:
+        return None
+
+    target = employee.daily_target or 0
+    total_units = report.piecework_units_total
+
+    if target <= 0:
+        return {
+            'target': 0,
+            'completed': total_units,
+            'percentage': 100 if total_units > 0 else 0,
+            'status': 'no_target',
+            'status_display': 'Nagruzka belgilanmagan',
+            'earnings': report.estimated_piecework_earn,
+            'bonus': Decimal('0'),
+            'total_payment': report.estimated_piecework_earn,
+            'piecework_rate': employee.piecework_rate,
+        }
+
+    percentage = min((total_units / target) * 100, 100)
+
+    if total_units >= target:
+        status = 'completed'
+        status_display = 'Bajarildi ✅'
+    elif total_units >= target * 0.75:
+        status = 'partial'
+        status_display = 'Yarim bajarildi ⚠️'
+    else:
+        status = 'failed'
+        status_display = 'Bajarilmadi ❌'
+
+    earnings = report.estimated_piecework_earn
+    bonus = earnings * Decimal('0.10') if status == 'completed' else Decimal('0')
+
+    return {
+        'target': target,
+        'completed': total_units,
+        'percentage': round(percentage, 1),
+        'status': status,
+        'status_display': status_display,
+        'earnings': earnings,
+        'bonus': bonus,
+        'total_payment': earnings + bonus,
+        'piecework_rate': employee.piecework_rate,
+    }
+
+
+@login_required
+def daily_target_api(request, emp_id):
+    if not _can_access(request.user, 'hr', 'branch_admin'):
+        return JsonResponse({'error': "Ruxsat yo'q"}, status=403)
+    try:
+        emp = Employee.objects.get(id=emp_id)
+    except Employee.DoesNotExist:
+        return JsonResponse({'error': 'Xodim topilmadi'}, status=404)
+
+    date_str = request.GET.get('date')
+    report_date = timezone.localdate()
+    if date_str:
+        try:
+            report_date = date.fromisoformat(date_str)
+        except ValueError:
+            pass
+
+    result = calculate_daily_target_status(emp, report_date)
+    if result is None:
+        return JsonResponse({'error': 'Hisobot topilmadi', 'employee': emp.name, 'date': str(report_date)}, status=404)
+
+    return JsonResponse({
+        'success': True,
+        'employee': emp.name,
+        'position': emp.position,
+        'date': str(report_date),
+        'target': result['target'],
+        'completed': result['completed'],
+        'percentage': result['percentage'],
+        'status': result['status'],
+        'status_display': result['status_display'],
+        'earnings': float(result['earnings']),
+        'bonus': float(result['bonus']),
+        'total_payment': float(result['total_payment']),
+        'piecework_rate': float(result['piecework_rate']),
+    })
+
+
+# ─── Face ID Views ─────────────────────────────────────────────────────────────
+
+@login_required
+def face_id_check_in(request):
+    """Face ID orqali kirish - API endpoint"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    employee_id = request.POST.get('employee_id')
+    confidence = float(request.POST.get('confidence', 0))
+    snapshot = request.FILES.get('snapshot')
+
+    try:
+        emp = Employee.objects.get(id=employee_id)
+    except Employee.DoesNotExist:
+        return JsonResponse({'error': 'Xodim topilmadi'}, status=404)
+
+    if not emp.face_id_enrolled:
+        return JsonResponse({'error': 'Xodim Face ID tizimiga ulanmagan'}, status=400)
+
+    today = timezone.localdate()
+    now = timezone.now()
+    current_time = now.time()
+
+    shift_start = emp.shift.start_time if emp.shift else None
+    expected_check_in = shift_start
+
+    late_minutes = 0
+    is_late = False
+    if shift_start and current_time > shift_start:
+        diff = datetime.combine(today, current_time) - datetime.combine(today, shift_start)
+        late_minutes = int(diff.total_seconds() / 60)
+        is_late = late_minutes > 0
+
+    log = FaceIDLog.objects.create(
+        employee=emp,
+        action='check_in',
+        confidence=confidence,
+        is_late=is_late,
+        late_minutes=late_minutes,
+        shift_start_time=shift_start,
+    )
+    if snapshot:
+        log.snapshot = snapshot
+        log.save(update_fields=['snapshot'])
+
+    Attendance.objects.update_or_create(
+        employee=emp,
+        date=today,
+        defaults={
+            'check_in': current_time,
+            'check_in_method': 'face_id',
+            'late_minutes': late_minutes,
+            'expected_check_in': expected_check_in,
+        }
+    )
+
+    time_str = current_time.strftime('%H:%M')
+    shift_name = emp.shift.name if emp.shift else 'Smenasiz'
+    if is_late:
+        tg_msg = (
+            f"⚠️ <b>Kechikish!</b>\n"
+            f"👤 {emp.name} — {emp.position}\n"
+            f"🕐 Keldi: {time_str} ({late_minutes} daqiqa kech)\n"
+            f"📋 Smena: {shift_name}"
+        )
+        ui_msg = f"⚠️ {emp.name} {late_minutes} daqiqa kechikdi"
+    else:
+        tg_msg = (
+            f"✅ <b>Keldi</b>\n"
+            f"👤 {emp.name} — {emp.position}\n"
+            f"🕐 Vaqt: {time_str}\n"
+            f"📋 Smena: {shift_name}"
+        )
+        ui_msg = f"✅ {emp.name} keldi"
+
+    _send_telegram(tg_msg)
+
+    return JsonResponse({
+        'success': True,
+        'message': ui_msg,
+        'employee_name': emp.name,
+        'position': emp.position,
+        'check_in_time': time_str,
+        'is_late': is_late,
+        'late_minutes': late_minutes,
+        'shift': shift_name,
+    })
+
+
+@login_required
+def face_id_check_out(request):
+    """Face ID orqali chiqish - API endpoint"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    employee_id = request.POST.get('employee_id')
+    confidence = float(request.POST.get('confidence', 0))
+    snapshot = request.FILES.get('snapshot')
+
+    try:
+        emp = Employee.objects.get(id=employee_id)
+    except Employee.DoesNotExist:
+        return JsonResponse({'error': 'Xodim topilmadi'}, status=404)
+
+    today = timezone.localdate()
+    now = timezone.now()
+    current_time = now.time()
+
+    log = FaceIDLog.objects.create(
+        employee=emp,
+        action='check_out',
+        confidence=confidence,
+        shift_start_time=emp.shift.start_time if emp.shift else None,
+    )
+    if snapshot:
+        log.snapshot = snapshot
+        log.save(update_fields=['snapshot'])
+
+    try:
+        att = Attendance.objects.get(employee=emp, date=today)
+        att.check_out = current_time
+        att.check_out_method = 'face_id'
+        att.save()
+    except Attendance.DoesNotExist:
+        Attendance.objects.create(
+            employee=emp,
+            date=today,
+            check_out=current_time,
+            check_out_method='face_id',
+        )
+
+    time_str = current_time.strftime('%H:%M')
+    tg_msg = (
+        f"👋 <b>Ketdi</b>\n"
+        f"👤 {emp.name} — {emp.position}\n"
+        f"🕐 Vaqt: {time_str}"
+    )
+    _send_telegram(tg_msg)
+
+    return JsonResponse({
+        'success': True,
+        'message': f"👋 {emp.name} ketdi",
+        'employee_name': emp.name,
+        'position': emp.position,
+        'check_out_time': time_str,
+    })
+
+
+@login_required
+def face_id_enroll(request):
+    """Xodimni Face ID tizimiga ulash"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    employee_id = request.POST.get('employee_id')
+    try:
+        emp = Employee.objects.get(id=employee_id)
+    except Employee.DoesNotExist:
+        return JsonResponse({'error': 'Xodim topilmadi'}, status=404)
+
+    photos = request.FILES.getlist('photos')
+    if not photos:
+        return JsonResponse({'error': "Kamida bitta rasm yuklanishi kerak"}, status=400)
+
+    emp.face_id_enrolled = True
+    emp.save(update_fields=['face_id_enrolled'])
+
+    saved = 0
+    existing_count = EmployeePhoto.objects.filter(employee=emp).count()
+    for i, photo_file in enumerate(photos):
+        EmployeePhoto.objects.create(
+            employee=emp,
+            photo=photo_file,
+            is_primary=(existing_count == 0 and i == 0)
+        )
+        saved += 1
+
+    return JsonResponse({
+        'success': True,
+        'message': f"{emp.name} Face ID tizimiga ulandi",
+        'employee_id': emp.id,
+        'photos_count': saved,
+    })
+
+
+@login_required
+def face_dashboard(request):
+    """Face ID monitoring dashboard"""
+    if not _can_access(request.user, 'hr', 'branch_admin'):
+        return redirect('dashboard')
+
+    today = timezone.localdate()
+
+    if _can_access_branch(request.user) and not request.user.is_superuser:
+        try:
+            user_branch = request.user.profile.branch
+            face_logs = FaceIDLog.objects.select_related('employee').filter(
+                timestamp__date=today,
+                employee__branch=user_branch
+            ).order_by('-timestamp')[:50]
+            attendances = Attendance.objects.select_related('employee', 'employee__shift').filter(
+                date=today,
+                employee__branch=user_branch
+            )
+            enrolled_employees = Employee.objects.filter(face_id_enrolled=True, branch=user_branch)
+        except Exception:
+            face_logs = FaceIDLog.objects.none()
+            attendances = Attendance.objects.none()
+            enrolled_employees = Employee.objects.none()
+    else:
+        face_logs = FaceIDLog.objects.select_related('employee').filter(
+            timestamp__date=today
+        ).order_by('-timestamp')[:50]
+        attendances = Attendance.objects.select_related('employee', 'employee__shift').filter(date=today)
+        enrolled_employees = Employee.objects.filter(face_id_enrolled=True)
+
+    late_arrivals = attendances.filter(late_minutes__gt=0)
+
+    context = {
+        'face_logs': face_logs,
+        'attendances': attendances,
+        'late_arrivals': late_arrivals,
+        'enrolled_employees': enrolled_employees,
+        'today': today,
+    }
+    return render(request, 'face_dashboard.html', context)
+
+
+@login_required
+def face_id_camera(request):
+    """Face ID kamera sahifasi"""
+    if not _can_access(request.user, 'hr', 'branch_admin'):
+        return redirect('dashboard')
+
+    today = timezone.localdate()
+
+    if _can_access_branch(request.user) and not request.user.is_superuser:
+        try:
+            user_branch = request.user.profile.branch
+            enrolled_employees = Employee.objects.filter(face_id_enrolled=True, branch=user_branch).select_related('shift')
+            all_employees = Employee.objects.filter(status='active', branch=user_branch).select_related('shift')
+        except Exception:
+            enrolled_employees = Employee.objects.none()
+            all_employees = Employee.objects.none()
+    else:
+        enrolled_employees = Employee.objects.filter(face_id_enrolled=True).select_related('shift')
+        all_employees = Employee.objects.filter(status='active').select_related('shift')
+
+    context = {
+        'enrolled_employees': enrolled_employees,
+        'all_employees': all_employees,
+        'today': today,
+        'telegram_configured': bool(getattr(settings, 'TELEGRAM_BOT_TOKEN', '')),
+    }
+    return render(request, 'hr_face_camera.html', context)
+
+
+@login_required
+def api_check_in(request):
+    """API: Qo'lda kirish/chiqish"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': "JSON xato"}, status=400)
+
+    employee_id = data.get('employee_id')
+    action = data.get('action')
+
+    try:
+        emp = Employee.objects.get(id=employee_id)
+    except Employee.DoesNotExist:
+        return JsonResponse({'error': 'Xodim topilmadi'}, status=404)
+
+    today = timezone.localdate()
+    now = timezone.now()
+    current_time = now.time()
+    time_str = current_time.strftime('%H:%M')
+
+    if action == 'check_in':
+        late_minutes = 0
+        is_late = False
+        shift_start = emp.shift.start_time if emp.shift else None
+
+        if shift_start and current_time > shift_start:
+            diff = datetime.combine(today, current_time) - datetime.combine(today, shift_start)
+            late_minutes = int(diff.total_seconds() / 60)
+            is_late = late_minutes > 0
+
+        Attendance.objects.update_or_create(
+            employee=emp,
+            date=today,
+            defaults={
+                'check_in': current_time,
+                'check_in_method': 'manual',
+                'late_minutes': late_minutes,
+                'expected_check_in': shift_start,
+            }
+        )
+
+        shift_name = emp.shift.name if emp.shift else 'Smenasiz'
+        if is_late:
+            tg_msg = f"⚠️ <b>{emp.name}</b> {late_minutes} daqiqa kechikib keldi\n🕐 {time_str} — {emp.position}\n📋 {shift_name}"
+            ui_msg = f"⚠️ {emp.name} {late_minutes} daqiqa kechikdi"
+        else:
+            tg_msg = f"✅ <b>{emp.name}</b> keldi\n🕐 {time_str} — {emp.position}\n📋 {shift_name}"
+            ui_msg = f"✅ {emp.name} keldi"
+
+        _send_telegram(tg_msg)
+        return JsonResponse({'success': True, 'message': ui_msg, 'employee_name': emp.name,
+                             'check_in_time': time_str, 'is_late': is_late, 'late_minutes': late_minutes})
+
+    elif action == 'check_out':
+        try:
+            att = Attendance.objects.get(employee=emp, date=today)
+            att.check_out = current_time
+            att.check_out_method = 'manual'
+            att.save()
+        except Attendance.DoesNotExist:
+            Attendance.objects.create(employee=emp, date=today, check_out=current_time, check_out_method='manual')
+
+        tg_msg = f"👋 <b>{emp.name}</b> ketdi\n🕐 {time_str} — {emp.position}"
+        _send_telegram(tg_msg)
+        return JsonResponse({'success': True, 'message': f"👋 {emp.name} ketdi",
+                             'employee_name': emp.name, 'check_out_time': time_str})
+
+    return JsonResponse({"error": "Noto'g'ri harakat"}, status=400)

@@ -344,11 +344,20 @@
             <div class="branch-meta">
                 <i class="fa-solid fa-user-check"></i> {{ b.responsible_person|default:"Mas'ul yo'q" }}
             </div>
-            <div style="margin-top:15px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="margin-top:15px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
                 <div style="font-size:12px; font-weight:700; color:var(--muted-ink);">{{ b.inventory.count }} mahsulot tur</div>
-                <button class="btn-submit" style="padding:8px 15px; width:auto; font-size:12px;" onclick="switchTab('inventory', null); scrollToBranch('{{ b.id }}')">
-                    Qoldiqni ko'rish
-                </button>
+                <div style="display:flex;gap:6px;">
+                    <button class="btn-submit" style="padding:7px 12px; width:auto; font-size:12px;" onclick="switchTab('inventory', null); scrollToBranch('{{ b.id }}')">
+                        <i class="fa-solid fa-boxes-stacked"></i> Ombor
+                    </button>
+                    <a href="/branches/{{ b.id }}/"
+                       style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;
+                              background:#D4A373;color:#fff;border-radius:9px;
+                              font-size:12px;font-weight:700;text-decoration:none;
+                              transition:background .18s;">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Batafsil
+                    </a>
+                </div>
             </div>
         </article>
         {% endfor %}

@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+
+{% block breadcrumb %}<span>Filial boshqaruv paneli</span>{% endblock %}
+
+{% block extra_head %}
+<style>
+    .branch-dashboard {
+        padding: 24px;
+        background: linear-gradient(180deg, #fffdf7 0%, #f7f6f1 62%, #f2f3ee 100%);
+        min-height: calc(100vh - 70px);
+    }
+    .branch-header {
+        background: linear-gradient(135deg, #D4A373, #b88656);
+        color: white;
+        padding: 24px;
+        border-radius: 16px;
+        margin-bottom: 24px;
+        box-shadow: 0 8px 24px rgba(212,163,115,0.3);
+    }
+    .branch-header h1 {
+        margin: 0 0 8px 0;
+        font-size: 24px;
+        font-weight: 800;
+    }
+    .branch-header p {
+        margin: 0;
+        opacity: 0.9;
+        font-size: 14px;
+    }
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px;
+        margin-bottom: 24px;
+    }
+    @media(max-width: 1024px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media(max-width: 600px) { .kpi-grid { grid-template-columns: 1fr; } }
+    
+    .kpi-box {
+        background: white;
+        border-radius: 14px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        border: 1px solid rgba(212,163,115,0.15);
+    }
+    .kpi-box .label {
+        font-size: 12px;
+        color: #8a7a65;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
+    }
+    .kpi-box .value {
+        font-size: 28px;
+        font-weight: 800;
+        color: #2f2a25;
+        margin-bottom: 6px;
+    }
+    .kpi-box .delta {
+        font-size: 13px;
+        font-weight: 700;
+    }
+    .delta.up { color: #27ae60; }
+    .delta.down { color: #e74c3c; }
+    
+    .panel-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+    }
+    @media(max-width: 768px) { .panel-grid { grid-template-columns: 1fr; } }
+    
+    .panel-box {
+        background: white;
+        border-radius: 14px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        border: 1px solid rgba(212,163,115,0.15);
+    }
+    .panel-box h3 {
+        margin: 0 0 16px 0;
+        font-size: 16px;
+        color: #2f2a25;
+        font-weight: 700;
+    }
+    .emp-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #f0ece6;
+    }
+    .emp-row:last-child { border-bottom: none; }
+    .emp-name { font-weight: 700; color: #2f2a25; }
+    .emp-meta { font-size: 12px; color: #8a7a65; }
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
+    }
+    .dot-green { background: #27ae60; }
+    .dot-red { background: #e74c3c; }
+    .dot-yellow { background: #f39c12; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="branch-dashboard">
+    <div class="branch-header">
+        <h1><i class="fa-solid fa-store"></i> {{ branch.name }}</h1>
+        <p>{{ branch.address }} — Filial rahbari: {{ request.user.get_full_name|default:request.user.username }}</p>
+    </div>
+
+    <div class="kpi-grid">
+        <div class="kpi-box">
+            <div class="label">Bugungi daromad</div>
+            <div class="value">{{ today_revenue|floatformat:0 }} UZS</div>
+            <div class="delta {% if revenue_delta >= 0 %}up{% else %}down{% endif %}">
+                <i class="fa-solid {% if revenue_delta >= 0 %}fa-arrow-trend-up{% else %}fa-arrow-trend-down{% endif %}"></i>
+                {{ revenue_delta|floatformat:0 }} UZS (kechagiga nisbatan)
+            </div>
+        </div>
+        <div class="kpi-box">
+            <div class="label">Ishlab chiqarish (bugun)</div>
+            <div class="value">{{ today_production }} dona</div>
+            <div class="delta up"><i class="fa-solid fa-industry"></i> Nonvoyxona</div>
+        </div>
+        <div class="kpi-box">
+            <div class="label">Faol xodimlar</div>
+            <div class="value">{{ active_employees }} / {{ total_employees }}</div>
+            <div class="delta up"><i class="fa-solid fa-user-check"></i> {{ present_today }} nafar bugun keldi</div>
+        </div>
+        <div class="kpi-box">
+            <div class="label">Kechikganlar</div>
+            <div class="value">{{ late_today }}</div>
+            <div class="delta {% if late_today == 0 %}up{% else %}down{% endif %}">
+                <i class="fa-solid {% if late_today == 0 %}fa-check{% else %}fa-triangle-exclamation{% endif %}"></i>
+                {% if late_today == 0 %}Barchasi o'z vaqtida{% else %}Diqqat!{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="panel-grid">
+        <div class="panel-box">
+            <h3><i class="fa-solid fa-chart-pie" style="color:#D4A373;"></i> Top mahsulotlar (bugun)</h3>
+            {% for p in top_products %}
+            <div class="emp-row">
+                <div>
+                    <div class="emp-name">{{ p.product__name }}</div>
+                </div>
+                <div class="emp-meta">{{ p.total }} dona sotildi</div>
+            </div>
+            {% empty %}
+            <p style="color:#8a7a65;text-align:center;padding:20px;">Bugun sotuv yo'q</p>
+            {% endfor %}
+        </div>
+
+        <div class="panel-box">
+            <h3><i class="fa-solid fa-users" style="color:#D4A373;"></i> Tezkor havolalar</h3>
+            <div class="emp-row">
+                <a href="/sales/" class="emp-name" style="color:#D4A373;text-decoration:none;">
+                    <i class="fa-solid fa-cash-register"></i> Sotuv paneli
+                </a>
+            </div>
+            <div class="emp-row">
+                <a href="/hr/" class="emp-name" style="color:#D4A373;text-decoration:none;">
+                    <i class="fa-solid fa-users-gear"></i> Xodimlar boshqaruvi
+                </a>
+            </div>
+            <div class="emp-row">
+                <a href="/accounting/" class="emp-name" style="color:#D4A373;text-decoration:none;">
+                    <i class="fa-solid fa-calculator"></i> Buxgalteriya
+                </a>
+            </div>
+            <div class="emp-row">
+                <a href="/production/" class="emp-name" style="color:#D4A373;text-decoration:none;">
+                    <i class="fa-solid fa-industry"></i> Ishlab chiqarish
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

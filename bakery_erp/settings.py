@@ -24,13 +24,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-#8dh8-hxh*8j93l2k@dfu8n1rr@s2-tyezw9-iw33g1@y)bgoa'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = True  # os.getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     'mybakeryerp-production.up.railway.app',
-    '.railway.app',  # Barcha railway.app domenlariga ruxsat
+    '.railway.app',
+    'testserver',  # Test uchun
 ]
 CSRF_TRUSTED_ORIGINS = [
     'https://mybakeryerp-production.up.railway.app',
@@ -84,6 +85,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'core.context_processors.user_roles',
+                'core.context_processors.menu_context',
             ],
         },
     },
@@ -161,3 +163,9 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# ── Telegram Bot (Face ID bildirishtmalari uchun) ──────────────────────────────
+# @BotFather orqali bot yarating, tokenni shu yerga kiriting
+# Chat ID ni olish: https://api.telegram.org/bot<TOKEN>/getUpdates
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
+TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', '')

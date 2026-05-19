@@ -48,6 +48,89 @@ def logout_view(request):
 
 
 @login_required
+def branch_dashboard(request):
+    """Filial rahbari uchun alohida dashboard — faqat o'z filiali"""
+    user = request.user
+    if user.is_superuser:
+        return redirect('dashboard')
+    if 'branch_admin' not in user.groups.values_list('name', flat=True):
+        return redirect('dashboard')
+
+    try:
+        user_branch = user.profile.branch
+    except Exception:
+        messages.error(request, "Sizga filial biriktirilmagan.")
+        return redirect('login')
+    
+    if not user_branch:
+        messages.error(request, "Sizga filial biriktirilmagan.")
+        return redirect('login')
+    
+    today = timezone.now().date()
+    yesterday = today - timedelta(days=1)
+
+    # Filial bo'yicha sotuvlar
+    from sales.models import Sale, SaleItem
+    from branches.models import BranchSale, BranchSaleItem
+    from production.models import ProductionLog
+    from accounting.models import Transaction, CashRegister
+    from hr.models import Employee, DailyReport
+    
+    # Bugungi sotuvlar (POS + filial)
+    today_pos_sales = Sale.objects.filter(date__date=today, seller__profile__branch=user_branch)
+    today_branch_sales = BranchSale.objects.filter(date=today, branch=user_branch)
+    
+    today_revenue = (today_pos_sales.aggregate(total=Sum('total_amount'))['total'] or 0) + \
+                    (today_branch_sales.aggregate(total=Sum('total_amount'))['total'] or 0)
+    
+    yesterday_pos_sales = Sale.objects.filter(date__date=yesterday, seller__profile__branch=user_branch)
+    yesterday_branch_sales = BranchSale.objects.filter(date=yesterday, branch=user_branch)
+    yesterday_revenue = (yesterday_pos_sales.aggregate(total=Sum('total_amount'))['total'] or 0) + \
+                        (yesterday_branch_sales.aggregate(total=Sum('total_amount'))['total'] or 0)
+    
+    revenue_delta = today_revenue - yesterday_revenue
+    
+    # Ishlab chiqarish (filial bo'yicha xodimlar orqali)
+    branch_employees = Employee.objects.filter(branch=user_branch)
+    employee_ids = list(branch_employees.values_list('id', flat=True))
+    
+    today_production = ProductionLog.objects.filter(
+        date__date=today,
+        baker_name__in=branch_employees.values_list('name', flat=True)
+    ).aggregate(total=Sum('quantity'))['total'] or 0
+    
+    # Xodimlar statistikasi
+    total_employees = branch_employees.count()
+    active_employees = branch_employees.filter(status='active').count()
+    
+    # Bugungi davomat
+    today_reports = DailyReport.objects.filter(date=today, employee__branch=user_branch)
+    present_today = today_reports.filter(was_present=True).count()
+    late_today = today_reports.filter(check_in__gt='09:00').count()  # sodda kechikish
+    
+    # Top mahsulotlar
+    top_products = SaleItem.objects.filter(
+        sale__date__date=today,
+        sale__seller__profile__branch=user_branch
+    ).values('product__name').annotate(total=Sum('quantity')).order_by('-total')[:5]
+    
+    context = {
+        'branch': user_branch,
+        'today_revenue': today_revenue,
+        'yesterday_revenue': yesterday_revenue,
+        'revenue_delta': revenue_delta,
+        'today_production': today_production,
+        'total_employees': total_employees,
+        'active_employees': active_employees,
+        'present_today': present_today,
+        'late_today': late_today,
+        'top_products': top_products,
+        'today': today,
+    }
+    return render(request, 'branch_dashboard.html', context)
+
+
+@login_required
 def admin_users(request):
     if not request.user.is_superuser:
         return redirect('dashboard')
@@ -132,8 +215,15 @@ def admin_users(request):
             else:
                 messages.error(request, "Login va parol majburiy.")
         return redirect('admin_users')
+
+    from .models import TelegramSettings
+    tg = TelegramSettings.get()
     users = User.objects.all().prefetch_related('groups', 'profile__branch')
-    return render(request, 'admin_users.html', {'users': users, 'branches': branches})
+    return render(request, 'admin_users.html', {
+        'users': users,
+        'branches': branches,
+        'tg': tg,
+    })
 
 @login_required
 def dashboard(request):
@@ -151,7 +241,7 @@ def dashboard(request):
         if 'production_manager' in groups:
             return redirect('production_dashboard')
         if 'branch_admin' in groups:
-            return redirect('branches_dashboard')
+            return redirect('branch_dashboard')   # filial rahbari → o'z filialiga
         # Unknown role — show a plain access-denied page
         return render(request, 'no_access.html')
 
@@ -273,3 +363,53 @@ def dashboard(request):
     }
     
     return render(request, 'dashboard.html', context)
+
+
+@login_required
+def save_telegram_settings(request):
+    if not request.user.is_superuser:
+        from django.http import JsonResponse
+        return JsonResponse({'error': 'Ruxsat yo\'q'}, status=403)
+    if request.method != 'POST':
+        return redirect('admin_users')
+
+    from .models import TelegramSettings
+    tg = TelegramSettings.get()
+    tg.bot_token = request.POST.get('bot_token', '').strip()
+    tg.chat_id = request.POST.get('chat_id', '').strip()
+    tg.is_active = request.POST.get('is_active') == 'on'
+    tg.save()
+    messages.success(request, "Telegram sozlamalari saqlandi.")
+    return redirect('admin_users')
+
+
+@login_required
+def test_telegram(request):
+    from django.http import JsonResponse
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'Ruxsat yo\'q'}, status=403)
+
+    from .models import TelegramSettings
+    import requests as http_req
+    tg = TelegramSettings.get()
+    token = tg.bot_token or ''
+    chat_id = tg.chat_id or ''
+
+    if not token or not chat_id:
+        return JsonResponse({'error': 'Bot token yoki Chat ID kiritilmagan'})
+
+    try:
+        resp = http_req.post(
+            f'https://api.telegram.org/bot{token}/sendMessage',
+            json={'chat_id': chat_id,
+                  'text': '✅ <b>NovvoyERP</b> — Telegram muvaffaqiyatli ulandi!',
+                  'parse_mode': 'HTML'},
+            timeout=8,
+        )
+        data = resp.json()
+        if data.get('ok'):
+            return JsonResponse({'success': True, 'message': 'Test xabari yuborildi!'})
+        else:
+            return JsonResponse({'error': data.get('description', 'Noma\'lum xato')})
+    except Exception as e:
+        return JsonResponse({'error': str(e)})

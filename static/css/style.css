@@ -3,22 +3,26 @@
    Breakpoints: 480 | 768 | 1080
 ═══════════════════════════════════════════════════════ */
 :root {
-    --primary:       #D4A373;
-    --primary-dark:  #b88656;
-    --primary-light: #FAEDCD;
-    --bg:            #F4F5F7;
-    --sidebar-bg:    #FEFAE0;
-    --text:          #2d3436;
-    --muted:         #636e72;
-    --white:         #ffffff;
-    --border:        #e8e0d4;
-    --danger:        #d63031;
-    --radius:        14px;
-    --radius-sm:     8px;
-    --shadow:        0 2px 16px rgba(0,0,0,0.07);
-    --shadow-lg:     0 8px 32px rgba(0,0,0,0.18);
-    --sidebar-w:     250px;
-    --topbar-h:      64px;
+    --primary:        #D4A373;
+    --primary-dark:   #b88656;
+    --primary-light:  #FAEDCD;
+    --bg:             #F5F4F0;
+    --sidebar-bg:     #FFFBF2;
+    --sidebar-text:   #2C1A0E;
+    --sidebar-muted:  #9A7A5A;
+    --sidebar-hover:  rgba(212,163,115,0.14);
+    --sidebar-active: #D4A373;
+    --text:           #1a1a1a;
+    --muted:          #4a4a4a;
+    --white:          #ffffff;
+    --border:         #E8D5B8;
+    --danger:         #d63031;
+    --radius:         14px;
+    --radius-sm:      8px;
+    --shadow:         0 2px 16px rgba(0,0,0,0.06);
+    --shadow-lg:      0 8px 32px rgba(0,0,0,0.14);
+    --sidebar-w:      260px;
+    --topbar-h:       64px;
 }
 
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
@@ -49,8 +53,8 @@ input,select,textarea { font-family:inherit; }
     display:flex;
     flex-direction:column;
     flex-shrink:0;
-    border-right:1px solid var(--border);
-    /* Desktop: sticky so it stays while scrolling */
+    border-right:1.5px solid var(--border);
+    box-shadow:2px 0 12px rgba(0,0,0,0.06);
     position:sticky;
     top:0;
     height:100vh;
@@ -62,141 +66,60 @@ input,select,textarea { font-family:inherit; }
 .sidebar::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
 
 .sidebar-header {
-    padding:18px 14px 14px;
+    padding:18px 16px 14px;
     display:flex;
     align-items:center;
     gap:10px;
-    border-bottom:1px solid var(--border);
+    border-bottom:1.5px solid var(--border);
+    background:var(--sidebar-bg);
     flex-shrink:0;
 }
-.logo-icon { font-size:22px; color:var(--primary); }
-.sidebar-header h2 { font-size:18px; font-weight:700; flex:1; white-space:nowrap; }
+.logo-icon { font-size:24px; color:var(--primary); }
+.sidebar-header h2 { font-size:18px; font-weight:800; flex:1; white-space:nowrap; color:var(--sidebar-text); }
 .sidebar-header .highlight { color:var(--primary); }
 
 /* ✕ close — hidden on desktop */
 .sidebar-close {
     display:none;
     background:none; border:none;
-    font-size:20px; color:var(--muted);
+    font-size:20px; color:var(--sidebar-muted);
     padding:4px; line-height:1;
     border-radius:6px;
     flex-shrink:0;
+    cursor:pointer;
 }
+.sidebar-close:hover { background:rgba(200,145,74,0.15); color:var(--primary); }
 
 .nav-links {
-    padding:10px 8px;
+    padding:8px 8px;
     display:flex; flex-direction:column;
     gap:2px; flex:1;
 }
 .nav-links li a {
-    display:flex; align-items:center; gap:12px;
-    padding:10px 14px;
+    display:flex; align-items:center; gap:10px;
+    padding:10px 12px;
     border-radius:var(--radius-sm);
-    font-weight:500; font-size:13.5px;
-    color:var(--muted);
-    transition:background .2s,color .2s;
+    font-weight:600; font-size:13.5px;
+    color:var(--sidebar-text);
+    transition:background .18s,color .18s;
     white-space:nowrap;
 }
-.nav-links li a i { font-size:16px; width:18px; text-align:center; flex-shrink:0; }
-.nav-links li a:hover { background:rgba(212,163,115,.12); color:var(--primary-dark); }
+.nav-links li a i { font-size:15px; width:18px; text-align:center; flex-shrink:0; color:var(--sidebar-muted); }
+.nav-links li a:hover { background:var(--sidebar-hover); color:var(--primary); }
 .nav-links li a.active {
-    background:var(--primary); color:var(--white);
-    box-shadow:0 3px 10px rgba(212,163,115,.35);
+    background:var(--primary); color:#fff;
+    box-shadow:0 2px 8px rgba(200,145,74,.3);
 }
-
-/* Buxgalteriya — guruh va ichki menyu */
-.nav-links li.nav-group {
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-}
-.nav-links li.nav-group > .nav-group__head {
-    display:flex;
-    align-items:center;
-    gap:12px;
-    padding:10px 14px;
-    border-radius:var(--radius-sm);
-    font-weight:600;
-    font-size:13.5px;
-    color:var(--muted);
-    transition:background .2s,color .2s;
-    flex-shrink:0;
-    position:relative;
-    z-index:1;
-}
-.nav-links li.nav-group > .nav-group__head i { font-size:16px; width:18px; text-align:center; flex-shrink:0; }
-.nav-links li.nav-group > .nav-group__head:hover { background:rgba(212,163,115,.12); color:var(--primary-dark); }
-.nav-links li.nav-group > .nav-group__head.active {
-    background:var(--primary); color:var(--white);
-    box-shadow:0 3px 10px rgba(212,163,115,.35);
-}
-.nav-sub {
-    margin:0 0 6px 10px;
-    padding:6px 0 6px 10px;
-    border-left:2px solid var(--border);
-    display:flex;
-    flex-direction:column;
-    gap:4px;
-    position:relative;
-    z-index:0;
-}
-.nav-links .nav-sub li a {
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding:8px 10px 8px 8px;
-    border-radius:8px;
-    font-size:12.5px;
-    font-weight:500;
-    color:var(--muted);
-    white-space:normal;
-    line-height:1.35;
-    border:1px solid transparent;
-    box-sizing:border-box;
-}
-.nav-links .nav-sub li a i {
-    font-size:13px;
-    width:16px;
-    text-align:center;
-    opacity:0.85;
-    flex-shrink:0;
-}
-.nav-links .nav-sub li a:hover {
-    background:rgba(212,163,115,.1);
-    color:var(--primary-dark);
-}
-.nav-links .nav-sub li a.active {
-    background:rgba(212,163,115,.22);
-    color:var(--primary-dark);
-    font-weight:600;
-    box-shadow:none;
-    border-color:rgba(184,134,86,.35);
-}
-.nav-links .nav-sub li a:focus {
-    outline:none;
-}
-.nav-links .nav-sub li a:focus-visible {
-    outline:2px solid var(--primary-dark);
-    outline-offset:2px;
-}
-
-/* Buxgalteriya: sarlavha tugmasi yo‘q — ichki bandlar asosiy menyu bilan tekis */
-.nav-links li.nav-group--no-head {
-    gap: 0;
-}
-.nav-links li.nav-group--no-head .nav-sub {
-    margin: 4px 0 6px 0;
-    padding: 4px 0 6px 0;
-    border-left: none;
-}
+.nav-links li a.active i { color:#fff; }
 
 .sidebar-footer {
-    padding:12px 8px;
-    border-top:1px solid var(--border);
+    padding:12px 10px;
+    border-top:1.5px solid var(--border);
+    background:var(--sidebar-bg);
     flex-shrink:0;
 }
 .lang-label {
-    font-size:10px; font-weight:700; color:var(--muted);
+    font-size:10px; font-weight:700; color:var(--sidebar-muted);
     text-transform:uppercase; letter-spacing:.6px;
     margin-bottom:7px;
     display:flex; align-items:center; gap:5px;
@@ -206,8 +129,8 @@ input,select,textarea { font-family:inherit; }
     flex:1; padding:6px 4px;
     border:1.5px solid var(--border);
     border-radius:6px; background:var(--white);
-    font-size:11px; font-weight:700; color:var(--muted);
-    transition:all .2s; letter-spacing:.4px;
+    font-size:11px; font-weight:700; color:var(--sidebar-muted);
+    transition:all .18s; letter-spacing:.4px;
 }
 .lang-btn:hover  { border-color:var(--primary); color:var(--primary); }
 .lang-btn.active { background:var(--primary); border-color:var(--primary); color:var(--white); }
@@ -266,8 +189,9 @@ input,select,textarea { font-family:inherit; }
 .menu-toggle:hover { background:var(--primary); color:var(--white); }
 
 .breadcrumb {
-    font-size:17px; font-weight:600;
+    font-size:17px; font-weight:700;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    color:#1a1a1a;
 }
 .topbar-actions { display:flex; align-items:center; gap:10px; flex-shrink:0; }
 .icon-btn {

@@ -1,13 +1,41 @@
 from django.db import models
+from django.contrib.auth.models import User
 from production.models import Product
 
 class Branch(models.Model):
     name = models.CharField(max_length=255)
     address = models.TextField()
     responsible_person = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
+
+
+class BranchManager(models.Model):
+    """Filial rahbari - filial uchun alohida login"""
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name='managers')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='branch_manager_profile')
+    phone = models.CharField(max_length=30, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+
+    # Ruxsatlar
+    can_manage_employees = models.BooleanField(default=True)
+    can_manage_sales = models.BooleanField(default=True)
+    can_manage_accounting = models.BooleanField(default=True)
+    can_manage_production = models.BooleanField(default=True)
+    can_manage_warehouse = models.BooleanField(default=True)
+    can_manage_recipes = models.BooleanField(default=True)
+    can_create_branch = models.BooleanField(default=False, help_text="Yangi filial yarata olishi (faqat superadmin)")
+
+    def __str__(self):
+        return f"{self.user.username} - {self.branch.name}"
+
+    @property
+    def full_name(self):
+        return f"{self.user.first_name} {self.user.last_name}".strip() or self.user.username
 
 class BranchInventory(models.Model):
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name='inventory')

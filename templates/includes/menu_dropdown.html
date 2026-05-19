@@ -1,0 +1,495 @@
+{% load static %}
+{% load menu_filters %}
+<style>
+    /* ══════════════════════════════════════════
+       SIDEBAR NAVIGATION — NovvoyERP
+       Och rang dizayn, yaxshi ko'rinish
+    ══════════════════════════════════════════ */
+
+    /* ─── Bo'lim sarlavhasi ─── */
+    .menu-section { margin-bottom: 2px; }
+
+    .menu-section-title {
+        padding: 14px 16px 5px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.13em;
+        color: #B89070;
+    }
+
+    .dropdown-menu { position: relative; }
+
+    /* ─── Asosiy tugma ─── */
+    .dropdown-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        color: #2C1E0F;
+        background: none;
+        border: none;
+        width: 100%;
+        font-size: 13.5px;
+        font-weight: 600;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background 0.18s, color 0.18s;
+        text-align: left;
+    }
+
+    .dropdown-toggle:hover {
+        background: rgba(200, 145, 74, 0.12);
+        color: #D4A373;
+    }
+
+    .dropdown-toggle.active {
+        background: #D4A373;
+        color: #fff;
+        box-shadow: 0 2px 10px rgba(212,163,115,0.35);
+    }
+
+    /* ─── Chap qism: icon + label ─── */
+    .dropdown-toggle .menu-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* ─── Icon quti ─── */
+    .dropdown-toggle i.menu-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: rgba(212,163,115,0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        color: #D4A373;
+        flex-shrink: 0;
+        transition: background 0.18s, color 0.18s;
+    }
+
+    .dropdown-toggle:hover i.menu-icon {
+        background: rgba(212,163,115,0.22);
+        color: #b88656;
+    }
+
+    .dropdown-toggle.active i.menu-icon {
+        background: rgba(255,255,255,0.25);
+        color: #fff;
+    }
+
+    /* ─── Label matni ─── */
+    .dropdown-toggle span.menu-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: inherit;
+    }
+
+    /* ─── O'q ─── */
+    .dropdown-arrow {
+        font-size: 10px;
+        color: #B89070;
+        transition: transform 0.25s;
+        flex-shrink: 0;
+        opacity: 0.8;
+    }
+
+    .dropdown-toggle.active .dropdown-arrow {
+        transform: rotate(180deg);
+        color: rgba(255,255,255,0.8);
+    }
+
+    /* ─── Dropdown ichki qism ─── */
+    .dropdown-content {
+        display: none;
+        margin: 3px 0 4px 14px;
+        padding: 3px 0;
+        border-left: 2px solid rgba(212,163,115,0.25);
+    }
+
+    .dropdown-toggle.active + .dropdown-content {
+        display: block;
+        animation: fadeSlide 0.18s ease;
+    }
+
+    @keyframes fadeSlide {
+        from { opacity: 0; transform: translateY(-4px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── Ichki bandlar ─── */
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 8px 10px 8px 14px;
+        color: #4A3520;
+        text-decoration: none;
+        font-size: 12.5px;
+        font-weight: 500;
+        border-radius: 8px;
+        margin: 1px 4px 1px 0;
+        transition: background 0.15s, color 0.15s;
+    }
+
+    .dropdown-item i {
+        font-size: 12px;
+        width: 15px;
+        text-align: center;
+        color: #B89070;
+        flex-shrink: 0;
+        transition: color 0.15s;
+    }
+
+    .dropdown-item:hover {
+        background: rgba(200, 145, 74, 0.13);
+        color: #D4A373;
+    }
+
+    .dropdown-item:hover i { color: #D4A373; }
+
+    .dropdown-item.active {
+        background: rgba(200, 145, 74, 0.18);
+        color: #7a5020;
+        font-weight: 700;
+        border-left: 3px solid #D4A373;
+        padding-left: 11px;
+    }
+
+    .dropdown-item.active i { color: #D4A373; }
+
+    /* ─── Bosh sahifa linki (dropdown'siz) ─── */
+    .sidebar-main-link {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        color: #2C1E0F;
+        text-decoration: none;
+        font-size: 13.5px;
+        font-weight: 600;
+        border-radius: 10px;
+        width: 100%;
+        transition: background 0.18s, color 0.18s;
+    }
+
+    .sidebar-main-link i {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: rgba(212,163,115,0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        color: #D4A373;
+        flex-shrink: 0;
+        transition: background 0.18s, color 0.18s;
+    }
+
+    .sidebar-main-link:hover {
+        background: rgba(200, 145, 74, 0.12);
+        color: #D4A373;
+    }
+
+    .sidebar-main-link:hover i {
+        background: rgba(212,163,115,0.22);
+    }
+
+    .sidebar-main-link.active {
+        background: #D4A373;
+        color: #fff;
+        box-shadow: 0 2px 10px rgba(212,163,115,0.35);
+    }
+
+    .sidebar-main-link.active i {
+        background: rgba(255,255,255,0.25);
+        color: #fff;
+    }
+
+    /* ─── Filial badge ─── */
+    .branch-badge {
+        display: inline-block;
+        background: #D4A373;
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 20px;
+        margin-left: 6px;
+        letter-spacing: 0.04em;
+    }
+</style>
+
+{% if is_superadmin %}
+<!-- ─── SuperAdmin: Boshqaruv Paneli ─── -->
+<div class="menu-section">
+    <div class="menu-section-title">Asosiy</div>
+    <a href="/" class="sidebar-main-link {% if request.path == '/' %}active{% endif %}">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span>Boshqaruv Paneli</span>
+    </a>
+</div>
+{% endif %}
+
+{% if is_branch_admin and not is_superadmin %}
+<!-- ─── Filial Rahbari: Boshqaruv ─── -->
+<div class="menu-section">
+    <div class="menu-section-title">
+        Filial Paneli
+        {% if user_branch %}<span class="branch-badge">{{ user_branch.name }}</span>{% endif %}
+    </div>
+    <a href="/sales/" class="sidebar-main-link {% if request.path == '/sales/' %}active{% endif %}">
+        <i class="fa-solid fa-chart-bar"></i>
+        <span>Bosh Sahifa</span>
+    </a>
+</div>
+{% endif %}
+
+{% if is_seller and not is_superadmin and not is_branch_admin %}
+<!-- ─── Sotuvchi: Bosh Sahifa ─── -->
+<div class="menu-section">
+    <div class="menu-section-title">Sotuvchi Paneli</div>
+    <a href="/sales/" class="sidebar-main-link {% if request.path == '/sales/' %}active{% endif %}">
+        <i class="fa-solid fa-gauge-high"></i>
+        <span>Bosh Sahifa</span>
+    </a>
+</div>
+{% endif %}
+
+<!-- ─── SOTUV BO'LIMI ─── -->
+{% if is_seller or is_superadmin or is_branch_admin %}
+<div class="menu-section">
+    <div class="dropdown-menu">
+        <button class="dropdown-toggle {% if request.path|startswith:'/sales' %}active{% endif %}" onclick="toggleDropdown(this)">
+            <div class="menu-left">
+                <i class="fa-solid fa-cash-register menu-icon"></i>
+                <span class="menu-label">Sotuv Bo'limi</span>
+            </div>
+            <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
+        </button>
+        <div class="dropdown-content">
+            <a href="/sales/" class="dropdown-item {% if request.path == '/sales/' %}active{% endif %}">
+                <i class="fa-solid fa-cash-register"></i>
+                <span>POS Korzinka</span>
+            </a>
+            <a href="/sales/quick/" class="dropdown-item {% if request.path == '/sales/quick/' %}active{% endif %}">
+                <i class="fa-solid fa-bolt"></i>
+                <span>Tezkor Sotuv</span>
+            </a>
+            <a href="/sales/customer-display/" class="dropdown-item {% if request.path == '/sales/customer-display/' %}active{% endif %}">
+                <i class="fa-solid fa-desktop"></i>
+                <span>Mijoz Ekran</span>
+            </a>
+            <a href="/sales/?tab=shift_balance" class="dropdown-item">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Smena Qoldig'i</span>
+            </a>
+            <a href="/sales/?tab=recent" class="dropdown-item">
+                <i class="fa-solid fa-history"></i>
+                <span>Sotuv Tarixi</span>
+            </a>
+            <a href="/sales/?tab=inventory" class="dropdown-item">
+                <i class="fa-solid fa-boxes-stacked"></i>
+                <span>Mahsulot Qoldig'i</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ─── ISHLAB CHIQARISH BO'LIMI ─── -->
+{% if is_production_mgr or is_superadmin or is_seller or is_branch_admin %}
+<div class="menu-section">
+    <div class="dropdown-menu">
+        <button class="dropdown-toggle {% if request.path|startswith:'/production' %}active{% endif %}" onclick="toggleDropdown(this)">
+            <div class="menu-left">
+                <i class="fa-solid fa-industry menu-icon"></i>
+                <span class="menu-label">Ishlab Chiqarish</span>
+            </div>
+            <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
+        </button>
+        <div class="dropdown-content">
+            <a href="/production/" class="dropdown-item {% if request.path == '/production/' %}active{% endif %}">
+                <i class="fa-solid fa-industry"></i>
+                <span>Ishlab Chiqarish Dashboard</span>
+            </a>
+            <a href="/production/manage/" class="dropdown-item {% if '/production/manage/' in request.path %}active{% endif %}">
+                <i class="fa-solid fa-box-open"></i>
+                <span>Mahsulotlar</span>
+            </a>
+            <a href="/production/manage/?tab=tab-categories" class="dropdown-item" style="padding-left:60px;">
+                <i class="fa-solid fa-folder"></i>
+                <span>Kategoriyalar</span>
+            </a>
+            <a href="/production/manage/?tab=tab-recipes" class="dropdown-item" style="padding-left:60px;">
+                <i class="fa-solid fa-book-open"></i>
+                <span>Retseptlar</span>
+            </a>
+            <a href="/production/manage/?tab=tab-inventory" class="dropdown-item" style="padding-left:60px;">
+                <i class="fa-solid fa-warehouse"></i>
+                <span>Omborxona</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ─── BUXGALTERIYA BO'LIMI ─── -->
+{% if is_accountant or is_superadmin or is_branch_admin %}
+<div class="menu-section">
+    <div class="dropdown-menu">
+        <button class="dropdown-toggle {% if request.path|startswith:'/accounting' %}active{% endif %}" onclick="toggleDropdown(this)">
+            <div class="menu-left">
+                <i class="fa-solid fa-calculator menu-icon"></i>
+                <span class="menu-label">Buxgalteriya</span>
+            </div>
+            <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
+        </button>
+        <div class="dropdown-content">
+            <a href="/accounting/" class="dropdown-item {% if request.path == '/accounting/' %}active{% endif %}">
+                <i class="fa-solid fa-calculator"></i>
+                <span>Buxgalteriya Dashboard</span>
+            </a>
+            <a href="/accounting/?tab=transactions" class="dropdown-item">
+                <i class="fa-solid fa-money-bill-transfer"></i>
+                <span>Transaktsiyalar</span>
+            </a>
+            <a href="/accounting/?tab=cash-registers" class="dropdown-item">
+                <i class="fa-solid fa-cash-register"></i>
+                <span>Naqd pullar</span>
+            </a>
+            <a href="/accounting/?tab=suppliers" class="dropdown-item">
+                <i class="fa-solid fa-truck"></i>
+                <span>Yetkazib beruvchilar</span>
+            </a>
+            {% if is_superadmin %}
+            <a href="/accounting/?tab=branch-accounting" class="dropdown-item" style="padding-left:60px;">
+                <i class="fa-solid fa-building-columns"></i>
+                <span>Filial buxgalteriyasi</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ─── HR BO'LIMI ─── -->
+{% if is_hr or is_superadmin or is_branch_admin %}
+<div class="menu-section">
+    <div class="dropdown-menu">
+        <button class="dropdown-toggle {% if request.path|startswith:'/hr' %}active{% endif %}" onclick="toggleDropdown(this)">
+            <div class="menu-left">
+                <i class="fa-solid fa-users menu-icon"></i>
+                <span class="menu-label">HR Bo'limi</span>
+            </div>
+            <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
+        </button>
+        <div class="dropdown-content">
+            <a href="/hr/" class="dropdown-item {% if request.path == '/hr/' %}active{% endif %}">
+                <i class="fa-solid fa-users"></i>
+                <span>HR Dashboard</span>
+            </a>
+            <a href="/hr/?tab=attendance" class="dropdown-item">
+                <i class="fa-solid fa-clock"></i>
+                <span>Keldi-Ketdi</span>
+            </a>
+            <a href="/hr/?tab=positions" class="dropdown-item">
+                <i class="fa-solid fa-briefcase"></i>
+                <span>Lavozimlar</span>
+            </a>
+            <a href="/hr/?tab=face-id" class="dropdown-item">
+                <i class="fa-solid fa-camera"></i>
+                <span>Face ID</span>
+            </a>
+            {% if is_superadmin %}
+            <a href="/admin-users/" class="dropdown-item">
+                <i class="fa-solid fa-user-gear"></i>
+                <span>Foydalanuvchilar</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ─── FILIALLAR BO'LIMI — faqat superadmin ─── -->
+{% if is_superadmin %}
+<div class="menu-section">
+    <div class="dropdown-menu">
+        <button class="dropdown-toggle {% if request.path|startswith:'/branches' %}active{% endif %}" onclick="toggleDropdown(this)">
+            <div class="menu-left">
+                <i class="fa-solid fa-store menu-icon"></i>
+                <span class="menu-label">Filiallar</span>
+            </div>
+            <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
+        </button>
+        <div class="dropdown-content">
+            <a href="/branches/" class="dropdown-item {% if request.path == '/branches/' %}active{% endif %}">
+                <i class="fa-solid fa-chart-line"></i>
+                <span>Filial Dashboard</span>
+            </a>
+            <a href="/branches/?tab=create" class="dropdown-item">
+                <i class="fa-solid fa-plus-circle"></i>
+                <span>Filial yaratish</span>
+            </a>
+            <a href="/branches/?tab=all" class="dropdown-item">
+                <i class="fa-solid fa-store"></i>
+                <span>Barcha filiallar</span>
+            </a>
+            <a href="/admin-users/" class="dropdown-item">
+                <i class="fa-solid fa-user-shield"></i>
+                <span>Foydalanuvchi & Rollar</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+function toggleDropdown(element) {
+    const isActive = element.classList.contains('active');
+
+    // Barcha ochiqlarni yop
+    document.querySelectorAll('.dropdown-toggle.active').forEach(function(toggle) {
+        if (toggle !== element) {
+            toggle.classList.remove('active');
+        }
+    });
+
+    // Tanlanganni ochish/yopish
+    element.classList.toggle('active');
+}
+
+// Sahifa yuklanganida aktiv bo'limni avtomatik och VA BARCHASINI OCHIQ QOLDIR
+document.addEventListener('DOMContentLoaded', function() {
+    const path = window.location.pathname;
+    const search = window.location.search;
+    const full = path + search;
+
+    document.querySelectorAll('.dropdown-toggle').forEach(function(toggle) {
+        const content = toggle.nextElementSibling;
+        if (!content) return;
+
+        // Ichki bandlarda aktiv link bormi?
+        const links = content.querySelectorAll('.dropdown-item');
+        let shouldOpen = toggle.classList.contains('active');
+
+        links.forEach(function(link) {
+            const href = link.getAttribute('href') || '';
+            if (href && full.includes(href) && href.length > 1) {
+                link.classList.add('active');
+                shouldOpen = true;
+            }
+        });
+
+        // Agar aktiv bo'lsa yoki ichida aktiv link bo'lsa - ochiq qoldir
+        if (shouldOpen) {
+            toggle.classList.add('active');
+        }
+    });
+});
+</script>

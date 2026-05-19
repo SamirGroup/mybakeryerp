@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chek #{{ sale.id }}</title>
+<style>
+/* ── Ekran ko'rinishi ── */
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+    font-family: 'Courier New', Courier, monospace;
+    background: #f0ede8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 80px;
+    min-height: 100vh;
+}
+
+/* Action bar */
+.action-bar {
+    width: 100%;
+    max-width: 320px;
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.btn-print {
+    flex: 1;
+    background: #D4A373;
+    color: #fff;
+    border: none;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.btn-print:hover { background: #a07030; }
+.btn-back {
+    background: #fff;
+    color: #555;
+    border: 1.5px solid #ddd;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.btn-back:hover { background: #f5f5f5; }
+
+/* ── Chek (80mm termal) ── */
+.receipt {
+    background: #fff;
+    width: 80mm;
+    max-width: 320px;
+    padding: 14px 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.rc { text-align: center; }
+.rl { text-align: left; }
+.rr { text-align: right; }
+
+.logo {
+    font-size: 20px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    margin-bottom: 2px;
+}
+.shop-name {
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+.sub {
+    font-size: 10px;
+    color: #666;
+}
+
+.dashed { border-top: 1px dashed #555; margin: 6px 0; }
+.solid  { border-top: 2px solid #111; margin: 6px 0; }
+
+.row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11.5px;
+    margin: 2px 0;
+}
+.row.bold { font-weight: bold; font-size: 13px; }
+.row.xlarge {
+    font-size: 17px;
+    font-weight: bold;
+    justify-content: center;
+    padding: 4px 0;
+}
+
+/* Items */
+.item-header {
+    display: grid;
+    grid-template-columns: 1fr 28px 70px;
+    font-size: 10px;
+    font-weight: bold;
+    color: #444;
+    padding: 2px 0;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+}
+.item-row {
+    display: grid;
+    grid-template-columns: 1fr 28px 70px;
+    font-size: 11.5px;
+    padding: 3px 0;
+    border-bottom: 1px dotted #eee;
+}
+.item-row:last-child { border-bottom: none; }
+.item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item-qty  { text-align: center; }
+.item-sum  { text-align: right; font-weight: 600; }
+
+/* Payment badge */
+.pay-method {
+    display: inline-block;
+    padding: 2px 8px;
+    border: 1px solid #333;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.footer {
+    text-align: center;
+    font-size: 10px;
+    color: #777;
+    margin-top: 6px;
+    line-height: 1.6;
+}
+
+/* ── PRINT mode ── */
+@media print {
+    body {
+        background: white;
+        padding: 0;
+        margin: 0;
+    }
+    .action-bar { display: none; }
+    .receipt {
+        box-shadow: none;
+        width: 80mm;
+        max-width: none;
+        border-radius: 0;
+        padding: 4mm 3mm;
+    }
+    @page {
+        size: 80mm auto;
+        margin: 0;
+    }
+}
+</style>
+</head>
+<body>
+
+<!-- Action bar (ekranda ko'rinadi, printda yo'q) -->
+<div class="action-bar">
+    <button class="btn-print" onclick="window.print()">
+        🖨️ Chekni chop etish
+    </button>
+    <a href="/sales/" class="btn-back">← Sotuv</a>
+</div>
+
+<!-- ══════════ CHEK ══════════ -->
+<div class="receipt">
+
+    <!-- Header -->
+    <div class="rc">
+        <div class="logo">★ BUNYOD NON ★</div>
+        <div class="sub">Novvoyxona | Toshkent</div>
+        <div class="sub">Tel: +998 90 000 00 00</div>
+    </div>
+
+    <div class="dashed"></div>
+
+    <!-- Chek ma'lumotlari -->
+    <div class="row"><span>Chek #:</span><span><b>{{ sale.id }}</b></span></div>
+    <div class="row"><span>Sana:</span><span>{{ sale.date|date:"d.m.Y" }}</span></div>
+    <div class="row"><span>Vaqt:</span><span>{{ sale.date|date:"H:i" }}</span></div>
+    <div class="row"><span>Sotuvchi:</span><span>{{ sale.seller.username|default:"-" }}</span></div>
+    {% if sale.shift_name %}
+    <div class="row"><span>Smena:</span><span>{{ sale.shift_name }}</span></div>
+    {% endif %}
+
+    <div class="dashed"></div>
+
+    <!-- Items -->
+    <div class="item-header">
+        <span>Mahsulot</span>
+        <span style="text-align:center;">Soni</span>
+        <span style="text-align:right;">Summa</span>
+    </div>
+
+    {% for item in sale.items.all %}
+    <div class="item-row">
+        <span class="item-name">{{ item.product.name }}</span>
+        <span class="item-qty">{{ item.quantity }}</span>
+        <span class="item-sum">{{ item.price_at_sale|floatformat:0 }}</span>
+    </div>
+    {% empty %}
+    <div style="text-align:center;color:#aaa;padding:6px 0;font-size:11px;">Ma'lumot yo'q</div>
+    {% endfor %}
+
+    <div class="dashed"></div>
+
+    <!-- Total -->
+    <div class="row bold">
+        <span>JAMI:</span>
+        <span>{{ sale.total_amount|floatformat:0 }} UZS</span>
+    </div>
+    <div class="row">
+        <span>To'lov:</span>
+        <span class="pay-method">{{ sale.get_payment_method_display }}</span>
+    </div>
+
+    <div class="solid"></div>
+
+    <div class="row xlarge">{{ sale.total_amount|floatformat:0 }} UZS</div>
+
+    <div class="dashed"></div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <div>★ RAHMAT! YANA KELING! ★</div>
+        <div style="margin-top:4px;">BunyodNon ERP tizimi</div>
+    </div>
+
+</div>
+
+<script>
+// Sahifa yuklanganda 800ms kutib avtomatik chop etish
+window.addEventListener('load', function () {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('auto') === '1') {
+        setTimeout(function () { window.print(); }, 800);
+    }
+});
+</script>
+</body>
+</html>

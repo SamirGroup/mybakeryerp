@@ -1,0 +1,411 @@
+{% extends 'base.html' %}
+{% load menu_filters %}
+
+{% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --paper: #fffdf7;
+        --ink: #2f2a25;
+        --muted-ink: #746a60;
+        --warm-1: #f2dcc2;
+        --warm-2: #d4a373;
+        --warm-3: #b8860b;
+        --success: #27ae60;
+        --danger: #e74c3c;
+        --line-soft: rgba(111, 89, 65, 0.2);
+    }
+
+    .content-wrapper {
+        font-family: 'Manrope', sans-serif;
+        background: linear-gradient(180deg, #fffdf7 0%, #f7f6f1 100%) !important;
+        min-height: calc(100vh - 70px);
+        padding: 0 !important;
+    }
+
+    /* Customer Display Full Screen */
+    .customer-display {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        color: white;
+    }
+
+    .display-header {
+        background: linear-gradient(90deg, #d4a373, #b8860b);
+        padding: 20px 30px;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .display-title {
+        font-family: 'Lexend', sans-serif;
+        font-size: 28px;
+        font-weight: 700;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+
+    .display-time {
+        font-size: 18px;
+        opacity: 0.9;
+        margin-top: 5px;
+    }
+
+    .display-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        overflow: hidden;
+    }
+
+    .current-sale {
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 30px;
+        margin-bottom: 20px;
+        border: 2px solid rgba(255,255,255,0.2);
+    }
+
+    .current-sale-title {
+        font-family: 'Lexend', sans-serif;
+        font-size: 20px;
+        margin-bottom: 20px;
+        color: #d4a373;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .products-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .product-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 12px;
+        margin-bottom: 10px;
+        border-left: 4px solid #d4a373;
+    }
+
+    .product-info {
+        flex: 1;
+    }
+
+    .product-name {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .product-details {
+        font-size: 14px;
+        opacity: 0.8;
+    }
+
+    .product-total {
+        font-family: 'Lexend', sans-serif;
+        font-size: 22px;
+        font-weight: 700;
+        color: #d4a373;
+        min-width: 150px;
+        text-align: right;
+    }
+
+    .display-footer {
+        background: rgba(0,0,0,0.3);
+        padding: 25px;
+        border-radius: 20px;
+        margin-top: auto;
+    }
+
+    .total-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .total-label {
+        font-size: 24px;
+        font-weight: 600;
+    }
+
+    .total-amount {
+        font-family: 'Lexend', sans-serif;
+        font-size: 48px;
+        font-weight: 800;
+        color: #d4a373;
+        text-shadow: 0 2px 10px rgba(212,163,115,0.3);
+    }
+
+    .payment-method {
+        display: inline-block;
+        padding: 8px 20px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 20px;
+        font-size: 16px;
+        margin-top: 10px;
+    }
+
+    .thank-you {
+        text-align: center;
+        padding: 40px;
+        font-family: 'Lexend', sans-serif;
+        font-size: 32px;
+        font-weight: 700;
+        color: #d4a373;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+
+    .no-sale {
+        text-align: center;
+        padding: 80px 20px;
+        opacity: 0.6;
+    }
+
+    .no-sale-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+    }
+
+    /* Receipt Print Style */
+    .receipt-container {
+        display: none;
+    }
+
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        .receipt-container, .receipt-container * {
+            visibility: visible;
+        }
+        .receipt-container {
+            display: block;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 58mm;
+            padding: 5mm;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            background: white;
+            color: black;
+        }
+
+        .receipt-header {
+            text-align: center;
+            margin-bottom: 10px;
+            border-bottom: 1px dashed black;
+            padding-bottom: 10px;
+        }
+
+        .receipt-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .receipt-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3px;
+        }
+
+        .receipt-total {
+            border-top: 1px dashed black;
+            padding-top: 10px;
+            margin-top: 10px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .receipt-footer {
+            text-align: center;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px dashed black;
+        }
+    }
+
+    .print-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: #d4a373;
+        border: none;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(212,163,115,0.4);
+        transition: all 0.3s;
+    }
+
+    .print-btn:hover {
+        transform: scale(1.1);
+        background: #b8860b;
+    }
+
+    .auto-refresh {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(255,255,255,0.1);
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-size: 14px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="customer-display">
+    <div class="display-header">
+        <h1 class="display-title">🏪 Nonvoyxona</h1>
+        <div class="display-time" id="currentTime"></div>
+    </div>
+
+    <div class="display-body">
+        {% if last_sale and last_sale.items %}
+        <div class="current-sale">
+            <div class="current-sale-title">
+                <i class="fa-solid fa-receipt"></i>
+                Chek #{{ last_sale.sale_id }}
+            </div>
+
+            <div class="products-list">
+                {% for item in last_sale.items %}
+                <div class="product-row">
+                    <div class="product-info">
+                        <div class="product-name">{{ item.name }}</div>
+                        <div class="product-details">{{ item.qty }} dona</div>
+                    </div>
+                    <div class="product-total">{{ item.total|floatformat:0 }} so'm</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="display-footer">
+            <div class="total-row">
+                <div class="total-label">Jami:</div>
+                <div class="total-amount">{{ last_sale.total|floatformat:0 }} so'm</div>
+            </div>
+            <div class="payment-method">
+                <i class="fa-solid fa-money-bill"></i> {{ last_sale.payment_method }}
+            </div>
+        </div>
+
+        <button class="print-btn" onclick="printReceipt()" title="Chekni chop etish">
+            <i class="fa-solid fa-print"></i>
+        </button>
+        {% else %}
+        <div class="no-sale">
+            <div class="no-sale-icon">🛒</div>
+            <div style="font-size:24px;">Hozircha sotuv yo'q</div>
+            <div style="font-size:16px; margin-top:10px;">Yakuniy sotuv bu yerdan ko'rinadi</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Receipt Print Template -->
+<div class="receipt-container" id="receipt">
+    <div class="receipt-header">
+        <div class="receipt-title">🏪 NONVOYXONA</div>
+        <div>{{ branch_name|default:"Asosiy filial" }}</div>
+        <div>{{ date|date:"d.m.Y H:i" }}</div>
+        <div>Chek #{{ last_sale.sale_id|default:"12345" }}</div>
+    </div>
+
+    <div style="margin: 10px 0;">
+        {% for item in last_sale.items %}
+        <div class="receipt-item">
+            <span>{{ item.name }}</span>
+            <span>{{ item.qty }} × {{ item.total|divide:item.qty|floatformat:0 }}</span>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="receipt-total">
+        <div class="receipt-item">
+            <span>JAMI:</span>
+            <span>{{ last_sale.total|default:"0" }} so'm</span>
+        </div>
+        <div class="receipt-item">
+            <span>To'lov:</span>
+            <span>{{ last_sale.payment_method|default:"Cash" }}</span>
+        </div>
+    </div>
+
+    <div class="receipt-footer">
+        <div>☎️ +998 90 123 45 67</div>
+        <div style="margin-top:10px;">Rahmat! Qayting!</div>
+    </div>
+</div>
+
+<script>
+    // Update time
+    function updateTime() {
+        const now = new Date();
+        const options = { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        };
+        document.getElementById('currentTime').textContent = now.toLocaleDateString('uz-UZ', options);
+    }
+    updateTime();
+    setInterval(updateTime, 1000);
+
+    // Auto refresh every 5 seconds
+    setInterval(() => {
+        fetch(window.location.href, {
+            headers: {'X-Requested-With': 'XMLHttpRequest'}
+        })
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newContent = doc.querySelector('.display-body').innerHTML;
+            document.querySelector('.display-body').innerHTML = newContent;
+        });
+    }, 5000);
+
+    // Print receipt
+    function printReceipt() {
+        window.print();
+    }
+
+    // Auto print on new sale
+    {% if last_sale %}
+    setTimeout(() => {
+        if (confirm('Chekni chop etish kerakmi?')) {
+            printReceipt();
+        }
+    }, 1000);
+    {% endif %}
+</script>
+{% endblock %}

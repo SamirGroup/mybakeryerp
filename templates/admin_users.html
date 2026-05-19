@@ -179,10 +179,89 @@
     </div>
 </div>
 
+<!-- ── Telegram Sozlamalari ─────────────────────────────────────── -->
+<div class="card" style="max-width:760px;margin-top:28px;border:2px solid rgba(39,174,96,0.25);">
+    <h2 style="margin-bottom:6px;font-size:20px;">
+        <i class="fa-brands fa-telegram" style="color:#2AABEE;margin-right:8px;"></i>
+        Telegram Bot Sozlamalari
+    </h2>
+    <p style="font-size:13px;color:#666;margin-bottom:20px;">
+        Face ID check-in/check-out xabarlari uchun Telegram botni ulang.
+        Bot yaratish: <strong>@BotFather</strong> → /newbot.
+        Chat ID olish: botingizga xabar yozing, keyin
+        <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> ni ochib <code>chat.id</code> ni oling.
+    </p>
+
+    {% if tg.is_active and tg.bot_token %}
+    <div style="padding:10px 14px;background:#e8f5e9;border-radius:10px;margin-bottom:16px;font-size:13px;font-weight:600;color:#1a7a3a;">
+        ✅ Telegram bot ulangan — <code>{{ tg.bot_token|slice:":20" }}...</code>
+    </div>
+    {% else %}
+    <div style="padding:10px 14px;background:#fdecea;border-radius:10px;margin-bottom:16px;font-size:13px;font-weight:600;color:#c0392b;">
+        ❌ Telegram bot ulanmagan
+    </div>
+    {% endif %}
+
+    <form method="post" action="/settings/telegram/">
+        {% csrf_token %}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div class="form-group" style="grid-column:span 2;">
+                <label>Bot Token</label>
+                <input class="form-control" type="text" name="bot_token"
+                       value="{{ tg.bot_token }}"
+                       placeholder="1234567890:ABCdef...">
+            </div>
+            <div class="form-group">
+                <label>Chat ID</label>
+                <input class="form-control" type="text" name="chat_id"
+                       value="{{ tg.chat_id }}"
+                       placeholder="-1001234567890 yoki 123456789">
+            </div>
+            <div class="form-group" style="display:flex;align-items:center;gap:10px;padding-top:24px;">
+                <input type="checkbox" name="is_active" id="tgActive" {% if tg.is_active %}checked{% endif %}
+                       style="width:16px;height:16px;">
+                <label for="tgActive" style="font-weight:600;margin:0;">Faollashtirish</label>
+            </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:8px;">
+            <button class="btn btn-primary" type="submit">
+                <i class="fa-solid fa-floppy-disk"></i> Saqlash
+            </button>
+            <button class="btn" type="button"
+                    style="background:#2AABEE;color:#fff;"
+                    onclick="testTelegram()">
+                <i class="fa-solid fa-paper-plane"></i> Test xabar
+            </button>
+        </div>
+    </form>
+    <p id="tgTestResult" style="margin-top:10px;font-size:13px;font-weight:600;display:none;"></p>
+</div>
+
 <script>
 function toggleBranch() {
     const role = document.getElementById('roleSelect').value;
     document.getElementById('branchGroup').style.display = role === 'branch_admin' ? 'block' : 'none';
+}
+
+async function testTelegram() {
+    const res = document.getElementById('tgTestResult');
+    res.style.display = 'block';
+    res.style.color = '#888';
+    res.textContent = 'Yuborilmoqda...';
+    try {
+        const r = await fetch('/settings/telegram/test/');
+        const d = await r.json();
+        if (d.success) {
+            res.style.color = '#27ae60';
+            res.textContent = '✅ ' + d.message;
+        } else {
+            res.style.color = '#c0392b';
+            res.textContent = '❌ Xato: ' + (d.error || 'Noma\'lum xato');
+        }
+    } catch (e) {
+        res.style.color = '#c0392b';
+        res.textContent = '❌ Server bilan aloqa yo\'q';
+    }
 }
 </script>
 {% endblock %}

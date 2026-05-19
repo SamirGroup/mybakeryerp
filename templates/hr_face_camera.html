@@ -1,0 +1,690 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block breadcrumb %}<span>Face ID — Kamera Stantsiyasi</span>{% endblock %}
+
+{% block extra_head %}
+<style>
+:root {
+    --gold: #D4A373;
+    --gold-light: #FAEDCD;
+    --ink: #2C1E0F;
+    --muted: #8B6F4E;
+    --ok: #27ae60;
+    --warn: #f39c12;
+    --danger: #e74c3c;
+    --bg: #FFFBF2;
+    --card: #ffffff;
+    --border: #E8D5B8;
+    --radius: 16px;
+    --shadow: 0 4px 20px rgba(212,163,115,0.10);
+}
+
+body { background: var(--bg); }
+
+.fc-layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 4px;
+}
+@media(max-width:900px){ .fc-layout { grid-template-columns: 1fr; } }
+
+/* ── Header ── */
+.fc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.fc-header h1 {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+.fc-header h1 i { color: var(--gold); }
+
+/* ── Card ── */
+.fc-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    margin-bottom: 16px;
+}
+.fc-card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.fc-card-title i { color: var(--gold); }
+
+/* ── Video ── */
+.video-wrap {
+    position: relative;
+    background: #111;
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 4/3;
+    width: 100%;
+}
+#camVideo {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.video-overlay {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.72);
+    color: #fff;
+    font-size: 15px; font-weight: 600;
+    gap: 12px;
+    transition: opacity 0.3s;
+}
+.video-overlay i { font-size: 40px; opacity: 0.7; }
+.video-overlay.hidden { display: none; }
+
+/* scan line */
+.scan-line {
+    position: absolute; left: 0; right: 0;
+    height: 3px; background: var(--ok);
+    box-shadow: 0 0 10px var(--ok);
+    animation: scan 2.5s ease-in-out infinite;
+    display: none;
+}
+@keyframes scan {
+    0%   { top: 0%; opacity: 0; }
+    5%   { opacity: 1; }
+    95%  { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+}
+
+/* face ring */
+.face-ring {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 180px; height: 180px;
+    border: 3px solid var(--ok);
+    border-radius: 50%;
+    box-shadow: 0 0 24px rgba(39,174,96,0.5);
+    animation: pulse 1.2s ease-in-out infinite;
+    display: none;
+}
+@keyframes pulse {
+    0%,100% { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+    50%      { transform: translate(-50%,-50%) scale(1.08); opacity: 0.7; }
+}
+
+/* ── Camera selector ── */
+.cam-select-row {
+    display: flex; gap: 8px; align-items: center;
+    margin-bottom: 14px; flex-wrap: wrap;
+}
+.cam-select-row select {
+    flex: 1; padding: 9px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 13px; font-weight: 600;
+    color: var(--ink);
+    background: var(--bg);
+    cursor: pointer;
+}
+.cam-select-row select:focus { outline: none; border-color: var(--gold); }
+
+/* ── Buttons ── */
+.btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 10px 20px; border: none;
+    border-radius: 10px; font-size: 13.5px;
+    font-weight: 700; cursor: pointer;
+    transition: all 0.2s; white-space: nowrap;
+}
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-gold   { background: var(--gold); color: #fff; }
+.btn-gold:hover:not(:disabled) { background: #a07030; }
+.btn-ok     { background: var(--ok); color: #fff; }
+.btn-ok:hover:not(:disabled) { background: #1e8449; }
+.btn-red    { background: var(--danger); color: #fff; }
+.btn-red:hover:not(:disabled) { background: #c0392b; }
+.btn-outline {
+    background: none; color: var(--gold);
+    border: 1.5px solid var(--gold);
+}
+.btn-outline:hover:not(:disabled) { background: var(--gold-light); }
+.btn-sm { padding: 7px 14px; font-size: 12.5px; }
+
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+
+/* ── Status chips ── */
+.status-row {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 10px; margin-top: 14px;
+}
+.status-chip {
+    padding: 10px 12px; border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+}
+.status-chip .sc-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.status-chip .sc-val { font-size: 13px; font-weight: 700; color: var(--ink); margin-top: 2px; }
+.sc-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
+.dot-ok   { background: var(--ok); }
+.dot-warn { background: var(--warn); }
+.dot-off  { background: #bbb; }
+
+/* ── Employee list ── */
+.emp-search {
+    width: 100%; padding: 9px 12px;
+    border: 1.5px solid var(--border); border-radius: 10px;
+    font-size: 13px; background: var(--bg); color: var(--ink);
+    margin-bottom: 10px;
+}
+.emp-search:focus { outline: none; border-color: var(--gold); }
+
+.emp-list {
+    max-height: 380px; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 4px;
+}
+.emp-list::-webkit-scrollbar { width: 4px; }
+.emp-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.emp-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 10px;
+    border: 1.5px solid transparent;
+    cursor: pointer; transition: all 0.15s;
+}
+.emp-item:hover { background: var(--gold-light); border-color: var(--gold); }
+.emp-item.selected { background: rgba(39,174,96,0.1); border-color: var(--ok); }
+
+.emp-avatar {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: var(--gold-light); color: var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 15px; flex-shrink: 0;
+}
+.emp-name  { font-size: 13.5px; font-weight: 700; color: var(--ink); }
+.emp-meta  { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+.emp-check { margin-left: auto; color: var(--ok); font-size: 16px; display: none; }
+.emp-item.selected .emp-check { display: block; }
+
+/* ── Action panel ── */
+.action-panel {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    padding: 16px;
+    background: var(--gold-light); border-radius: 12px;
+    border: 1.5px solid rgba(212,163,115,0.25);
+    margin-top: 12px;
+}
+.action-panel .selected-info {
+    font-size: 13px; font-weight: 700; color: var(--ink);
+    margin-bottom: 8px; width: 100%;
+}
+
+/* ── Notification toast ── */
+.toast {
+    position: fixed; top: 76px; right: 20px;
+    padding: 14px 20px; border-radius: 12px;
+    color: #fff; font-weight: 700; font-size: 14px;
+    z-index: 9999; box-shadow: 0 6px 24px rgba(0,0,0,0.2);
+    display: flex; align-items: center; gap: 10px;
+    animation: toastIn 0.3s ease;
+    max-width: 340px;
+}
+@keyframes toastIn { from { transform: translateX(380px); opacity: 0; } to { transform: none; opacity: 1; } }
+.toast.ok   { background: var(--ok); }
+.toast.warn { background: var(--warn); }
+.toast.err  { background: var(--danger); }
+.toast.info { background: #3498db; }
+
+/* ── Telegram badge ── */
+.tg-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700;
+}
+.tg-badge.on  { background: #e3f6ea; color: #1a7a3a; }
+.tg-badge.off { background: #fdecea; color: #c0392b; }
+
+/* ── Enroll section ── */
+.enroll-zone {
+    border: 2px dashed var(--border); border-radius: 12px;
+    padding: 20px; text-align: center; color: var(--muted);
+    cursor: pointer; transition: border-color 0.2s;
+    margin-bottom: 10px;
+}
+.enroll-zone:hover { border-color: var(--gold); color: var(--gold); }
+.enroll-zone i { font-size: 28px; margin-bottom: 8px; display: block; }
+.enroll-zone p { margin: 0; font-size: 13px; }
+
+#enrollPreview {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-top: 10px;
+}
+#enrollPreview img {
+    width: 72px; height: 72px; object-fit: cover;
+    border-radius: 10px; border: 2px solid var(--border);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fc-header">
+    <h1><i class="fa-solid fa-camera"></i> Face ID Kamera Stantsiyasi</h1>
+    <div style="display:flex;gap:8px;align-items:center;">
+        {% if telegram_configured %}
+        <span class="tg-badge on"><i class="fa-brands fa-telegram"></i> Telegram ulangan</span>
+        {% else %}
+        <span class="tg-badge off"><i class="fa-brands fa-telegram"></i> Telegram ulanmagan</span>
+        {% endif %}
+        <a href="/hr/?tab=face-id" class="btn btn-outline btn-sm">
+            <i class="fa-solid fa-list"></i> Face ID ro'yxati
+        </a>
+        <a href="/hr/face-id/dashboard/" class="btn btn-outline btn-sm">
+            <i class="fa-solid fa-chart-bar"></i> Monitoring
+        </a>
+    </div>
+</div>
+
+<div class="fc-layout">
+
+    <!-- ═══ LEFT: Kamera ═══ -->
+    <div>
+        <div class="fc-card">
+            <div class="fc-card-title"><i class="fa-solid fa-video"></i> Kamera</div>
+
+            <!-- Camera selector -->
+            <div class="cam-select-row">
+                <select id="camSelect" onchange="switchCamera()">
+                    <option value="">— Kamerani tanlang —</option>
+                </select>
+                <button class="btn btn-outline btn-sm" onclick="refreshCameraList()">
+                    <i class="fa-solid fa-rotate"></i>
+                </button>
+            </div>
+
+            <!-- Video feed -->
+            <div class="video-wrap">
+                <video id="camVideo" autoplay playsinline muted></video>
+                <div class="video-overlay" id="camOverlay">
+                    <i class="fa-solid fa-camera-slash"></i>
+                    <span id="overlayText">Kamerani yoqing</span>
+                </div>
+                <div class="scan-line" id="scanLine"></div>
+                <div class="face-ring" id="faceRing"></div>
+            </div>
+
+            <!-- Controls -->
+            <div class="btn-row">
+                <button class="btn btn-gold" id="btnStart" onclick="startCamera()">
+                    <i class="fa-solid fa-power-off"></i> Yoqish
+                </button>
+                <button class="btn btn-red" id="btnStop" onclick="stopCamera()" disabled>
+                    <i class="fa-solid fa-stop"></i> O'chirish
+                </button>
+                <button class="btn btn-ok" id="btnCapture" onclick="takeSnapshot()" disabled>
+                    <i class="fa-solid fa-camera"></i> Rasm olish
+                </button>
+            </div>
+
+            <!-- Status -->
+            <div class="status-row">
+                <div class="status-chip">
+                    <div class="sc-label">Kamera</div>
+                    <div class="sc-val">
+                        <span class="sc-dot dot-off" id="dotCam"></span>
+                        <span id="valCam">O'chiq</span>
+                    </div>
+                </div>
+                <div class="status-chip">
+                    <div class="sc-label">Xodim</div>
+                    <div class="sc-val" id="valEmp">Tanlanmagan</div>
+                </div>
+                <div class="status-chip">
+                    <div class="sc-label">So'nggi harakat</div>
+                    <div class="sc-val" id="valAction">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual check in/out -->
+        <div class="fc-card">
+            <div class="fc-card-title"><i class="fa-solid fa-hand-pointer"></i> Qo'lda Kirish / Chiqish</div>
+            <div id="actionPanel" class="action-panel" style="display:none;">
+                <div class="selected-info" id="selInfo">Xodim tanlanmagan</div>
+                <button class="btn btn-ok" onclick="manualAction('check_in')">
+                    <i class="fa-solid fa-door-open"></i> Kirish qayd etish
+                </button>
+                <button class="btn btn-red" onclick="manualAction('check_out')">
+                    <i class="fa-solid fa-right-from-bracket"></i> Chiqish qayd etish
+                </button>
+            </div>
+            <p id="noSelMsg" style="color:var(--muted);font-size:13px;margin:0;">
+                <i class="fa-solid fa-arrow-right"></i> O'ngdagi ro'yxatdan xodimni tanlang.
+            </p>
+        </div>
+    </div>
+
+    <!-- ═══ RIGHT: Xodimlar ═══ -->
+    <div>
+        <!-- Employee list -->
+        <div class="fc-card">
+            <div class="fc-card-title"><i class="fa-solid fa-users"></i> Face ID Xodimlar</div>
+            <input class="emp-search" type="text" placeholder="Ism bo'yicha qidirish..."
+                   oninput="filterEmployees(this.value)">
+            <div class="emp-list" id="empList">
+                {% for emp in enrolled_employees %}
+                <div class="emp-item" id="ei-{{ emp.id }}"
+                     onclick="selectEmployee({{ emp.id }}, '{{ emp.name|escapejs }}', '{{ emp.position|escapejs }}')">
+                    <div class="emp-avatar">{{ emp.name|first|upper }}</div>
+                    <div>
+                        <div class="emp-name">{{ emp.name }}</div>
+                        <div class="emp-meta">{{ emp.position }} • {{ emp.shift.name|default:"Smenasiz" }}</div>
+                    </div>
+                    <i class="fa-solid fa-circle-check emp-check"></i>
+                </div>
+                {% empty %}
+                <p style="text-align:center;color:var(--muted);padding:24px 0;font-size:13px;">
+                    <i class="fa-solid fa-user-slash" style="font-size:28px;display:block;margin-bottom:8px;opacity:.4;"></i>
+                    Face ID uchun ro'yxatga olingan xodimlar yo'q.<br>
+                    Quyida xodimni ro'yxatga oling.
+                </p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Enroll section -->
+        <div class="fc-card">
+            <div class="fc-card-title"><i class="fa-solid fa-user-plus"></i> Xodimni Face ID ga Ulash</div>
+            <form id="enrollForm" onsubmit="enrollEmployee(event)">
+                <div style="margin-bottom:10px;">
+                    <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:5px;">
+                        Xodimni tanlang
+                    </label>
+                    <select name="employee_id" id="enrollEmpSel" required
+                            style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;background:var(--bg);color:var(--ink);">
+                        <option value="">— Xodim —</option>
+                        {% for emp in all_employees %}
+                        <option value="{{ emp.id }}">{{ emp.name }} — {{ emp.position }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:5px;">
+                    Rasmlar (3-5 ta, turli burchakdan)
+                </label>
+                <div class="enroll-zone" onclick="document.getElementById('enrollPhotos').click()">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <p>Rasmlarni bosing yoki sudrab tashlang</p>
+                </div>
+                <input type="file" id="enrollPhotos" name="photos" multiple accept="image/*"
+                       style="display:none;" onchange="previewPhotos(this)">
+                <div id="enrollPreview"></div>
+                <button type="submit" class="btn btn-gold" style="width:100%;justify-content:center;margin-top:10px;">
+                    <i class="fa-solid fa-user-check"></i> Face ID ga Ulash
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<canvas id="snapCanvas" style="display:none;"></canvas>
+
+<script>
+const CSRF = '{{ csrf_token }}';
+let camStream = null;
+let selectedEmpId = null;
+let selectedEmpName = '';
+let cameraActive = false;
+
+// ── Camera device list ─────────────────────────────────────────────────────────
+
+async function refreshCameraList() {
+    try {
+        // Enumerate available cameras
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const cameras = devices.filter(d => d.kind === 'videoinput');
+        const sel = document.getElementById('camSelect');
+        const prev = sel.value;
+
+        sel.innerHTML = '<option value="">— Kamerani tanlang —</option>';
+        cameras.forEach((cam, i) => {
+            const opt = document.createElement('option');
+            opt.value = cam.deviceId;
+            opt.textContent = cam.label || `Kamera ${i + 1}`;
+            sel.appendChild(opt);
+        });
+
+        if (cameras.length === 0) {
+            sel.innerHTML = '<option value="">Kamera topilmadi</option>';
+            toast('Kompyuterga kamera ulanmagan', 'err');
+        } else if (cameras.length === 1) {
+            sel.value = cameras[0].deviceId;
+            toast(`${cameras.length} ta kamera topildi`, 'ok');
+        } else {
+            if (prev) sel.value = prev;
+            toast(`${cameras.length} ta kamera topildi`, 'ok');
+        }
+    } catch (err) {
+        toast('Kamera ro\'yxatini olishda xato: ' + err.message, 'err');
+    }
+}
+
+async function switchCamera() {
+    if (cameraActive) {
+        stopCamera();
+        await startCamera();
+    }
+}
+
+async function startCamera() {
+    const deviceId = document.getElementById('camSelect').value;
+    const constraints = {
+        video: deviceId
+            ? { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
+            : { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }
+    };
+
+    try {
+        camStream = await navigator.mediaDevices.getUserMedia(constraints);
+        document.getElementById('camVideo').srcObject = camStream;
+        document.getElementById('camOverlay').classList.add('hidden');
+        document.getElementById('scanLine').style.display = 'block';
+        document.getElementById('btnStart').disabled = true;
+        document.getElementById('btnStop').disabled = false;
+        document.getElementById('btnCapture').disabled = false;
+        document.getElementById('dotCam').className = 'sc-dot dot-ok';
+        document.getElementById('valCam').textContent = 'Faol';
+        cameraActive = true;
+
+        // Kamera ro'yxatini yangilash (label olish uchun)
+        await refreshCameraList();
+        if (deviceId) document.getElementById('camSelect').value = deviceId;
+
+        toast('Kamera yoqildi ✅', 'ok');
+    } catch (err) {
+        if (err.name === 'NotAllowedError') {
+            toast('Kamera ruxsati rad etildi. Brauzer sozlamalarini tekshiring.', 'err');
+        } else if (err.name === 'NotFoundError') {
+            toast('Kamera topilmadi. Kamerani ulang va qayta urinib ko\'ring.', 'err');
+        } else {
+            toast('Kamera xatosi: ' + err.message, 'err');
+        }
+        document.getElementById('overlayText').textContent = 'Kamera yo\'q yoki ruxsat berilmagan';
+    }
+}
+
+function stopCamera() {
+    if (camStream) {
+        camStream.getTracks().forEach(t => t.stop());
+        camStream = null;
+    }
+    document.getElementById('camVideo').srcObject = null;
+    document.getElementById('camOverlay').classList.remove('hidden');
+    document.getElementById('overlayText').textContent = 'Kamerani yoqing';
+    document.getElementById('scanLine').style.display = 'none';
+    document.getElementById('faceRing').style.display = 'none';
+    document.getElementById('btnStart').disabled = false;
+    document.getElementById('btnStop').disabled = true;
+    document.getElementById('btnCapture').disabled = true;
+    document.getElementById('dotCam').className = 'sc-dot dot-off';
+    document.getElementById('valCam').textContent = "O'chiq";
+    cameraActive = false;
+}
+
+function takeSnapshot() {
+    const video = document.getElementById('camVideo');
+    const canvas = document.getElementById('snapCanvas');
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+
+    const link = document.createElement('a');
+    link.download = `snap_${selectedEmpName || 'unknown'}_${Date.now()}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    toast('Rasm saqlandi', 'ok');
+}
+
+// ── Employee selection ─────────────────────────────────────────────────────────
+
+function selectEmployee(id, name, position) {
+    document.querySelectorAll('.emp-item').forEach(el => el.classList.remove('selected'));
+    const el = document.getElementById('ei-' + id);
+    if (el) el.classList.add('selected');
+
+    selectedEmpId = id;
+    selectedEmpName = name;
+
+    document.getElementById('valEmp').textContent = name;
+    document.getElementById('selInfo').textContent = `👤 ${name} — ${position}`;
+    document.getElementById('actionPanel').style.display = 'flex';
+    document.getElementById('noSelMsg').style.display = 'none';
+
+    // Also set in enroll form
+    const enrollSel = document.getElementById('enrollEmpSel');
+    for (let opt of enrollSel.options) {
+        if (parseInt(opt.value) === id) { enrollSel.value = id; break; }
+    }
+}
+
+function filterEmployees(q) {
+    q = q.toLowerCase();
+    document.querySelectorAll('.emp-item').forEach(el => {
+        const name = el.querySelector('.emp-name').textContent.toLowerCase();
+        el.style.display = name.includes(q) ? '' : 'none';
+    });
+}
+
+// ── Manual check in / out ──────────────────────────────────────────────────────
+
+async function manualAction(action) {
+    if (!selectedEmpId) { toast('Xodimni tanlang!', 'warn'); return; }
+
+    const label = action === 'check_in' ? 'Kirish' : 'Chiqish';
+    try {
+        const res = await fetch('/hr/api/check-in/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({ employee_id: selectedEmpId, action })
+        });
+        const data = await res.json();
+        if (data.success) {
+            toast(data.message, data.is_late ? 'warn' : 'ok');
+            document.getElementById('valAction').textContent = `${label} ${new Date().toLocaleTimeString('uz-UZ', {hour:'2-digit',minute:'2-digit'})}`;
+            // Show face ring animation
+            document.getElementById('faceRing').style.display = 'block';
+            setTimeout(() => { document.getElementById('faceRing').style.display = 'none'; }, 3000);
+        } else {
+            toast(data.error || 'Xato yuz berdi', 'err');
+        }
+    } catch (e) {
+        toast('Server bilan aloqa yo\'q', 'err');
+    }
+}
+
+// ── Enroll employee ────────────────────────────────────────────────────────────
+
+function previewPhotos(input) {
+    const preview = document.getElementById('enrollPreview');
+    preview.innerHTML = '';
+    for (const file of input.files) {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        preview.appendChild(img);
+    }
+}
+
+async function enrollEmployee(e) {
+    e.preventDefault();
+    const form = document.getElementById('enrollForm');
+    const empId = document.getElementById('enrollEmpSel').value;
+    const photos = document.getElementById('enrollPhotos').files;
+
+    if (!empId) { toast('Xodimni tanlang!', 'warn'); return; }
+    if (photos.length === 0) { toast('Kamida bitta rasm yuklang!', 'warn'); return; }
+
+    const fd = new FormData();
+    fd.append('employee_id', empId);
+    for (const p of photos) fd.append('photos', p);
+
+    try {
+        const res = await fetch('/hr/face-id/enroll/', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': CSRF },
+            body: fd
+        });
+        const data = await res.json();
+        if (data.success) {
+            toast(`✅ ${data.message}`, 'ok');
+            document.getElementById('enrollPreview').innerHTML = '';
+            document.getElementById('enrollPhotos').value = '';
+            // Reload page after 1.5s to refresh employee list
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            toast(data.error || 'Xato', 'err');
+        }
+    } catch (e) {
+        toast('Server bilan aloqa yo\'q', 'err');
+    }
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────────
+
+function toast(msg, type = 'info') {
+    const icons = { ok: 'fa-circle-check', warn: 'fa-triangle-exclamation', err: 'fa-circle-xmark', info: 'fa-info-circle' };
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.innerHTML = `<i class="fa-solid ${icons[type] || icons.info}"></i> ${msg}`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', async function () {
+    // First enumerate devices (may get generic labels before permission)
+    await refreshCameraList();
+    // Auto-start if a camera is available
+    const sel = document.getElementById('camSelect');
+    if (sel.options.length > 1) {
+        sel.selectedIndex = 1;  // first real camera
+        await startCamera();
+    }
+});
+</script>
+{% endblock %}

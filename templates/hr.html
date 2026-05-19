@@ -225,6 +225,9 @@
             <div class="tab-link" onclick="switchTab('positions', this)">
                 <i class="fa-solid fa-briefcase"></i> <span>Lavozimlar</span>
             </div>
+            <div class="tab-link" onclick="location.href='/hr/face-id/camera/'">
+                <i class="fa-solid fa-camera"></i> <span>Face ID Kamera</span>
+            </div>
         </div>
     </div>
 
@@ -404,6 +407,11 @@
                     <div class="form-group">
                         <label>Kunlik nagruzka (reja, dona)</label>
                         <input type="number" name="daily_target" class="form-control" value="0" min="0">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Face ID uchun rasmlar (kamida 1 ta, ko'pi bilan 5 ta)</label>
+                        <input type="file" name="face_photos" accept="image/*" class="form-control" multiple required>
+                        <small style="color:var(--muted-ink);">Xodimni Face ID orqali tanish uchun turli burchaklardan rasmlar yuklang</small>
                     </div>
                     {# <div class="form-group" style="grid-column: span 2;">
                         <label>Xodim rasmi</label>
@@ -656,6 +664,131 @@
                 {% empty %}
                 <div style="text-align:center;padding:40px 0;color:var(--muted-ink);"><i class="fa-solid fa-briefcase" style="font-size:32px;opacity:0.3;"></i><p style="margin-top:12px;">Lavozimlar yo'q</p></div>
                 {% endfor %}
+            </section>
+        </div>
+    </div>
+
+    <!-- ═══════ PANE: FACE ID ═══════ -->
+    <div id="pane-face-id" class="tab-pane" style="grid-column: span 12; display: none;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 22px;">
+            <!-- Face ID Monitoring -->
+            <section class="panel" style="grid-column: span 12;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                    <h3 class="hero-title" style="font-size:18px;margin:0;">
+                        <i class="fa-solid fa-camera" style="color:var(--warm-2);"></i> Bugungi Face ID hodisalari
+                    </h3>
+                    <button type="button" class="tab-link" onclick="location.href='/hr/face-id/dashboard/'">
+                        <i class="fa-solid fa-chart-line"></i> To'liq dashboard
+                    </button>
+                </div>
+                
+                <div style="max-height:400px;overflow-y:auto;">
+                    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                        <thead>
+                            <tr style="text-align:left;color:var(--muted-ink);background:#f8f6f2;">
+                                <th style="padding:10px;">Vaqt</th>
+                                <th>Xodim</th>
+                                <th>Lavozim</th>
+                                <th>Harakat</th>
+                                <th>Ishonchlilik</th>
+                                <th>Kechikish</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in face_logs|slice:":20" %}
+                            <tr style="border-top:1px solid var(--line-soft);">
+                                <td style="padding:10px;">{{ log.timestamp|time:"H:i" }}</td>
+                                <td style="padding:10px;font-weight:600;">{{ log.employee.name }}</td>
+                                <td style="padding:10px;">{{ log.employee.position }}</td>
+                                <td style="padding:10px;">
+                                    {% if log.action == 'check_in' %}
+                                        <span style="color:#27ae60;font-weight:700;">✅ Kirish</span>
+                                    {% elif log.action == 'check_out' %}
+                                        <span style="color:#3498db;font-weight:700;">👋 Chiqish</span>
+                                    {% else %}
+                                        <span style="color:#e74c3c;font-weight:700;">❌ Noto'g'ri</span>
+                                    {% endif %}
+                                </td>
+                                <td style="padding:10px;">{{ log.confidence|default:"—" }}%</td>
+                                <td style="padding:10px;">
+                                    {% if log.is_late %}
+                                        <span style="color:#e74c3c;font-weight:700;">⚠️ {{ log.late_minutes }} daq</span>
+                                    {% else %}
+                                        <span style="color:#27ae60;">✅ O'z vaqtida</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" style="padding:20px;text-align:center;color:var(--muted-ink);">
+                                    Hozircha Face ID hodisalari yo'q
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Face ID Enrolled Employees -->
+            <section class="panel" style="grid-column: span 6;">
+                <h3 class="hero-title" style="font-size:18px;margin-bottom:18px;">
+                    Face ID ga ulangan xodimlar ({{ enrolled_employees.count }})
+                </h3>
+                <div style="max-height:300px;overflow-y:auto;">
+                    {% for emp in enrolled_employees %}
+                    <div class="emp-row">
+                        <div class="emp-main">
+                            <div class="emp-avatar" style="background:#e8f5e9;color:#27ae60;">
+                                <i class="fa-solid fa-face-smile"></i>
+                            </div>
+                            <div>
+                                <div class="emp-name">{{ emp.name }}</div>
+                                <div class="emp-pos">{{ emp.position }} • {{ emp.shift.name|default:"Smenasiz" }}</div>
+                            </div>
+                        </div>
+                        <span class="status-pill status-active">Ulangan</span>
+                    </div>
+                    {% empty %}
+                    <p style="text-align:center;color:var(--muted-ink);padding:20px;">Face ID ga ulangan xodimlar yo'q</p>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- Late Arrivals Today -->
+            <section class="panel" style="grid-column: span 6;">
+                <h3 class="hero-title" style="font-size:18px;margin-bottom:18px;">
+                    <span style="color:#e74c3c;">⚠️</span> Kechikganlar (bugun)
+                </h3>
+                <div style="max-height:300px;overflow-y:auto;">
+                    {% for att in late_arrivals %}
+                    <div class="emp-row" style="border-left:3px solid #e74c3c;">
+                        <div class="emp-main">
+                            <div class="emp-avatar" style="background:#fde8e8;color:#e74c3c;">
+                                ⏰
+                            </div>
+                            <div>
+                                <div class="emp-name">{{ att.employee.name }}</div>
+                                <div class="emp-pos">
+                                    Kirish: {{ att.check_in|default:"—" }} • 
+                                    Kutilgan: {{ att.expected_check_in|default:"—" }}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="color:#e74c3c;font-weight:800;font-size:16px;">
+                                {{ att.late_minutes }} daqiqa
+                            </div>
+                            <div style="font-size:11px;color:var(--muted-ink);">kechikdi</div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div style="text-align:center;padding:40px 0;">
+                        <i class="fa-solid fa-check-circle" style="font-size:32px;color:#27ae60;margin-bottom:10px;"></i>
+                        <p style="color:var(--muted-ink);">Barcha xodimlar o'z vaqtida kelgan</p>
+                    </div>
+                    {% endfor %}
+                </div>
             </section>
         </div>
     </div>

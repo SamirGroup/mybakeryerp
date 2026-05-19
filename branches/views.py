@@ -1,10 +1,12 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
+from django.db.models import Sum, Count
 from django.utils import timezone
-from .models import Branch, Transfer, TransferItem, BranchInventory
-from production.models import Product, FinishedGoodsInventory
+from datetime import timedelta
+from .models import Branch, Transfer, TransferItem, BranchInventory, BranchSale, BranchSaleItem
+from production.models import Product, FinishedGoodsInventory, ProductionLog
 
 
 def _get_user_branch(user):
@@ -228,3 +230,156 @@ def branches_dashboard(request):
         'branch_stock_list': branch_stock_list,
     }
     return render(request, 'branches.html', context)
+
+
+@login_required
+def branch_detail(request, branch_id):
+    """Filial ichki paneli — sotuv, HR, buxgalteriya, ishlab chiqarish."""
+    if not request.user.is_superuser:
+        return redirect('dashboard')
+
+    branch = get_object_or_404(Branch, id=branch_id)
+
+    today = timezone.localdate()
+    week_ago = today - timedelta(days=6)
+    month_start = today.replace(day=1)
+
+    # ── Sotuv statistikasi ─────────────────────────────────────────────────────
+    branch_sales_today = BranchSale.objects.filter(branch=branch, date=today)
+    branch_sales_week  = BranchSale.objects.filter(branch=branch, date__gte=week_ago, date__lte=today)
+    branch_sales_month = BranchSale.objects.filter(branch=branch, date__gte=month_start, date__lte=today)
+
+    today_revenue = branch_sales_today.aggregate(t=Sum('total_amount'))['t'] or 0
+    week_revenue  = branch_sales_week.aggregate(t=Sum('total_amount'))['t'] or 0
+    month_revenue = branch_sales_month.aggregate(t=Sum('total_amount'))['t'] or 0
+
+    # So'nggi 30 kun savdo tarixi
+    recent_sales = (
+        BranchSale.objects
+        .filter(branch=branch)
+        .prefetch_related('items__product')
+        .order_by('-date', '-id')[:30]
+    )
+
+    # ── Omborxona ──────────────────────────────────────────────────────────────
+    inventory = (
+        BranchInventory.objects
+        .filter(branch=branch)
+        .select_related('product', 'product__category')
+        .order_by('product__name')
+    )
+    total_stock_qty = inventory.aggregate(t=Sum('stock'))['t'] or 0
+    low_stock = [i for i in inventory if 0 < i.stock < 10]
+
+    # ── Transferlar ────────────────────────────────────────────────────────────
+    in_transit = Transfer.objects.filter(branch=branch, status='in_transit').count()
+    transfers = (
+        Transfer.objects
+        .filter(branch=branch)
+        .prefetch_related('items__product')
+        .order_by('-date_sent')[:20]
+    )
+
+    # ── HR — Xodimlar ──────────────────────────────────────────────────────────
+    from hr.models import Employee, Attendance, DailyReport, FaceIDLog
+    employees = Employee.objects.filter(branch=branch).select_related('shift').order_by('name')
+    active_employees = employees.filter(status='active')
+
+    # Bugungi davomat
+    attendances_today = (
+        Attendance.objects
+        .filter(employee__branch=branch, date=today)
+        .select_related('employee')
+    )
+    present_today = attendances_today.count()
+    late_today    = attendances_today.filter(late_minutes__gt=0).count()
+
+    # Bugungi hisobotlar
+    daily_reports_today = (
+        DailyReport.objects
+        .filter(employee__branch=branch, date=today)
+        .select_related('employee', 'shift')
+    )
+
+    # So'nggi Face ID loglari
+    face_logs = (
+        FaceIDLog.objects
+        .filter(employee__branch=branch, timestamp__date=today)
+        .select_related('employee')
+        .order_by('-timestamp')[:15]
+    )
+
+    # ── Buxgalteriya ───────────────────────────────────────────────────────────
+    from accounting.models import Transaction, CashRegister
+    # Filialga tegishli tranzaktsiyalar (branch_admin uzerlar orqali)
+    branch_user_ids = list(
+        branch.admins.values_list('user_id', flat=True)
+    )
+    transactions = (
+        Transaction.objects
+        .filter(created_by_id__in=branch_user_ids) if branch_user_ids
+        else Transaction.objects.none()
+    )
+    # Oddiy: barcha branch sotuvlari orqali daromad hisoblash
+    month_income  = month_revenue  # BranchSale asosida
+    today_income  = today_revenue
+
+    # ── Ishlab chiqarish ───────────────────────────────────────────────────────
+    # Filial xodimlari nomi bo'yicha ishlab chiqarish loglari
+    emp_names = list(employees.values_list('name', flat=True))
+    production_today = (
+        ProductionLog.objects
+        .filter(date__date=today, baker_name__in=emp_names)
+        .select_related('product')
+        .order_by('-date')
+    )
+    production_month = (
+        ProductionLog.objects
+        .filter(date__date__gte=month_start, baker_name__in=emp_names)
+    )
+    production_today_qty = production_today.aggregate(t=Sum('quantity'))['t'] or 0
+    production_month_qty = production_month.aggregate(t=Sum('quantity'))['t'] or 0
+
+    # Mahsulot bo'yicha bugungi ishlab chiqarish
+    production_by_product = (
+        production_today
+        .values('product__name')
+        .annotate(qty=Sum('quantity'))
+        .order_by('-qty')[:10]
+    )
+
+    context = {
+        'branch': branch,
+        'today': today,
+        # Sotuv
+        'today_revenue': today_revenue,
+        'week_revenue': week_revenue,
+        'month_revenue': month_revenue,
+        'recent_sales': recent_sales,
+        # Omborxona
+        'inventory': inventory,
+        'total_stock_qty': total_stock_qty,
+        'low_stock': low_stock,
+        # Transferlar
+        'transfers': transfers,
+        'in_transit': in_transit,
+        # HR
+        'employees': employees,
+        'active_employees_count': active_employees.count(),
+        'attendances_today': attendances_today,
+        'present_today': present_today,
+        'late_today': late_today,
+        'daily_reports_today': daily_reports_today,
+        'face_logs': face_logs,
+        # Buxgalteriya
+        'today_income': today_income,
+        'month_income': month_income,
+        # Ishlab chiqarish
+        'production_today_qty': production_today_qty,
+        'production_month_qty': production_month_qty,
+        'production_today': production_today,
+        'production_by_product': production_by_product,
+        # Transfer shakli
+        'all_products': Product.objects.all().order_by('name'),
+    }
+    return render(request, 'branch_detail.html', context)
