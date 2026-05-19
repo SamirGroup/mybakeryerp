@@ -1,23 +1,24 @@
 # Bakery ERP — Python dependencies
-# Install with: pip install -r requirements.txt
+# Install: pip install -r requirements.txt
 
-# Core framework
+# ── Core ──────────────────────────────────────────────────────────────────────
 Django==6.0.4
-
-# Django async support
 asgiref==3.11.1
-
-# SQL parsing (used internally by Django)
 sqlparse==0.5.5
-
-# Timezone data (required on Windows)
 tzdata==2026.1
 
-# Translation UI (matches INSTALLED_APPS + /rosetta/ URL)
+# ── Web server ────────────────────────────────────────────────────────────────
+gunicorn>=21.2.0
+whitenoise>=6.7.0
+
+# ── Static files / Images ─────────────────────────────────────────────────────
+Pillow>=10.0.0
+
+# ── Excel export ──────────────────────────────────────────────────────────────
+openpyxl>=3.1.5
+
+# ── Translation UI ────────────────────────────────────────────────────────────
 django-rosetta>=0.10.3
 
-# Required for Django ImageField (hr.Employee.photo, production.Product.image)
-Pillow
-whitenoise
-gunicorn
-openpyxl>=3.1.5
+# ── Telegram bot (Face ID bildirishnomalar) ───────────────────────────────────
+requests>=2.31.0
