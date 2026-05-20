@@ -416,12 +416,6 @@
                 <i class="fa-solid fa-camera"></i>
                 <span>Face ID</span>
             </a>
-            {% if is_superadmin %}
-            <a href="/admin-users/" class="dropdown-item">
-                <i class="fa-solid fa-user-gear"></i>
-                <span>Foydalanuvchilar</span>
-            </a>
-            {% endif %}
         </div>
     </div>
 </div>
@@ -451,12 +445,23 @@
                 <i class="fa-solid fa-store"></i>
                 <span>Barcha filiallar</span>
             </a>
-            <a href="/admin-users/" class="dropdown-item">
-                <i class="fa-solid fa-user-shield"></i>
-                <span>Foydalanuvchi & Rollar</span>
-            </a>
         </div>
     </div>
+</div>
+{% endif %}
+
+<!-- ─── TIZIM BOSHQARUVI — faqat superadmin ─── -->
+{% if is_superadmin %}
+<div class="menu-section" style="margin-top:8px;border-top:1.5px solid rgba(212,163,115,.18);padding-top:8px;">
+    <div class="menu-section-title">Tizim Boshqaruvi</div>
+    <a href="/admin-users/" class="sidebar-main-link {% if request.path == '/admin-users/' %}active{% endif %}">
+        <i class="fa-solid fa-users-gear"></i>
+        <span>Foydalanuvchilar & Rollar</span>
+    </a>
+    <a href="/admin-users/#telegram" class="sidebar-main-link {% if 'telegram' in request.GET.urlencode %}active{% endif %}" style="margin-top:2px;">
+        <i class="fa-brands fa-telegram"></i>
+        <span>Telegram Sozlamalari</span>
+    </a>
 </div>
 {% endif %}
 
