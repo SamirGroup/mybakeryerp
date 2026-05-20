@@ -260,6 +260,17 @@
 </div>
 {% endif %}
 
+{% if is_production_mgr and not is_superadmin and not is_branch_admin %}
+<!-- ─── Ishlab Chiqarish Rahbari: Bosh Sahifa ─── -->
+<div class="menu-section">
+    <div class="menu-section-title">Ishlab Chiqarish Paneli</div>
+    <a href="/production/" class="sidebar-main-link {% if request.path == '/production/' %}active{% endif %}">
+        <i class="fa-solid fa-industry"></i>
+        <span>Bosh Sahifa</span>
+    </a>
+</div>
+{% endif %}
+
 <!-- ─── SOTUV BO'LIMI ─── -->
 {% if is_seller or is_superadmin or is_branch_admin %}
 <div class="menu-section">
@@ -302,7 +313,7 @@
 {% endif %}
 
 <!-- ─── ISHLAB CHIQARISH BO'LIMI ─── -->
-{% if is_production_mgr or is_superadmin or is_seller or is_branch_admin %}
+{% if is_production_mgr or is_superadmin or is_branch_admin %}
 <div class="menu-section">
     <div class="dropdown-menu">
         <button class="dropdown-toggle {% if request.path|startswith:'/production' %}active{% endif %}" onclick="toggleDropdown(this)">

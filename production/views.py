@@ -78,7 +78,7 @@ def _date_range(request):
 
 @login_required
 def production_dashboard(request):
-    if not _can_access(request.user, 'seller', 'production_manager'):
+    if not _can_access(request.user, 'production_manager', 'branch_admin'):
         return redirect('dashboard')
 
     raw_materials = RawMaterial.objects.all().order_by('name')
@@ -341,7 +341,7 @@ def _export_production_excel(date_from, date_to):
 @login_required
 def mark_production_done(request, log_id):
     """AJAX: mark a production log as done and add to inventory."""
-    if not _can_access(request.user, 'seller', 'production_manager'):
+    if not _can_access(request.user, 'production_manager', 'branch_admin'):
         return JsonResponse({'ok': False}, status=403)
     try:
         log = ProductionLog.objects.select_related('product').get(id=log_id, is_done=False)
@@ -359,7 +359,7 @@ def mark_production_done(request, log_id):
 
 @login_required
 def manage_products(request):
-    if not _can_access(request.user, 'seller', 'production_manager'):
+    if not _can_access(request.user, 'production_manager', 'branch_admin'):
         return redirect('dashboard')
 
     products = Product.objects.select_related('category', 'inventory').order_by('name')
@@ -795,7 +795,7 @@ def _export_recipes_excel(recipes):
 @login_required
 def recipe_print(request, recipe_id):
     """Print a single recipe as HTML."""
-    if not _can_access(request.user, 'seller', 'production_manager'):
+    if not _can_access(request.user, 'production_manager', 'branch_admin'):
         return JsonResponse({'ok': False}, status=403)
     
     try:
@@ -924,7 +924,7 @@ def _xlsx_header(ws, headers, color='D4A373'):
 
 @login_required
 def recipe_export_json(request):
-    if not _can_access(request.user, 'seller', 'production_manager'):
+    if not _can_access(request.user, 'production_manager', 'branch_admin'):
         return JsonResponse({'ok': False}, status=403)
     data = []
     for recipe in Recipe.objects.select_related('product').prefetch_related('items__raw_material'):
@@ -948,7 +948,7 @@ def recipe_export_json(request):
 
 @login_required
 def recipe_import_json(request):
-    if not _can_access(request.user, 'seller', 'production_manager'):
+    if not _can_access(request.user, 'production_manager', 'branch_admin'):
         return redirect('dashboard')
     if request.method != 'POST':
         return redirect('manage_products')
@@ -997,7 +997,7 @@ def recipe_import_json(request):
 
 @login_required
 def products_export_excel(request):
-    if not _can_access(request.user, 'seller', 'production_manager'):
+    if not _can_access(request.user, 'production_manager', 'branch_admin'):
         return redirect('dashboard')
     import openpyxl
     wb = openpyxl.Workbook()
@@ -1014,7 +1014,7 @@ def products_export_excel(request):
 
 @login_required
 def products_export_json(request):
-    if not _can_access(request.user, 'seller', 'production_manager'):
+    if not _can_access(request.user, 'production_manager', 'branch_admin'):
         return redirect('dashboard')
     data = [
         {'name': p.name, 'category': p.category.name if p.category else '', 'price': str(p.price)}
@@ -1027,7 +1027,7 @@ def products_export_json(request):
 
 @login_required
 def products_import_excel(request):
-    if not _can_access(request.user, 'seller', 'production_manager'):
+    if not _can_access(request.user, 'production_manager', 'branch_admin'):
         return redirect('dashboard')
     if request.method != 'POST':
         return redirect('manage_products')
@@ -1069,7 +1069,7 @@ def products_import_excel(request):
 
 @login_required
 def products_import_json(request):
-    if not _can_access(request.user, 'seller', 'production_manager'):
+    if not _can_access(request.user, 'production_manager', 'branch_admin'):
         return redirect('dashboard')
     if request.method != 'POST':
         return redirect('manage_products')
@@ -1113,7 +1113,7 @@ def products_import_json(request):
 
 @login_required
 def materials_export_excel(request):
-    if not _can_access(request.user, 'seller', 'production_manager'):
+    if not _can_access(request.user, 'production_manager', 'branch_admin'):
         return redirect('dashboard')
     import openpyxl
     wb = openpyxl.Workbook()
@@ -1130,7 +1130,7 @@ def materials_export_excel(request):
 
 @login_required
 def materials_export_json(request):
-    if not _can_access(request.user, 'seller', 'production_manager'):
+    if not _can_access(request.user, 'production_manager', 'branch_admin'):
         return redirect('dashboard')
     data = [
         {'name': m.name, 'unit': m.unit, 'stock': str(m.stock)}
@@ -1143,7 +1143,7 @@ def materials_export_json(request):
 
 @login_required
 def materials_import_excel(request):
-    if not _can_access(request.user, 'seller', 'production_manager'):
+    if not _can_access(request.user, 'production_manager', 'branch_admin'):
         return redirect('dashboard')
     if request.method != 'POST':
         return redirect('manage_products')
@@ -1181,7 +1181,7 @@ def materials_import_excel(request):
 
 @login_required
 def materials_import_json(request):
-    if not _can_access(request.user, 'seller', 'production_manager'):
+    if not _can_access(request.user, 'production_manager', 'branch_admin'):
         return redirect('dashboard')
     if request.method != 'POST':
         return redirect('manage_products')
@@ -1259,7 +1259,7 @@ def recipe_import_template(request):
 @login_required
 def recipe_import(request):
     """Excel fayldan retseptlarni import qilish."""
-    if not _can_access(request.user, 'seller', 'production_manager'):
+    if not _can_access(request.user, 'production_manager', 'branch_admin'):
         return redirect('dashboard')
     if request.method != 'POST':
         return redirect('manage_products')
@@ -1351,7 +1351,7 @@ def recipe_import(request):
 
 @login_required
 def recipe_json(request, recipe_id):
-    if not _can_access(request.user, 'seller', 'production_manager'):
+    if not _can_access(request.user, 'production_manager', 'branch_admin'):
         return JsonResponse({'ok': False}, status=403)
     
     try:
