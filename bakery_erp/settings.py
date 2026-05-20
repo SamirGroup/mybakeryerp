@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ── Security ────────────────────────────────────────────────────────────────
 SECRET_KEY = os.getenv(
     'SECRET_KEY',
-    'django-insecure-#8dh8-hxh*8j93l2k@dfu8n1rr@s2-tyezw9-iw33g1@y)bgoa'
+    '0tynt^-cd#o^)oxz*kdz#v51^2t-&o(1apepdi%s&!1qp9f^847jid=i!e5f0_@-'
 )
 
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
@@ -31,11 +31,11 @@ CSRF_TRUSTED_ORIGINS = [
 # Production security (Railway HTTPS'ni o'zi boshqaradi)
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    # SECURE_SSL_REDIRECT = True  # Railway o'zi HTTPS ga yo'naltiradi
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
 
 # ── Apps ────────────────────────────────────────────────────────────────────
 INSTALLED_APPS = [
@@ -90,7 +90,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'bakery_erp.wsgi.application'
 
 # ── Database ─────────────────────────────────────────────────────────────────
-# SQLite — Railway'da db.sqlite3 git orqali yuklanadi
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -135,7 +134,6 @@ STORAGES = {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        # CompressedStaticFilesStorage — manifest talab qilmaydi, Railway uchun xavfsiz
         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
@@ -144,6 +142,12 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # ── Telegram Bot ──────────────────────────────────────────────────────────────
-# Railway environment variables dan o'qiladi
-TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
-TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', '')
+# Doimiy qiymatlar — admin panel yoki env var bilan ustiga yozish mumkin
+TELEGRAM_BOT_TOKEN = os.getenv(
+    'TELEGRAM_BOT_TOKEN',
+    '8306874742:AAEhMFKCfniNI4XkpYR8IfJ4fHBiUsVwNv0'
+)
+TELEGRAM_CHAT_ID = os.getenv(
+    'TELEGRAM_CHAT_ID',
+    '-1002064363271'
+)
