@@ -1784,6 +1784,106 @@
         </div>
     </div>
 </div>
+
+<!-- ── Smena Yopish Hisoboti Modal ── -->
+{% if shift_report %}
+<div id="shiftReportModal" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;">
+    <div style="background:#fff;border-radius:20px;width:640px;max-width:98vw;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+        <!-- Header -->
+        <div style="padding:20px 24px 14px;border-bottom:1.5px solid #E8D5B8;background:linear-gradient(135deg,#fffdf7,#fff8ec);">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div>
+                    <h2 style="font-size:18px;font-weight:800;color:#2C1A0E;margin:0;">
+                        <i class="fa-solid fa-flag-checkered" style="color:#D4A373;"></i>
+                        Smena Hisoboti — {{ shift_report.shift_name }}
+                    </h2>
+                    <p style="font-size:12px;color:#9a7a5a;margin:4px 0 0;">{{ shift_report.date }} · {{ shift_report.total_count }} ta sotuv</p>
+                </div>
+                <button onclick="document.getElementById('shiftReportModal').remove()"
+                        style="background:none;border:none;font-size:22px;color:#bbb;cursor:pointer;">✕</button>
+            </div>
+        </div>
+
+        <div style="padding:20px 24px;">
+            <!-- Jami -->
+            <div style="background:#D4A373;color:#fff;border-radius:14px;padding:18px 20px;text-align:center;margin-bottom:18px;">
+                <div style="font-size:12px;opacity:.85;letter-spacing:.05em;text-transform:uppercase;">Jami Tushum</div>
+                <div style="font-size:28px;font-weight:800;">{{ shift_report.total_revenue|floatformat:0 }} UZS</div>
+                <div style="font-size:13px;opacity:.85;">{{ shift_report.total_count }} ta chek</div>
+            </div>
+
+            <!-- Mahsulot bo'yicha -->
+            {% if shift_report.product_stats %}
+            <h4 style="font-size:14px;font-weight:800;color:#2C1A0E;margin:0 0 10px;display:flex;align-items:center;gap:7px;">
+                <i class="fa-solid fa-boxes-stacked" style="color:#D4A373;"></i> Mahsulot bo'yicha
+            </h4>
+            <div style="overflow-x:auto;margin-bottom:18px;">
+                <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                    <thead>
+                        <tr style="background:#FAEDCD;">
+                            <th style="padding:9px 12px;text-align:left;font-weight:700;color:#7a5a2a;">Mahsulot</th>
+                            <th style="padding:9px 12px;text-align:center;font-weight:700;color:#7a5a2a;">Miqdor</th>
+                            <th style="padding:9px 12px;text-align:right;font-weight:700;color:#7a5a2a;">Summa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in shift_report.product_stats %}
+                        <tr style="border-bottom:1px solid #f0ece4;">
+                            <td style="padding:8px 12px;font-weight:600;color:#2C1A0E;">{{ row.product }}</td>
+                            <td style="padding:8px 12px;text-align:center;">
+                                <span style="background:#FAEDCD;color:#7a5a2a;padding:2px 10px;border-radius:20px;font-weight:700;">{{ row.qty }} dona</span>
+                            </td>
+                            <td style="padding:8px 12px;text-align:right;font-weight:700;color:#D4A373;">{{ row.total|floatformat:0 }} UZS</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            <!-- Sotuvchi bo'yicha -->
+            {% if shift_report.seller_stats %}
+            <h4 style="font-size:14px;font-weight:800;color:#2C1A0E;margin:0 0 10px;display:flex;align-items:center;gap:7px;">
+                <i class="fa-solid fa-user-check" style="color:#D4A373;"></i> Sotuvchi bo'yicha
+            </h4>
+            <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                    <thead>
+                        <tr style="background:#FAEDCD;">
+                            <th style="padding:9px 12px;text-align:left;font-weight:700;color:#7a5a2a;">Sotuvchi</th>
+                            <th style="padding:9px 12px;text-align:left;font-weight:700;color:#7a5a2a;">Mahsulot</th>
+                            <th style="padding:9px 12px;text-align:center;font-weight:700;color:#7a5a2a;">Miqdor</th>
+                            <th style="padding:9px 12px;text-align:right;font-weight:700;color:#7a5a2a;">Summa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in shift_report.seller_stats %}
+                        <tr style="border-bottom:1px solid #f0ece4;">
+                            <td style="padding:8px 12px;color:#2C1A0E;">{{ row.seller }}</td>
+                            <td style="padding:8px 12px;color:#2C1A0E;">{{ row.product }}</td>
+                            <td style="padding:8px 12px;text-align:center;">{{ row.qty }}</td>
+                            <td style="padding:8px 12px;text-align:right;font-weight:700;color:#D4A373;">{{ row.total|floatformat:0 }} UZS</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+
+        <div style="padding:14px 24px;border-top:1.5px solid #E8D5B8;display:flex;gap:10px;justify-content:flex-end;">
+            <button onclick="window.print()"
+                    style="padding:10px 20px;background:#2C1A0E;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;">
+                <i class="fa-solid fa-print"></i> Chop etish
+            </button>
+            <button onclick="document.getElementById('shiftReportModal').remove()"
+                    style="padding:10px 20px;background:#D4A373;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;">
+                <i class="fa-solid fa-check"></i> Yopish
+            </button>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_scripts %}

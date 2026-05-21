@@ -1,10 +1,13 @@
 {% extends 'base.html' %}
-{% block breadcrumb %}Foydalanuvchilarni boshqarish{% endblock %}
+{% block breadcrumb %}
+{% if is_branch_mgr %}Filial Foydalanuvchilari{% else %}Foydalanuvchilarni boshqarish{% endif %}
+{% endblock %}
 {% block content %}
 
+{% if not is_branch_mgr %}
 <div class="card" style="max-width:760px;margin-bottom:28px;border:2px solid rgba(212,163,115,0.35);">
     <h2 style="margin-bottom:12px;font-size:20px;"><i class="fa-solid fa-store" style="color:#D4A373;margin-right:8px;"></i>Yangi filial + filial login</h2>
-    <p style="font-size:13px;color:#666;margin-bottom:20px;line-height:1.5;">Bitta qadamda filial yaratiladi va unga alohida <strong>login / parol</strong> beriladi. Bu foydalanuvchi faqat o‘z filialiga kiradi, sotuv va qoldiqni ko‘radi (umumiy aylanma ko‘rinmaydi).</p>
+    <p style="font-size:13px;color:#666;margin-bottom:20px;line-height:1.5;">Bitta qadamda filial yaratiladi va unga alohida <strong>login / parol</strong> beriladi. Bu foydalanuvchi faqat o'z filialiga kiradi, sotuv va qoldiqni ko'radi (umumiy aylanma ko'rinmaydi).</p>
     <form method="post">
         {% csrf_token %}
         <input type="hidden" name="action" value="create_branch_with_admin">
@@ -15,13 +18,13 @@
                 <input class="form-control" type="text" name="branch_name" required placeholder="Masalan: Chilonzor">
             </div>
             <div class="form-group">
-                <label>Mas’ul shaxs</label>
+                <label>Mas'ul shaxs</label>
                 <input class="form-control" type="text" name="responsible_person" placeholder="F.I.Sh.">
             </div>
         </div>
         <div class="form-group">
             <label>Manzil</label>
-            <input class="form-control" type="text" name="branch_address" placeholder="Toshkent, ko‘cha...">
+            <input class="form-control" type="text" name="branch_address" placeholder="Toshkent, ko'cha...">
         </div>
         <h3 style="font-size:15px;margin:20px 0 12px;color:#444;">Filial admini (kirish)</h3>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
@@ -51,9 +54,24 @@
         </button>
     </form>
 </div>
+{% endif %}
 
 <div class="card" style="max-width:760px;">
-    <h2 style="margin-bottom:24px;font-size:20px;"><i class="fa-solid fa-user-plus" style="color:#D4A373;margin-right:8px;"></i>Yangi foydalanuvchi qo'shish</h2>
+    <h2 style="margin-bottom:24px;font-size:20px;">
+        <i class="fa-solid fa-user-plus" style="color:#D4A373;margin-right:8px;"></i>
+        {% if is_branch_mgr %}
+        {{ my_branch.name }} uchun yangi foydalanuvchi
+        {% else %}
+        Yangi foydalanuvchi qo'shish
+        {% endif %}
+    </h2>
+    {% if is_branch_mgr %}
+    <div style="padding:10px 14px;background:#e8f5e9;border-radius:10px;margin-bottom:16px;font-size:13px;color:#155724;font-weight:600;">
+        <i class="fa-solid fa-info-circle"></i>
+        Filial: <strong>{{ my_branch.name }}</strong> — yaratilgan foydalanuvchilar avtomatik bu filialga biriktiriladi.
+        Yaratish mumkin bo'lgan rollar: HR Xodim, Sotuvchi, Buxgalter, Ishlab chiqarish Menejer.
+    </div>
+    {% endif %}
     <form method="post">
         {% csrf_token %}
 
@@ -91,14 +109,19 @@
             <div class="form-group">
                 <label>Rol <span style="color:#dc3545;">*</span></label>
                 <select class="form-control" name="role" id="roleSelect" onchange="toggleBranch()">
-                    <option value="superadmin">⭐ SuperAdmin</option>
-                    <option value="accountant">💰 Buxgalter</option>
-                    <option value="hr">👥 HR Xodim</option>
-                    <option value="seller">🛒 Sotuvchi</option>
-                    <option value="production_manager">🏭 Ishlab chiqarish menejer</option>
-                    <option value="branch_admin">🏪 Filial Admini</option>
+                    {% if not is_branch_mgr %}
+                    <option value="superadmin">SuperAdmin</option>
+                    {% endif %}
+                    <option value="accountant">Buxgalter</option>
+                    <option value="hr">HR Xodim</option>
+                    <option value="seller">Sotuvchi</option>
+                    <option value="production_manager">Ishlab chiqarish menejer</option>
+                    {% if not is_branch_mgr %}
+                    <option value="branch_admin">Filial Admini</option>
+                    {% endif %}
                 </select>
             </div>
+            {% if not is_branch_mgr %}
             <div class="form-group" id="branchGroup" style="display:none;">
                 <label>Filial</label>
                 <select class="form-control" name="branch_id">
@@ -108,6 +131,7 @@
                     {% endfor %}
                 </select>
             </div>
+            {% endif %}
         </div>
 
         <button class="btn btn-primary" type="submit" style="margin-top:8px;">
@@ -117,7 +141,10 @@
 </div>
 
 <div class="card" style="margin-top:28px;">
-    <h2 style="margin-bottom:16px;font-size:18px;"><i class="fa-solid fa-users" style="color:#D4A373;margin-right:8px;"></i>Barcha foydalanuvchilar</h2>
+    <h2 style="margin-bottom:16px;font-size:18px;">
+        <i class="fa-solid fa-users" style="color:#D4A373;margin-right:8px;"></i>
+        {% if is_branch_mgr %}{{ my_branch.name }} foydalanuvchilari{% else %}Barcha foydalanuvchilar{% endif %}
+    </h2>
     <div style="overflow-x:auto;">
         <table class="data-table">
             <thead>

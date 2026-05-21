@@ -559,6 +559,51 @@ def employee_report(request, emp_id):
 
     daily_target_status = calculate_daily_target_status(emp, today) if emp.is_piecework else None
 
+    # ── KPI Statistikasi ────────────────────────────────────────────────
+    attendance_pct = round((present_days / total_days * 100), 1) if total_days > 0 else 0
+    target_fulfillment_pct = 0
+    if emp.is_piecework and emp.daily_target and present_days > 0:
+        avg_daily_units = total_units / present_days
+        target_fulfillment_pct = round(min(avg_daily_units / emp.daily_target * 100, 100), 1)
+
+    # Davomat qoidabuzarliklari
+    from .models import Attendance
+    late_records = Attendance.objects.filter(
+        employee=emp, date__gte=date_from, date__lte=date_to, late_minutes__gt=0
+    )
+    late_count = late_records.count()
+    avg_late_minutes = 0
+    if late_count:
+        avg_late_minutes = round(late_records.aggregate(a=Sum('late_minutes'))['a'] / late_count)
+
+    # O'rtacha kunlik ishlab chiqarish
+    avg_daily_units = round(total_units / present_days, 1) if present_days > 0 else 0
+    avg_daily_hours = round(total_hours / present_days, 1) if present_days > 0 else 0
+
+    # Savdo qo'shish (agar piecework va sales ga ulangan bo'lsa)
+    units_from_sales = sum(r.units_from_sales or 0 for r in reports)
+    units_from_production = sum(r.units_produced or 0 for r in reports)
+
+    # KPI ball (0-100): davomat 40% + nagruzka 40% + kechikmaslik 20%
+    kpi_attendance  = min(attendance_pct, 100) * 0.40
+    kpi_target      = min(target_fulfillment_pct, 100) * 0.40
+    kpi_punctuality = max(0, 100 - (late_count * 5)) * 0.20  # har kechikish uchun -5 ball
+    kpi_score = round(kpi_attendance + kpi_target + kpi_punctuality, 1)
+
+    kpi = {
+        'score': kpi_score,
+        'attendance_pct': attendance_pct,
+        'target_pct': target_fulfillment_pct,
+        'late_count': late_count,
+        'avg_late_min': avg_late_minutes,
+        'avg_daily_units': avg_daily_units,
+        'avg_daily_hours': avg_daily_hours,
+        'units_from_sales': units_from_sales,
+        'units_from_production': units_from_production,
+        'grade': 'A' if kpi_score >= 90 else 'B' if kpi_score >= 75 else 'C' if kpi_score >= 60 else 'D',
+        'grade_color': '#27ae60' if kpi_score >= 90 else '#f39c12' if kpi_score >= 75 else '#e67e22' if kpi_score >= 60 else '#e74c3c',
+    }
+
     context = {
         'emp': emp,
         'reports': reports,
@@ -583,6 +628,7 @@ def employee_report(request, emp_id):
         'advances': advances,
         'absence_reasons': DailyReport.ABSENCE_REASON_CHOICES,
         'daily_target_status': daily_target_status,
+        'kpi': kpi,
     }
     return render(request, 'hr_employee_report.html', context)
 

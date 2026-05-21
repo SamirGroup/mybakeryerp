@@ -236,14 +236,14 @@
 {% endif %}
 
 {% if is_branch_admin and not is_superadmin %}
-<!-- ─── Filial Rahbari: Boshqaruv ─── -->
+<!-- ─── Filial Rahbari: Panel ─── -->
 <div class="menu-section">
     <div class="menu-section-title">
         Filial Paneli
         {% if user_branch %}<span class="branch-badge">{{ user_branch.name }}</span>{% endif %}
     </div>
     <a href="/sales/" class="sidebar-main-link {% if request.path == '/sales/' %}active{% endif %}">
-        <i class="fa-solid fa-chart-bar"></i>
+        <i class="fa-solid fa-gauge-high"></i>
         <span>Bosh Sahifa</span>
     </a>
 </div>
@@ -450,18 +450,24 @@
 </div>
 {% endif %}
 
-<!-- ─── TIZIM BOSHQARUVI — faqat superadmin ─── -->
-{% if is_superadmin %}
+<!-- ─── TIZIM / FILIAL BOSHQARUVI ─── -->
+{% if is_superadmin or is_branch_admin %}
 <div class="menu-section" style="margin-top:8px;border-top:1.5px solid rgba(212,163,115,.18);padding-top:8px;">
+    {% if is_superadmin %}
     <div class="menu-section-title">Tizim Boshqaruvi</div>
+    {% else %}
+    <div class="menu-section-title">Filial Boshqaruvi</div>
+    {% endif %}
     <a href="/admin-users/" class="sidebar-main-link {% if request.path == '/admin-users/' %}active{% endif %}">
         <i class="fa-solid fa-users-gear"></i>
-        <span>Foydalanuvchilar & Rollar</span>
+        <span>Foydalanuvchilar</span>
     </a>
-    <a href="/admin-users/#telegram" class="sidebar-main-link {% if 'telegram' in request.GET.urlencode %}active{% endif %}" style="margin-top:2px;">
+    {% if is_superadmin %}
+    <a href="/admin-users/#telegram" class="sidebar-main-link" style="margin-top:2px;">
         <i class="fa-brands fa-telegram"></i>
         <span>Telegram Sozlamalari</span>
     </a>
+    {% endif %}
 </div>
 {% endif %}
 

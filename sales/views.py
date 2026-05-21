@@ -15,12 +15,25 @@ from accounting.models import CashRegister, Transaction as AccountingTransaction
 from hr.models import DailyReport, Employee
 from production.models import FinishedGoodsInventory, Product, ProductCategory
 from .models import ReturnLog, Sale, SaleItem, ShiftClosure, ShiftDailyAllocation
+from branches.models import BranchInventory, Branch
 
 
 def _can_access(user, *roles):
     if user.is_superuser:
         return True
     return user.groups.filter(name__in=roles).exists()
+
+
+def _get_user_branch(user):
+    """Foydalanuvchi branch_admin bo'lsa uning filialini qaytaradi."""
+    if user.is_superuser:
+        return None
+    if user.groups.filter(name='branch_admin').exists():
+        try:
+            return user.profile.branch
+        except Exception:
+            return None
+    return None
 
 
 REGISTER_BY_PAYMENT = {
@@ -169,7 +182,10 @@ def sales_dashboard(request):
     if request.GET.get('export') == 'excel':
         return _export_sales_excel(date_from, date_to)
 
-    return render(request, 'sales.html', _sales_context(date_from, date_to, request))
+    ctx = _sales_context(date_from, date_to, request)
+    # Smena yopilish hisobotini ko'rsatish
+    ctx['shift_report'] = request.session.pop('shift_report', None)
+    return render(request, 'sales.html', ctx)
 
 
 def _save_shift_allocations(request):
@@ -216,7 +232,54 @@ def _close_shift_session(request):
         shift_name=shift_name,
         defaults={'closed_by': request.user, 'notes': notes},
     )
-    messages.success(request, f"'{shift_name}' smenasi yopildi.")
+
+    # Smena hisobotini sessionga saqlash
+    shift_sales = Sale.objects.filter(date__date=d, shift_name=shift_name)
+    total_revenue = shift_sales.aggregate(t=Sum('total_amount'))['t'] or 0
+    total_count = shift_sales.count()
+
+    # Kim qanchadan sotdi
+    seller_stats = []
+    for sale in shift_sales.select_related('seller').prefetch_related('items__product'):
+        seller_name = sale.seller.username if sale.seller else 'Noma\'lum'
+        for item in sale.items.all():
+            existing = next((s for s in seller_stats if s['seller'] == seller_name and s['product'] == item.product.name), None)
+            if existing:
+                existing['qty'] += item.quantity
+                existing['total'] += float(item.price_at_sale * item.quantity)
+            else:
+                seller_stats.append({
+                    'seller': seller_name,
+                    'product': item.product.name,
+                    'qty': item.quantity,
+                    'total': float(item.price_at_sale * item.quantity),
+                })
+
+    # Mahsulot bo'yicha jami
+    product_stats = []
+    for sale in shift_sales.prefetch_related('items__product'):
+        for item in sale.items.all():
+            existing = next((p for p in product_stats if p['product'] == item.product.name), None)
+            if existing:
+                existing['qty'] += item.quantity
+                existing['total'] += float(item.price_at_sale * item.quantity)
+            else:
+                product_stats.append({
+                    'product': item.product.name,
+                    'qty': item.quantity,
+                    'total': float(item.price_at_sale * item.quantity),
+                })
+    product_stats.sort(key=lambda x: x['qty'], reverse=True)
+
+    request.session['shift_report'] = {
+        'shift_name': shift_name,
+        'date': str(d),
+        'total_revenue': float(total_revenue),
+        'total_count': total_count,
+        'seller_stats': seller_stats,
+        'product_stats': product_stats,
+    }
+    messages.success(request, f"'{shift_name}' smenasi yopildi. Hisobot tayyorlandi.")
 
 
 def _get_seller_for_shift(request, shift_name):
@@ -229,11 +292,14 @@ def _get_seller_for_shift(request, shift_name):
 
 
 def _handle_multi_sale(request):
-    """Handle a single sale with multiple product lines."""
+    """Handle a single sale with multiple product lines.
+    Branch admin uchun BranchInventory, oddiy seller uchun FinishedGoodsInventory.
+    """
     payment_method = request.POST.get('payment_method', 'cash')
     shift_name = request.POST.get('shift_name', '').strip()
     product_ids = request.POST.getlist('product_id')
     quantities = request.POST.getlist('quantity')
+    user_branch = _get_user_branch(request.user)
 
     if not product_ids:
         raise ValueError("Kamida bitta mahsulot tanlang.")
@@ -251,12 +317,28 @@ def _handle_multi_sale(request):
             qty = int(qty_raw)
             if qty <= 0:
                 continue
-            inv = FinishedGoodsInventory.objects.select_for_update().select_related('product').get(product_id=pid)
-            if inv.stock < qty:
-                raise ValueError(f"{inv.product.name}: yetarli emas (bor: {inv.stock}).")
-            price = _money(inv.product.price)
-            total += price * qty
-            items_data.append((inv, qty, price))
+
+            if user_branch:
+                # Filial ombori
+                try:
+                    b_inv = BranchInventory.objects.select_for_update().select_related('product').get(
+                        branch=user_branch, product_id=pid
+                    )
+                except BranchInventory.DoesNotExist:
+                    raise ValueError(f"Bu mahsulot filial omborida yo'q.")
+                if b_inv.stock < qty:
+                    raise ValueError(f"{b_inv.product.name}: filial omborida yetarli emas (bor: {b_inv.stock}).")
+                price = _money(b_inv.product.price)
+                total += price * qty
+                items_data.append(('branch', b_inv, qty, price))
+            else:
+                # Asosiy ombor
+                inv = FinishedGoodsInventory.objects.select_for_update().select_related('product').get(product_id=pid)
+                if inv.stock < qty:
+                    raise ValueError(f"{inv.product.name}: yetarli emas (bor: {inv.stock}).")
+                price = _money(inv.product.price)
+                total += price * qty
+                items_data.append(('main', inv, qty, price))
 
         if not items_data:
             raise ValueError("Hech qanday mahsulot tanlanmadi.")
@@ -267,7 +349,7 @@ def _handle_multi_sale(request):
             seller=_get_seller_for_shift(request, shift_name),
             shift_name=shift_name,
         )
-        for inv, qty, price in items_data:
+        for inv_type, inv, qty, price in items_data:
             SaleItem.objects.create(sale=sale, product=inv.product, quantity=qty, price_at_sale=price)
             inv.stock -= qty
             inv.save(update_fields=['stock'])
@@ -278,19 +360,14 @@ def _handle_multi_sale(request):
     emp_id = request.POST.get('seller_employee_id')
     _credit_piecework_for_sale(sale, employee_id=emp_id)
 
-    # Mijoz chek ma'lumotlarini sessionga saqlash
     request.session['last_sale'] = {
         'sale_id': sale.id,
         'total': str(total),
         'payment_method': sale.get_payment_method_display(),
         'shift_name': shift_name,
         'items': [
-            {
-                'name': inv.product.name,
-                'qty': qty,
-                'total': str(qty * price)
-            }
-            for inv, qty, price in items_data
+            {'name': inv.product.name, 'qty': qty, 'total': str(qty * price)}
+            for _, inv, qty, price in items_data
         ]
     }
 
@@ -300,14 +377,26 @@ def _handle_quick_sale(request):
     qty = int(request.POST.get("quantity", 0))
     payment_method = request.POST.get("payment_method", "cash")
     shift_name = request.POST.get("shift_name", "").strip()
+    user_branch = _get_user_branch(request.user)
 
     if qty <= 0:
         raise ValueError("Miqdor 0 dan katta bo'lishi kerak.")
 
     with transaction.atomic():
-        inv = FinishedGoodsInventory.objects.select_for_update().select_related('product').get(product_id=product_id)
-        if inv.stock < qty:
-            raise ValueError(f"{inv.product.name}: yetarli emas.")
+        if user_branch:
+            try:
+                inv = BranchInventory.objects.select_for_update().select_related('product').get(
+                    branch=user_branch, product_id=product_id
+                )
+            except BranchInventory.DoesNotExist:
+                raise ValueError("Bu mahsulot filial omborida yo'q.")
+            if inv.stock < qty:
+                raise ValueError(f"{inv.product.name}: filial omborida yetarli emas.")
+        else:
+            inv = FinishedGoodsInventory.objects.select_for_update().select_related('product').get(product_id=product_id)
+            if inv.stock < qty:
+                raise ValueError(f"{inv.product.name}: yetarli emas.")
+
         price = _money(inv.product.price)
         total = price * qty
         sale = Sale.objects.create(
@@ -354,33 +443,78 @@ def _sales_context(date_from, date_to, request=None):
     today = timezone.localdate()
     first_of_month = today.replace(day=1)
 
+    # Branch admin uchun filial omboridan foydalanish
+    user_branch = _get_user_branch(request.user) if request else None
+
     categories = ProductCategory.objects.prefetch_related('products').all()
-    products = list(Product.objects.select_related('category').order_by('name'))
-    finished_goods_qs = FinishedGoodsInventory.objects.select_related('product__category').order_by('product__name')
-    finished_goods_all = list(finished_goods_qs)
 
-    inv_map = {fg.product_id: fg for fg in finished_goods_all}
-    product_options = [
-        {
-            'product': p,
-            'stock': inv_map[p.id].stock if p.id in inv_map else 0,
-            'has_inventory': p.id in inv_map,
-        }
-        for p in products
-    ]
+    if user_branch:
+        # Faqat filial omboridagi mahsulotlar
+        branch_inv_qs = (
+            BranchInventory.objects
+            .filter(branch=user_branch)
+            .select_related('product__category')
+            .order_by('product__name')
+        )
+        branch_inv_list = list(branch_inv_qs)
+        inv_map = {bi.product_id: bi for bi in branch_inv_list}
+        products = [bi.product for bi in branch_inv_list]
+        finished_goods_all = []  # branch uchun ishlatilmaydi
 
-    sale_cart_products = [
-        {
-            'id': p.id,
-            'name': p.name,
-            'price': float(p.price),
-            'category': p.category.name if p.category else 'Turkumsiz',
-            'stock': inv_map[p.id].stock if p.id in inv_map else 0,
-            'disabled': p.id not in inv_map or inv_map[p.id].stock <= 0,
-            'image_url': p.image.url if p.image else '',
-        }
-        for p in products
-    ]
+        product_options = [
+            {
+                'product': bi.product,
+                'stock': bi.stock,
+                'has_inventory': True,
+            }
+            for bi in branch_inv_list
+        ]
+        sale_cart_products = [
+            {
+                'id': bi.product.id,
+                'name': bi.product.name,
+                'price': float(bi.product.price),
+                'category': bi.product.category.name if bi.product.category else 'Turkumsiz',
+                'stock': bi.stock,
+                'disabled': bi.stock <= 0,
+                'image_url': bi.product.image.url if bi.product.image else '',
+            }
+            for bi in branch_inv_list
+        ]
+        total_inv_value = sum(_money(bi.product.price) * bi.stock for bi in branch_inv_list)
+        low_stock = [bi for bi in branch_inv_list if 0 < bi.stock < 10]
+        out_of_stock = [bi for bi in branch_inv_list if bi.stock == 0]
+        finished_goods_qs = BranchInventory.objects.none()
+    else:
+        # Asosiy ombor (superadmin / seller)
+        finished_goods_qs = FinishedGoodsInventory.objects.select_related('product__category').order_by('product__name')
+        finished_goods_all = list(finished_goods_qs)
+        products = list(Product.objects.select_related('category').order_by('name'))
+        inv_map = {fg.product_id: fg for fg in finished_goods_all}
+
+        product_options = [
+            {
+                'product': p,
+                'stock': inv_map[p.id].stock if p.id in inv_map else 0,
+                'has_inventory': p.id in inv_map,
+            }
+            for p in products
+        ]
+        sale_cart_products = [
+            {
+                'id': p.id,
+                'name': p.name,
+                'price': float(p.price),
+                'category': p.category.name if p.category else 'Turkumsiz',
+                'stock': inv_map[p.id].stock if p.id in inv_map else 0,
+                'disabled': p.id not in inv_map or inv_map[p.id].stock <= 0,
+                'image_url': p.image.url if p.image else '',
+            }
+            for p in products
+        ]
+        total_inv_value = sum(_money(fg.product.price) * fg.stock for fg in finished_goods_all)
+        low_stock = [fg for fg in finished_goods_all if 0 < fg.stock < 10]
+        out_of_stock = [fg for fg in finished_goods_all if fg.stock == 0]
 
     today_sales = Sale.objects.filter(date__date=today)
     today_revenue = today_sales.aggregate(t=Sum('total_amount'))['t'] or _decimal_zero()
@@ -418,10 +552,6 @@ def _sales_context(date_from, date_to, request=None):
         d = today - timedelta(days=offset)
         rev = Sale.objects.filter(date__date=d).aggregate(t=Sum('total_amount'))['t'] or _decimal_zero()
         last_7.append({'date': d.strftime('%d.%m'), 'revenue': float(rev)})
-
-    total_inv_value = sum(_money(fg.product.price) * fg.stock for fg in finished_goods_all)
-    low_stock = [fg for fg in finished_goods_all if 0 < fg.stock < 10]
-    out_of_stock = [fg for fg in finished_goods_all if fg.stock == 0]
 
     # Returns stats
     from .models import ReturnLog

@@ -7,6 +7,10 @@ asgiref==3.11.1
 sqlparse==0.5.5
 tzdata==2026.1
 
+# ── Database (PostgreSQL for Render) ──────────────────────────────────────────
+dj-database-url>=2.1.0
+psycopg2-binary>=2.9.9
+
 # ── Web server ────────────────────────────────────────────────────────────────
 gunicorn>=21.2.0
 whitenoise>=6.7.0

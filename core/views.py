@@ -132,21 +132,47 @@ def branch_dashboard(request):
 
 @login_required
 def admin_users(request):
-    if not request.user.is_superuser:
+    # Superadmin yoki branch_admin kirishi mumkin
+    is_super = request.user.is_superuser
+    is_branch_mgr = (not is_super) and request.user.groups.filter(name='branch_admin').exists()
+    if not is_super and not is_branch_mgr:
         return redirect('dashboard')
+
     _ensure_groups()
-    branches = Branch.objects.all()
+
+    # Branch admin faqat o'z filialini ko'radi
+    if is_branch_mgr:
+        try:
+            my_branch = request.user.profile.branch
+        except Exception:
+            messages.error(request, "Filial biriktirilmagan.")
+            return redirect('dashboard')
+        branches = Branch.objects.filter(id=my_branch.id)
+    else:
+        branches = Branch.objects.all()
+        my_branch = None
+    # Branch_admin ruxsat etilgan rollar (superadmin va branch_admin yarata olmaydi)
+    BRANCH_ALLOWED_ROLES = ['hr', 'seller', 'accountant', 'production_manager']
+
     if request.method == 'POST':
         if request.POST.get('delete_user_id'):
             uid = request.POST.get('delete_user_id')
             try:
                 u = User.objects.get(id=uid)
                 if u != request.user:
+                    # Branch admin faqat o'z filial foydalanuvchilarini o'chirishi mumkin
+                    if is_branch_mgr:
+                        try:
+                            if u.profile.branch != my_branch:
+                                messages.error(request, "Siz faqat o'z filial foydalanuvchilarini o'chira olasiz.")
+                                return redirect('admin_users')
+                        except Exception:
+                            pass
                     u.delete()
                     messages.success(request, "Foydalanuvchi o'chirildi.")
             except User.DoesNotExist:
                 pass
-        elif request.POST.get('action') == 'create_branch_with_admin':
+        elif request.POST.get('action') == 'create_branch_with_admin' and is_super:
             bname = request.POST.get('branch_name', '').strip()
             baddr = request.POST.get('branch_address', '').strip()
             resp = request.POST.get('responsible_person', '').strip()
@@ -186,26 +212,43 @@ def admin_users(request):
             password = request.POST.get('password', '').strip()
             role = request.POST.get('role', 'seller')
             branch_id = request.POST.get('branch_id', '')
+
+            # Branch admin faqat ruxsat etilgan rollarni yarata oladi
+            if is_branch_mgr and role not in BRANCH_ALLOWED_ROLES:
+                messages.error(request, f"Filial admin faqat {', '.join(BRANCH_ALLOWED_ROLES)} yarata oladi.")
+                return redirect('admin_users')
+
             if username and password:
                 if User.objects.filter(username=username).exists():
                     messages.error(request, "Bu login allaqachon mavjud.")
                 else:
-                    is_super = role == 'superadmin'
+                    make_super = (role == 'superadmin') and is_super
                     u = User.objects.create_user(
                         username=username,
                         password=password,
-                        is_superuser=is_super,
-                        is_staff=is_super,
+                        is_superuser=make_super,
+                        is_staff=make_super,
                     )
-                    if not is_super:
+                    if not make_super:
                         group, _ = Group.objects.get_or_create(name=role)
                         u.groups.add(group)
                     profile = UserProfile.objects.create(user=u)
-                    if role == 'branch_admin' and branch_id:
+
+                    # Filial biriktirish
+                    if is_branch_mgr:
+                        # Branch admin yaratgan foydalanuvchi avtomatik o'z filialiga biriktiriladi
+                        profile.branch = my_branch
+                    elif role == 'branch_admin' and branch_id:
                         try:
                             profile.branch = Branch.objects.get(id=branch_id)
                         except Branch.DoesNotExist:
                             pass
+                    elif branch_id:
+                        try:
+                            profile.branch = Branch.objects.get(id=branch_id)
+                        except Branch.DoesNotExist:
+                            pass
+
                     profile.first_name = request.POST.get('first_name', '').strip()
                     profile.last_name = request.POST.get('last_name', '').strip()
                     profile.phone = request.POST.get('phone', '').strip()
@@ -218,10 +261,19 @@ def admin_users(request):
 
     from .models import TelegramSettings
     tg = TelegramSettings.get()
-    users = User.objects.all().prefetch_related('groups', 'profile__branch')
+
+    # Branch admin faqat o'z filialining foydalanuvchilarini ko'radi
+    if is_branch_mgr:
+        users = User.objects.filter(profile__branch=my_branch).prefetch_related('groups', 'profile__branch')
+    else:
+        users = User.objects.all().prefetch_related('groups', 'profile__branch')
+
     return render(request, 'admin_users.html', {
         'users': users,
         'branches': branches,
+        'is_branch_mgr': is_branch_mgr,
+        'my_branch': my_branch,
+        'branch_allowed_roles': BRANCH_ALLOWED_ROLES,
         'tg': tg,
     })
 

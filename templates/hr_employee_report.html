@@ -639,6 +639,94 @@
         </div>
     </div>
 
+    <!-- KPI Statistikasi -->
+    {% if kpi %}
+    <div class="panel" style="margin-bottom:20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+            <h3 style="font-family:'Lexend',sans-serif;font-size:18px;margin:0;color:var(--ink);">
+                <i class="fa-solid fa-chart-line" style="color:var(--warm-2);"></i> KPI Statistikasi
+            </h3>
+            <div style="text-align:center;background:{{ kpi.grade_color }};color:#fff;padding:10px 24px;border-radius:12px;">
+                <div style="font-size:28px;font-weight:800;line-height:1;">{{ kpi.grade }}</div>
+                <div style="font-size:11px;opacity:.85;">Ball: {{ kpi.score }}/100</div>
+            </div>
+        </div>
+
+        <!-- KPI bal chizig'i -->
+        <div style="margin-bottom:18px;">
+            <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:5px;">
+                <span style="color:var(--muted-ink);">Umumiy KPI</span>
+                <span style="color:{{ kpi.grade_color }};font-weight:800;">{{ kpi.score }}%</span>
+            </div>
+            <div style="height:10px;background:#f0ece4;border-radius:5px;overflow:hidden;">
+                <div style="height:100%;width:{{ kpi.score }}%;background:{{ kpi.grade_color }};border-radius:5px;transition:width .5s;"></div>
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;">
+            <!-- Davomat -->
+            <div style="background:var(--success-soft);border-radius:12px;padding:14px;">
+                <div style="font-size:11px;color:var(--muted-ink);text-transform:uppercase;letter-spacing:.05em;">Davomat</div>
+                <div style="font-size:22px;font-weight:800;color:#27ae60;">{{ kpi.attendance_pct }}%</div>
+                <div style="font-size:12px;color:var(--muted-ink);">{{ present_days }}/{{ total_days }} kun</div>
+            </div>
+            <!-- Nagruzka -->
+            {% if emp.is_piecework and emp.daily_target %}
+            <div style="background:rgba(52,152,219,.08);border-radius:12px;padding:14px;">
+                <div style="font-size:11px;color:var(--muted-ink);text-transform:uppercase;letter-spacing:.05em;">Nagruzka bajarilishi</div>
+                <div style="font-size:22px;font-weight:800;color:#3498db;">{{ kpi.target_pct }}%</div>
+                <div style="font-size:12px;color:var(--muted-ink);">O'rtacha {{ kpi.avg_daily_units }} / {{ emp.daily_target }} dona/kun</div>
+            </div>
+            {% endif %}
+            <!-- Kechikish -->
+            <div style="background:{% if kpi.late_count == 0 %}rgba(46,204,113,.08){% else %}rgba(231,76,60,.08){% endif %};border-radius:12px;padding:14px;">
+                <div style="font-size:11px;color:var(--muted-ink);text-transform:uppercase;letter-spacing:.05em;">Kechikishlar</div>
+                <div style="font-size:22px;font-weight:800;color:{% if kpi.late_count == 0 %}#27ae60{% else %}#e74c3c{% endif %};">{{ kpi.late_count }} marta</div>
+                {% if kpi.late_count > 0 %}
+                <div style="font-size:12px;color:var(--muted-ink);">O'rtacha {{ kpi.avg_late_min }} daqiqa</div>
+                {% else %}
+                <div style="font-size:12px;color:#27ae60;">Hech kechikmasdi</div>
+                {% endif %}
+            </div>
+            <!-- O'rtacha soat -->
+            <div style="background:rgba(155,89,182,.08);border-radius:12px;padding:14px;">
+                <div style="font-size:11px;color:var(--muted-ink);text-transform:uppercase;letter-spacing:.05em;">O'rtacha ish soati</div>
+                <div style="font-size:22px;font-weight:800;color:#9b59b6;">{{ kpi.avg_daily_hours }}h</div>
+                <div style="font-size:12px;color:var(--muted-ink);">Jami: {{ total_hours }}h</div>
+            </div>
+            <!-- Ishlab chiqarish -->
+            {% if emp.is_piecework %}
+            <div style="background:rgba(243,156,18,.08);border-radius:12px;padding:14px;">
+                <div style="font-size:11px;color:var(--muted-ink);text-transform:uppercase;letter-spacing:.05em;">Ishlab chiqarish</div>
+                <div style="font-size:22px;font-weight:800;color:#f39c12;">{{ kpi.units_from_production }}</div>
+                <div style="font-size:12px;color:var(--muted-ink);">Sotuv orqali: {{ kpi.units_from_sales }}</div>
+            </div>
+            <!-- Daromad -->
+            <div style="background:rgba(39,174,96,.08);border-radius:12px;padding:14px;">
+                <div style="font-size:11px;color:var(--muted-ink);text-transform:uppercase;letter-spacing:.05em;">Hisoblangan to'lov</div>
+                <div style="font-size:18px;font-weight:800;color:#27ae60;">{{ salary_calc|floatformat:0 }}</div>
+                <div style="font-size:12px;color:var(--muted-ink);">UZS · {{ total_units }} dona × {{ emp.piecework_rate|floatformat:0 }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sabab bo'yicha yo'qlik -->
+        {% if absent_days > 0 %}
+        <div style="margin-top:14px;padding:12px 16px;background:#fff8e1;border-radius:10px;border-left:4px solid #f39c12;">
+            <div style="font-size:12px;font-weight:700;color:#7a5a00;margin-bottom:6px;">
+                <i class="fa-solid fa-calendar-xmark"></i> Yo'qlik sabablar
+            </div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;">
+                {% if absent_sick %}<span>Kasallik: <strong>{{ absent_sick }}</strong> kun</span>{% endif %}
+                {% if absent_personal %}<span>Shaxsiy: <strong>{{ absent_personal }}</strong> kun</span>{% endif %}
+                {% if absent_approved %}<span>Ruxsat: <strong>{{ absent_approved }}</strong> kun</span>{% endif %}
+                {% if absent_no_reason %}<span style="color:#e74c3c;">Sababsiz: <strong>{{ absent_no_reason }}</strong> kun</span>{% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
     <!-- Reports Table -->
     <div class="panel report-table-container">
         <table class="report-table">
