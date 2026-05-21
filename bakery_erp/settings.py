@@ -15,13 +15,10 @@ SECRET_KEY = os.getenv(
 
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    'mybakeryerp-production.up.railway.app',
-    '.railway.app',
-    'testserver',
-]
+ALLOWED_HOSTS = os.getenv(
+    'ALLOWED_HOSTS',
+    'localhost,127.0.0.1,.render.com,.onrender.com,testserver'
+).split(',')
 
 CSRF_TRUSTED_ORIGINS = [
     'https://mybakeryerp-production.up.railway.app',
@@ -90,12 +87,22 @@ TEMPLATES = [
 WSGI_APPLICATION = 'bakery_erp.wsgi.application'
 
 # ── Database ─────────────────────────────────────────────────────────────────
+import dj_database_url
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# Render/Railway PostgreSQL (DATABASE_URL muhit o'zgaruvchisi orqali)
+if 'DATABASE_URL' in os.environ:
+    DATABASES['default'] = dj_database_url.config(
+        env='DATABASE_URL',
+        conn_max_age=600,
+        ssl_require=True
+    )
 
 # ── Password validation ───────────────────────────────────────────────────────
 AUTH_PASSWORD_VALIDATORS = [

@@ -118,7 +118,7 @@ def _date_range(request):
 
 @login_required
 def accounting_dashboard(request):
-    if not _can_access(request.user, 'accountant'):
+    if not _can_access(request.user, 'accountant', 'branch_admin'):
         return redirect('dashboard')
 
     services.ensure_control_accounts()

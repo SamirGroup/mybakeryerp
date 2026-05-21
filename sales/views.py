@@ -141,7 +141,7 @@ def _date_range(request):
 
 @login_required
 def sales_dashboard(request):
-    if not _can_access(request.user, 'seller'):
+    if not _can_access(request.user, 'seller', 'branch_admin'):
         return redirect('dashboard')
 
     date_from, date_to = _date_range(request)
@@ -512,7 +512,7 @@ def _sales_context(date_from, date_to, request=None):
         'products': products,
         'product_options': product_options,
         'categories': categories,
-        'employees': Employee.objects.filter(status='active', is_piecework=True).select_related('shift').order_by('name'),
+        'employees': Employee.objects.filter(status='active').select_related('shift').order_by('name'),
         'finished_goods': [
             {
                 'product': fg.product,
@@ -613,7 +613,7 @@ def _export_sales_excel(date_from, date_to):
 @login_required
 def quick_sale_view(request):
     """Tezkor sotuv — alohida sahifa."""
-    if not _can_access(request.user, 'seller'):
+    if not _can_access(request.user, 'seller', 'branch_admin'):
         return redirect('dashboard')
 
     if request.method == 'POST':

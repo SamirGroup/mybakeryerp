@@ -241,7 +241,7 @@ def dashboard(request):
         if 'production_manager' in groups:
             return redirect('production_dashboard')
         if 'branch_admin' in groups:
-            return redirect('branch_dashboard')   # filial rahbari → o'z filialiga
+            return redirect('sales_dashboard')   # filial rahbari → sotuv bo'limi
         # Unknown role — show a plain access-denied page
         return render(request, 'no_access.html')
 
