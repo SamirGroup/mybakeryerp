@@ -259,28 +259,21 @@ def admin_users(request):
                 messages.error(request, "Login va parol majburiy.")
         return redirect('admin_users')
 
-    from .models import TelegramSettings
-    try:
-        tg = TelegramSettings.get()
-    except Exception:
-        # Agar TelegramSettings yaratilmagan bo'lsa, yangisini yaratamiz
-        from .models import TelegramSettings as TS
-        tg = TS.objects.create(pk=1, is_active=True, is_persistent=True)
+    from .models import TelegramSettings, BranchTelegramSettings
 
+    # Telegram sozlamalarini yuklash - agar yo'q bo'lsa yaratish
+    tg = TelegramSettings.get()
+    
     # Branch admin faqat o'z filialining foydalanuvchilarini ko'radi
     if is_branch_mgr:
         users = User.objects.filter(profile__branch=my_branch).prefetch_related('groups', 'profile__branch')
     else:
         users = User.objects.all().prefetch_related('groups', 'profile__branch')
 
-    from .models import BranchTelegramSettings
     # Filial Telegram sozlamalari
     branch_tg = None
     if is_branch_mgr and my_branch:
-        try:
-            branch_tg = BranchTelegramSettings.get_for_branch(my_branch)
-        except Exception:
-            branch_tg = BranchTelegramSettings.objects.create(branch=my_branch, is_active=True, is_persistent=True)
+        branch_tg = BranchTelegramSettings.get_for_branch(my_branch)
 
     # Superadmin: barcha filiallar va ularning TG sozlamalari
     all_branches = []
