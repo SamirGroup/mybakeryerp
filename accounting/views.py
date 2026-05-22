@@ -20,6 +20,18 @@ def _can_access(user, *roles):
     return user.groups.filter(name__in=roles).exists()
 
 
+def _get_user_branch(user):
+    """Branch_admin bo'lsa filialni, aks holda None qaytaradi."""
+    if user.is_superuser:
+        return None
+    if user.groups.filter(name='branch_admin').exists():
+        try:
+            return user.profile.branch
+        except Exception:
+            return None
+    return None
+
+
 def _month_bounds(d):
     first = d.replace(day=1)
     if first.month == 12:
@@ -121,6 +133,8 @@ def accounting_dashboard(request):
     if not _can_access(request.user, 'accountant', 'branch_admin'):
         return redirect('dashboard')
 
+    user_branch = _get_user_branch(request.user)
+
     services.ensure_control_accounts()
     services.backfill_gl_for_existing_registers()
 
@@ -135,12 +149,31 @@ def accounting_dashboard(request):
     start_dt = timezone.make_aware(datetime.combine(date_from, time.min))
     end_dt = timezone.make_aware(datetime.combine(date_to + timedelta(days=1), time.min))
 
-    registers = CashRegister.objects.select_related('gl_account').order_by('name', 'id')
+    # Branch_admin faqat o'z filiali ma'lumotlarini ko'radi
+    if user_branch:
+        registers = CashRegister.objects.filter(branch=user_branch).select_related('gl_account').order_by('name')
+        tx_window_qs = Transaction.objects.filter(branch=user_branch, date__gte=start_dt, date__lt=end_dt)
+    else:
+        # Superadmin/accountant: filtrash imkoniyati
+        branch_filter = request.GET.get('branch_filter', '')
+        if branch_filter and request.user.is_superuser:
+            from branches.models import Branch as BranchModel
+            try:
+                fb = BranchModel.objects.get(id=branch_filter)
+                registers = CashRegister.objects.filter(branch=fb).select_related('gl_account').order_by('name')
+                tx_window_qs = Transaction.objects.filter(branch=fb, date__gte=start_dt, date__lt=end_dt)
+            except Exception:
+                registers = CashRegister.objects.filter(branch__isnull=True).select_related('gl_account').order_by('name', 'id')
+                tx_window_qs = Transaction.objects.filter(branch__isnull=True, date__gte=start_dt, date__lt=end_dt)
+        else:
+            # default: asosiy ofis (branch=None)
+            registers = CashRegister.objects.filter(branch__isnull=True).select_related('gl_account').order_by('name', 'id')
+            tx_window_qs = Transaction.objects.filter(branch__isnull=True, date__gte=start_dt, date__lt=end_dt)
+
+    je_window_qs = JournalEntry.objects.filter(entry_date__gte=start_dt, entry_date__lt=end_dt)
     expense_cats = ExpenseCategory.objects.all()
     suppliers = Supplier.objects.all()
     accounts = Account.objects.filter(is_active=True).order_by('code')
-    tx_window_qs = Transaction.objects.filter(date__gte=start_dt, date__lt=end_dt)
-    je_window_qs = JournalEntry.objects.filter(entry_date__gte=start_dt, entry_date__lt=end_dt)
 
     recent_transactions = tx_window_qs.select_related(
         'cash_register', 'expense_category', 'supplier'
@@ -212,11 +245,11 @@ def accounting_dashboard(request):
 
     overview_kpis = [
         {
-            'label': 'Jami kassa qoldig‘i',
+            'label': "Jami kassa qoldigi",
             'value': total_balance,
             'kind': 'money',
             'icon': 'fa-wallet',
-            'hint': 'Har kassa uchun jurnal (GL) aktiv balansi; yig‘indi',
+            'hint': "Har kassa uchun jurnal (GL) aktiv balansi; yig'indi",
         },
         {
             'label': 'Ta\'minotchilar qarzi',
@@ -237,7 +270,7 @@ def accounting_dashboard(request):
             'value': period_expense,
             'kind': 'money',
             'icon': 'fa-arrow-trend-down',
-            'hint': 'Xarajat va ta\'minotchiga to‘lov',
+            'hint': "Xarajat va ta\'minotchiga to'lov",
         },
         {
             'label': 'Davr sof pul oqimi',
@@ -330,18 +363,18 @@ def accounting_dashboard(request):
         register_data,
     )
     chart_cards = [
-        {'key': 'trend_6m', 'title': 'Oylik kassa oqimi', 'hint': 'So‘nggi 6 oy — tushum va chiqim (Transaction)'},
+        {'key': 'trend_6m', 'title': 'Oylik kassa oqimi', 'hint': "So'nggi 6 oy — tushum va chiqim (Transaction)"},
         {'key': 'register_split', 'title': 'Kassalar taqsimoti', 'hint': 'Kassa qoldiqlari'},
         {'key': 'pos_vs_branch_6m', 'title': 'POS va filial savdosi', 'hint': '6 oylik solishtirish'},
         {'key': 'daily_sales_14d', 'title': 'Kunlik savdo (14 kun)', 'hint': 'POS + filial'},
-        {'key': 'tx_type_pie', 'title': 'Kassa operatsiyalari (oy)', 'hint': 'Turlar bo‘yicha summa'},
+        {'key': 'tx_type_pie', 'title': 'Kassa operatsiyalari (oy)', 'hint': "Turlar bo'yicha summa"},
         {'key': 'expense_categories', 'title': 'Xarajat kategoriyalari', 'hint': 'Joriy oy'},
         {'key': 'supplier_debt', 'title': 'Ta\'minotchi qarzlari', 'hint': 'TOP 10'},
-        {'key': 'payment_methods', 'title': 'POS to‘lov usullari', 'hint': 'Oy bo‘yicha'},
+        {'key': 'payment_methods', 'title': "POS to'lov usullari", 'hint': "Oy bo'yicha"},
         {'key': 'top_products', 'title': 'TOP mahsulotlar', 'hint': 'Oy daromadi (POS)'},
         {'key': 'branch_sales_month', 'title': 'Filial savdosi', 'hint': 'Joriy oy'},
-        {'key': 'journal_daily_14', 'title': 'Kunlik jurnal', 'hint': '14 kun — yozuvlar soni'},
-        {'key': 'gl_activity', 'title': 'GL faolligi', 'hint': 'Hisoblar bo‘yicha (oy)'},
+        {'key': 'journal_daily_14', 'title': 'Kunlik jurnal', 'hint': "14 kun — yozuvlar soni"},
+        {'key': 'gl_activity', 'title': 'GL faolligi', 'hint': "Hisoblar bo'yicha (oy)"},
         {'key': 'hourly_pos_today', 'title': 'Bugungi POS (soat)', 'hint': 'Bugun'},
         {'key': 'tx_type_counts', 'title': 'Operatsiya turlari soni', 'hint': 'Oy'},
         {'key': 'trial_balance_split', 'title': 'Sinov balansi', 'hint': 'Jami debet / kredit'},
@@ -357,17 +390,17 @@ def accounting_dashboard(request):
             except InvalidOperation:
                 bal = Decimal('0')
             if name:
-                if CashRegister.objects.filter(name=name).exists():
+                if CashRegister.objects.filter(name=name, branch=user_branch).exists():
                     messages.warning(request, f"«{name}» allaqachon mavjud.")
                 else:
-                    reg = CashRegister.objects.create(name=name, balance=Decimal('0'))
+                    reg = CashRegister.objects.create(name=name, balance=Decimal('0'), branch=user_branch)
                     services.ensure_register_gl(reg)
                     if bal > 0:
                         try:
-                            services.record_income(reg, bal, request.user, 'Boshlang‘ich qoldiq')
+                            services.record_income(reg, bal, request.user, "Boshlang'ich qoldiq")
                         except Exception as e:
-                            messages.warning(request, f"Kassa yaratildi, boshlang‘ich jurnal xatosi: {e}")
-                    messages.success(request, f"Kassa «{name}» qo‘shildi.")
+                            messages.warning(request, f"Kassa yaratildi, boshlang'ich jurnal xatosi: {e}")
+                    messages.success(request, f"Kassa «{name}» qo'shildi.")
             else:
                 messages.error(request, 'Kassa nomi majburiy.')
 
@@ -376,7 +409,7 @@ def accounting_dashboard(request):
             if name:
                 cat, created = ExpenseCategory.objects.get_or_create(name=name)
                 if created:
-                    messages.success(request, f"Kategoriya «{name}» qo‘shildi.")
+                    messages.success(request, f"Kategoriya «{name}» qo'shildi.")
                 else:
                     messages.warning(request, 'Bu kategoriya allaqachon bor.')
             else:
@@ -391,7 +424,7 @@ def accounting_dashboard(request):
                     sup.contact_info = contact
                     sup.save(update_fields=['contact_info'])
                 if created:
-                    messages.success(request, f"Ta'minotchi «{name}» qo‘shildi.")
+                    messages.success(request, f"Ta'minotchi «{name}» qo'shildi.")
                 else:
                     messages.warning(request, 'Bu nom allaqachon mavjud.')
             else:
@@ -401,7 +434,7 @@ def accounting_dashboard(request):
             rid = request.POST.get('register_id')
             try:
                 CashRegister.objects.get(id=rid).delete()
-                messages.success(request, "Kassa o‘chirildi.")
+                messages.success(request, "Kassa o'chirildi.")
             except CashRegister.DoesNotExist:
                 messages.error(request, 'Kassa topilmadi.')
 
@@ -409,7 +442,7 @@ def accounting_dashboard(request):
             cid = request.POST.get('category_id')
             try:
                 ExpenseCategory.objects.get(id=cid).delete()
-                messages.success(request, 'Kategoriya o‘chirildi.')
+                messages.success(request, "Kategoriya o'chirildi.")
             except ExpenseCategory.DoesNotExist:
                 messages.error(request, 'Kategoriya topilmadi.')
 
@@ -417,7 +450,7 @@ def accounting_dashboard(request):
             sid = request.POST.get('supplier_id')
             try:
                 Supplier.objects.get(id=sid).delete()
-                messages.success(request, 'Ta\'minotchi o‘chirildi.')
+                messages.success(request, "Ta\'minotchi o'chirildi.")
             except Supplier.DoesNotExist:
                 messages.error(request, 'Topilmadi.')
 
@@ -450,10 +483,10 @@ def accounting_dashboard(request):
                 to_reg = CashRegister.objects.get(id=request.POST.get('to_register'))
                 desc = request.POST.get('description', '').strip()
                 if from_reg.id == to_reg.id:
-                    messages.error(request, 'Manba va maqsad kassa bir xil bo‘lmasligi kerak.')
+                    messages.error(request, "Manba va maqsad kassa bir xil bo'lmasligi kerak.")
                 else:
                     services.record_transfer(from_reg, to_reg, amount, request.user, desc)
-                    messages.success(request, 'O‘tkazma bajarildi.')
+                    messages.success(request, "O'tkazma bajarildi.")
             except (CashRegister.DoesNotExist, InvalidOperation, ValueError) as e:
                 messages.error(request, str(e) if str(e) else 'Xato.')
 
@@ -463,7 +496,7 @@ def accounting_dashboard(request):
                 reg = CashRegister.objects.get(id=request.POST.get('register'))
                 sup = Supplier.objects.get(id=request.POST.get('supplier'))
                 services.record_supplier_payment(reg, sup, amount, request.user)
-                messages.success(request, 'To‘lov qayd etildi.')
+                messages.success(request, "To'lov qayd etildi.")
             except (CashRegister.DoesNotExist, Supplier.DoesNotExist, InvalidOperation, ValueError) as e:
                 messages.error(request, str(e) if str(e) else 'Xato.')
 
@@ -495,11 +528,21 @@ def accounting_dashboard(request):
                 )
             try:
                 services.post_manual_journal(request.user, memo, ref, rows)
-                messages.success(request, 'Qo‘lda jurnal yozuvi yaratildi.')
+                messages.success(request, "Qo'lda jurnal yozuvi yaratildi.")
             except Exception as e:
                 messages.error(request, str(e))
 
         return redirect('accounting_dashboard')
+
+    # Superadmin uchun filiallar ro'yxati (filtr uchun)
+    from branches.models import Branch as BranchModel
+    all_branches_for_filter = []
+    current_branch_filter = None
+    if request.user.is_superuser:
+        all_branches_for_filter = list(BranchModel.objects.order_by('name'))
+        branch_filter_id = request.GET.get('branch_filter', '')
+        if branch_filter_id:
+            current_branch_filter = BranchModel.objects.filter(id=branch_filter_id).first()
 
     context = {
         'registers': registers,
@@ -533,5 +576,8 @@ def accounting_dashboard(request):
         'date_from': date_from,
         'date_to': date_to,
         'saved_filter': request.session.get('accounting_saved_filter'),
+        'user_branch': user_branch,
+        'all_branches_for_filter': all_branches_for_filter,
+        'current_branch_filter': current_branch_filter,
     }
     return render(request, 'accounting.html', context)

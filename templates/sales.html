@@ -782,6 +782,17 @@
     body.pos-fullscreen .tab-container { border-radius: 0; }
     body.pos-fullscreen .tab-nav button:not([data-tab="pos"]) { display: none; }
 
+    /* ── POS Scroll Fix - Formani doim ko'rinadigan qilish ── */
+    #multiSaleForm {
+        position: sticky;
+        top: 20px;
+    }
+    
+    #multiSaleForm .panel {
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+    }
+
     /* ── POS Korzinka ───────────────────────────────── */
     .pos-cart-item {
         display: flex;

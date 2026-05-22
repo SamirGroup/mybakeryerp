@@ -41,9 +41,15 @@ class CashRegister(models.Model):
         blank=True,
         related_name='cash_register',
     )
+    branch = models.ForeignKey(
+        'branches.Branch', on_delete=models.CASCADE,
+        null=True, blank=True, related_name='cash_registers',
+        verbose_name="Filial (bo'sh = asosiy ofis)"
+    )
 
     def __str__(self):
-        return f"{self.name} — {self.balance}"
+        prefix = f"[{self.branch.name}] " if self.branch else ""
+        return f"{prefix}{self.name} — {self.balance}"
 
 
 class ExpenseCategory(models.Model):
@@ -74,6 +80,15 @@ class Transaction(models.Model):
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
     description = models.TextField(blank=True, null=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='transactions'
+    )
+    branch = models.ForeignKey(
+        'branches.Branch', on_delete=models.CASCADE,
+        null=True, blank=True, related_name='transactions',
+        verbose_name="Filial (bo'sh = asosiy ofis)"
+    )
 
     expense_category = models.ForeignKey(
         ExpenseCategory, on_delete=models.SET_NULL, null=True, blank=True

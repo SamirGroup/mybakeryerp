@@ -122,10 +122,13 @@ def _money(value):
         return _decimal_zero()
 
 
-def _record_accounting_income(sale, payment_method, total_price):
+def _record_accounting_income(sale, payment_method, total_price, branch=None):
     register_name = REGISTER_BY_PAYMENT.get(payment_method, "Main Cash")
+    # Branch uchun alohida kassa, asosiy ofis uchun umumiy kassa
     register, _ = CashRegister.objects.select_for_update().get_or_create(
-        name=register_name, defaults={"balance": _decimal_zero()}
+        name=register_name,
+        branch=branch,
+        defaults={"balance": _decimal_zero()}
     )
     register.balance = _money(register.balance) + total_price
     register.save(update_fields=["balance"])
@@ -134,6 +137,8 @@ def _record_accounting_income(sale, payment_method, total_price):
         amount=total_price,
         transaction_type="income",
         description=f"Sotuv #{sale.id} ({sale.get_payment_method_display()})",
+        branch=branch,
+        created_by=sale.seller,
     )
 
 
@@ -354,7 +359,7 @@ def _handle_multi_sale(request):
             inv.stock -= qty
             inv.save(update_fields=['stock'])
 
-        _record_accounting_income(sale, payment_method, total)
+        _record_accounting_income(sale, payment_method, total, branch=user_branch)
 
     messages.success(request, f"Sotuv #{sale.id} yakunlandi: {total:,.0f} UZS.")
     emp_id = request.POST.get('seller_employee_id')
@@ -406,7 +411,7 @@ def _handle_quick_sale(request):
         SaleItem.objects.create(sale=sale, product=inv.product, quantity=qty, price_at_sale=price)
         inv.stock -= qty
         inv.save(update_fields=['stock'])
-        _record_accounting_income(sale, payment_method, total)
+        _record_accounting_income(sale, payment_method, total, branch=user_branch)
 
     messages.success(request, f"{qty} x {inv.product.name} = {total:,.0f} UZS.")
     emp_id = request.POST.get('seller_employee_id')

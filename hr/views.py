@@ -63,36 +63,48 @@ def _date_range(request):
     return today, today
 
 
-def _send_telegram(message: str):
-    """Telegram bot orqali rahbarga xabar yuborish.
-    Avval database sozlamalarini, so'ng settings.py ni tekshiradi.
+def _send_telegram(message: str, employee=None):
+    """Telegram bot orqali xabar yuborish.
+    Tartib: 1) Xodimning filial Telegram → 2) Global DB → 3) settings.py
     """
-    token = ''
-    chat_id = ''
-    try:
-        from core.models import TelegramSettings
-        cfg = TelegramSettings.get()
-        if cfg.is_active and cfg.bot_token and cfg.chat_id:
-            token = cfg.bot_token
-            chat_id = cfg.chat_id
-    except Exception:
-        pass
+    configs = []
 
-    if not token:
+    # 1. Xodim filialni aniqlash
+    if employee and employee.branch_id:
+        try:
+            from core.models import BranchTelegramSettings
+            br_tg = BranchTelegramSettings.get_for_branch(employee.branch)
+            if br_tg.is_active and br_tg.bot_token and br_tg.chat_id:
+                configs.append((br_tg.bot_token, br_tg.chat_id))
+        except Exception:
+            pass
+
+    # 2. Global DB sozlamalari
+    if not configs:
+        try:
+            from core.models import TelegramSettings
+            cfg = TelegramSettings.get()
+            if cfg.is_active and cfg.bot_token and cfg.chat_id:
+                configs.append((cfg.bot_token, cfg.chat_id))
+        except Exception:
+            pass
+
+    # 3. settings.py fallback
+    if not configs:
         token = getattr(settings, 'TELEGRAM_BOT_TOKEN', '')
         chat_id = getattr(settings, 'TELEGRAM_CHAT_ID', '')
+        if token and chat_id:
+            configs.append((token, chat_id))
 
-    if not token or not chat_id:
-        return
-
-    try:
-        http_requests.post(
-            f'https://api.telegram.org/bot{token}/sendMessage',
-            json={'chat_id': chat_id, 'text': message, 'parse_mode': 'HTML'},
-            timeout=5,
-        )
-    except Exception:
-        pass
+    for token, chat_id in configs:
+        try:
+            http_requests.post(
+                f'https://api.telegram.org/bot{token}/sendMessage',
+                json={'chat_id': chat_id, 'text': message, 'parse_mode': 'HTML'},
+                timeout=5,
+            )
+        except Exception:
+            pass
 
 
 # ─── HR Dashboard ─────────────────────────────────────────────────────────────
@@ -892,7 +904,7 @@ def face_id_check_in(request):
         )
         ui_msg = f"✅ {emp.name} keldi"
 
-    _send_telegram(tg_msg)
+    _send_telegram(tg_msg, employee=emp)
 
     return JsonResponse({
         'success': True,
@@ -954,7 +966,7 @@ def face_id_check_out(request):
         f"👤 {emp.name} — {emp.position}\n"
         f"🕐 Vaqt: {time_str}"
     )
-    _send_telegram(tg_msg)
+    _send_telegram(tg_msg, employee=emp)
 
     return JsonResponse({
         'success': True,

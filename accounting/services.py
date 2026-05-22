@@ -73,11 +73,12 @@ def _validate_balance(lines: list[tuple[Account, Decimal, Decimal]]):
 def record_income(register: CashRegister, amount, user, description: str = ''):
     amount = _d(amount)
     if amount <= 0:
-        raise ValueError('Summa musbat bo‘lishi kerak.')
+        raise ValueError("Summa musbat bo'lishi kerak.")
     reg_acc = ensure_register_gl(register)
     rev = Account.objects.get(code=CODE_REV)
     tx = Transaction.objects.create(
         cash_register=register,
+        branch=register.branch,
         amount=amount,
         transaction_type='income',
         description=description or 'Naqd tushum',
@@ -103,13 +104,14 @@ def record_income(register: CashRegister, amount, user, description: str = ''):
 def record_expense(register: CashRegister, amount, category: ExpenseCategory, user, description: str = ''):
     amount = _d(amount)
     if amount <= 0:
-        raise ValueError('Summa musbat bo‘lishi kerak.')
+        raise ValueError("Summa musbat bo'lishi kerak.")
     reg_acc = ensure_register_gl(register)
     exp = Account.objects.get(code=CODE_EXP)
     if register.balance < amount:
-        raise ValueError(f"{register.name} kassasida yetarli mablag‘ yo‘q. Qoldiq: {register.balance}")
+        raise ValueError(f"{register.name} kassasida yetarli mablag' yo'q. Qoldiq: {register.balance}")
     tx = Transaction.objects.create(
         cash_register=register,
+        branch=register.branch,
         amount=amount,
         transaction_type='expense',
         expense_category=category,
@@ -136,13 +138,13 @@ def record_expense(register: CashRegister, amount, category: ExpenseCategory, us
 def record_transfer(from_reg: CashRegister, to_reg: CashRegister, amount, user, description: str = ''):
     amount = _d(amount)
     if amount <= 0:
-        raise ValueError('Summa musbat bo‘lishi kerak.')
+        raise ValueError("Summa musbat bo'lishi kerak.")
     if from_reg.id == to_reg.id:
         raise ValueError('Bir xil kassa tanlangan.')
     from_acc = ensure_register_gl(from_reg)
     to_acc = ensure_register_gl(to_reg)
     if from_reg.balance < amount:
-        raise ValueError(f"{from_reg.name} kassasida yetarli mablag‘ yo‘q.")
+        raise ValueError(f"{from_reg.name} kassasida yetarli mablag' yo'q.")
     tx = Transaction.objects.create(
         cash_register=from_reg,
         amount=amount,
@@ -157,7 +159,7 @@ def record_transfer(from_reg: CashRegister, to_reg: CashRegister, amount, user, 
     je = JournalEntry.objects.create(
         entry_date=timezone.now(),
         reference=f'TRF-{tx.id}',
-        memo=description or f"O‘tkazma: {from_reg.name} → {to_reg.name}",
+        memo=description or f"O'tkazma: {from_reg.name} → {to_reg.name}",
         source='cash',
         created_by=user,
         transaction=tx,
@@ -173,19 +175,20 @@ def record_transfer(from_reg: CashRegister, to_reg: CashRegister, amount, user, 
 def record_supplier_payment(register: CashRegister, supplier: Supplier, amount, user, description: str = ''):
     amount = _d(amount)
     if amount <= 0:
-        raise ValueError('Summa musbat bo‘lishi kerak.')
+        raise ValueError("Summa musbat bo'lishi kerak.")
     reg_acc = ensure_register_gl(register)
     ap = Account.objects.get(code=CODE_AP)
     if register.balance < amount:
-        raise ValueError(f"{register.name} kassasida yetarli mablag‘ yo‘q.")
+        raise ValueError(f"{register.name} kassasida yetarli mablag' yo'q.")
     if supplier.debt < amount:
-        raise ValueError('To‘lov summasi ta\'minotchi qarzidan oshmasligi kerak.')
+        raise ValueError("To'lov summasi ta\'minotchi qarzidan oshmasligi kerak.")
     tx = Transaction.objects.create(
         cash_register=register,
+        branch=register.branch,
         amount=amount,
         transaction_type='supplier_payment',
         supplier=supplier,
-        description=description or f"To‘lov: {supplier.name}",
+        description=description or f"To'lov: {supplier.name}",
     )
     register.balance -= amount
     supplier.debt -= amount
@@ -211,7 +214,7 @@ def record_supplier_debt_increase(supplier: Supplier, amount, user, description:
     """Qarzga xarid: Dr Xarid / Cr Kreditorlik (naqd harakatsiz)."""
     amount = _d(amount)
     if amount <= 0:
-        raise ValueError('Summa musbat bo‘lishi kerak.')
+        raise ValueError("Summa musbat bo'lishi kerak.")
     ensure_control_accounts()
     pur = Account.objects.get(code=CODE_PURCHASE)
     ap = Account.objects.get(code=CODE_AP)
@@ -246,7 +249,7 @@ def post_manual_journal(user, memo: str, reference: str, rows: list[dict]):
             d = _d(r.get('debit') or 0)
             c = _d(r.get('credit') or 0)
         except (InvalidOperation, TypeError):
-            raise ValueError('Noto‘g‘ri summa.')
+            raise ValueError("Noto'g'ri summa.")
         if d < 0 or c < 0:
             raise ValueError('Manfiy summalar ruxsat etilmaydi.')
         if d > 0 and c > 0:
@@ -263,7 +266,7 @@ def post_manual_journal(user, memo: str, reference: str, rows: list[dict]):
             }
         )
     if len(parsed) < 2:
-        raise ValueError('Kamida ikkita to‘ldirilgan qator kerak.')
+        raise ValueError("Kamida ikkita to'ldirilgan qator kerak.")
     td = sum(x['debit'] for x in parsed)
     tc = sum(x['credit'] for x in parsed)
     if td != tc:
@@ -288,9 +291,9 @@ def post_manual_journal(user, memo: str, reference: str, rows: list[dict]):
 
 def cash_register_rows_from_registers(registers):
     """
-    Kassa UI uchun ro‘yxat: id, name, balance, gl_code.
-    GL bog‘langan kassalar uchun balans jurnal qatorlaridan (aktiv: debet − kredit);
-    yozuv bo‘lmasa yoki GL yo‘q bo‘lsa — CashRegister.balance.
+    Kassa UI uchun ro'yxat: id, name, balance, gl_code.
+    GL bog'langan kassalar uchun balans jurnal qatorlaridan (aktiv: debet − kredit);
+    yozuv bo'lmasa yoki GL yo'q bo'lsa — CashRegister.balance.
     """
     registers = list(registers)
     account_ids = [r.gl_account_id for r in registers if r.gl_account_id]
@@ -326,7 +329,7 @@ def cash_register_rows_from_registers(registers):
 
 
 def trial_balance():
-    """Jurnal qatorlari bo‘yicha sinov balansi."""
+    """Jurnal qatorlari bo'yicha sinov balansi."""
     qs = (
         JournalLine.objects.values('account__code', 'account__name', 'account__account_type')
         .annotate(debit_total=Sum('debit'), credit_total=Sum('credit'))
@@ -347,7 +350,7 @@ def trial_balance():
 
 
 def backfill_gl_for_existing_registers():
-    """Migratsiya yoki admin uchun: mavjud kassalarga GL hisob bog‘lash."""
+    """Migratsiya yoki admin uchun: mavjud kassalarga GL hisob bog'lash."""
     ensure_control_accounts()
     for reg in CashRegister.objects.filter(gl_account__isnull=True):
         ensure_register_gl(reg)

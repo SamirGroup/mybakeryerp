@@ -1,0 +1,524 @@
+{% extends 'base.html' %}
+{% block breadcrumb %}Face ID Kamera Boshqaruvi{% endblock %}
+{% block content %}
+
+<style>
+    .camera-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(252, 247, 239, 0.92));
+        border: 2px solid rgba(212, 163, 115, 0.25);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 16px;
+        transition: all 0.3s ease;
+    }
+    
+    .camera-card:hover {
+        box-shadow: 0 8px 24px rgba(212, 163, 115, 0.15);
+        transform: translateY(-2px);
+    }
+    
+    .camera-card.active {
+        border-color: #28a745;
+        background: linear-gradient(135deg, rgba(240, 255, 240, 0.95), rgba(240, 250, 240, 0.92));
+    }
+    
+    .camera-card.default {
+        border-color: #D4A373;
+        background: linear-gradient(135deg, rgba(255, 252, 245, 0.97), rgba(250, 245, 236, 0.94));
+    }
+    
+    .camera-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+    
+    .status-active {
+        background: rgba(40, 167, 69, 0.15);
+        color: #25713a;
+    }
+    
+    .status-inactive {
+        background: rgba(220, 53, 69, 0.15);
+        color: #a4333f;
+    }
+    
+    .status-default {
+        background: rgba(212, 163, 115, 0.2);
+        color: #8b6914;
+    }
+    
+    .session-panel {
+        background: linear-gradient(135deg, rgba(245, 250, 255, 0.95), rgba(240, 248, 255, 0.92));
+        border: 2px solid rgba(52, 152, 219, 0.25);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .session-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-top: 16px;
+    }
+    
+    .stat-box {
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(52, 152, 219, 0.2);
+        border-radius: 12px;
+        padding: 12px;
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-family: 'Lexend', sans-serif;
+        font-size: 24px;
+        font-weight: 800;
+        color: #2f2a25;
+    }
+    
+    .stat-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #7f7468;
+        font-weight: 700;
+        margin-top: 4px;
+    }
+    
+    .add-camera-form {
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px dashed rgba(212, 163, 115, 0.3);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .btn-action {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .btn-start {
+        background: #28a745;
+        color: white;
+    }
+    
+    .btn-start:hover {
+        background: #218838;
+        transform: translateY(-2px);
+    }
+    
+    .btn-stop {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .btn-stop:hover {
+        background: #c82333;
+        transform: translateY(-2px);
+    }
+    
+    .btn-set-default {
+        background: #D4A373;
+        color: white;
+    }
+    
+    .btn-set-default:hover {
+        background: #c49360;
+    }
+    
+    .btn-toggle {
+        background: #17a2b8;
+        color: white;
+    }
+    
+    .btn-toggle:hover {
+        background: #138496;
+    }
+</style>
+
+<!-- Session Control Panel -->
+<div class="session-panel">
+    <h2 style="margin-bottom:12px;font-size:18px;color:#2f2a25;">
+        <i class="fa-solid fa-video"></i> Face ID Monitoring Sessiyasi
+    </h2>
+    
+    <div id="sessionStatus">
+        <p style="color:#666;font-size:13px;">Sessiya holati yuklanmoqda...</p>
+    </div>
+    
+    <div id="sessionStats" class="session-stats" style="display:none;">
+        <div class="stat-box">
+            <div class="stat-value" id="checkInsCount">0</div>
+            <div class="stat-label">Kirishlar</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value" id="checkOutsCount">0</div>
+            <div class="stat-label">Chiqishlar</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value" id="sessionDuration">00:00</div>
+            <div class="stat-label">Davomiylik</div>
+        </div>
+    </div>
+    
+    <div style="margin-top:16px;display:flex;gap:12px;">
+        <button class="btn-action btn-start" onclick="startSession()">
+            <i class="fa-solid fa-play"></i> Monitoringni Boshlash
+        </button>
+        <button class="btn-action btn-stop" onclick="stopSession()" id="stopBtn" disabled>
+            <i class="fa-solid fa-stop"></i> Monitoringni To'xtatish
+        </button>
+    </div>
+</div>
+
+<!-- Add New Camera -->
+<div class="add-camera-form">
+    <h3 style="margin-bottom:12px;font-size:16px;color:#2f2a25;">
+        <i class="fa-solid fa-camera"></i> Yangi Kamera Qo'shish
+    </h3>
+    <form id="addCameraForm" onsubmit="addCamera(event)">
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:12px;align-items:end;">
+            <div>
+                <label style="font-size:12px;font-weight:700;color:#555;">Kamera Nomi</label>
+                <input type="text" name="name" class="form-control" 
+                       placeholder="Masalan: Asosiy Kirish Kamerasi" required>
+            </div>
+            <div>
+                <label style="font-size:12px;font-weight:700;color:#555;">Kamera ID</label>
+                <input type="number" name="camera_id" class="form-control" 
+                       placeholder="0" value="0" min="0">
+                <small style="color:#888;font-size:11px;">0 - birinchi kamera</small>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding-bottom:24px;">
+                <input type="checkbox" name="is_default" id="defaultCameraCheck" 
+                       style="width:16px;height:16px;">
+                <label for="defaultCameraCheck" style="font-size:12px;font-weight:600;">Asosiy qilib belgilash</label>
+            </div>
+            <button type="submit" class="btn-action btn-set-default">
+                <i class="fa-solid fa-plus"></i> Qo'shish
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Camera List -->
+<div class="card">
+    <h2 style="margin-bottom:16px;font-size:18px;color:#2f2a25;">
+        <i class="fa-solid fa-list"></i> Kameralar Ro'yxati
+    </h2>
+    
+    <div id="cameraList">
+        <p style="color:#888;font-size:13px;">Kameralar yuklanmoqda...</p>
+    </div>
+</div>
+
+<!-- Recent Sessions -->
+<div class="card" style="margin-top:20px;">
+    <h2 style="margin-bottom:16px;font-size:18px;color:#2f2a25;">
+        <i class="fa-solid fa-clock-rotate-left"></i> So'nggi Sessiyalar
+    </h2>
+    
+    <div id="recentSessions">
+        <p style="color:#888;font-size:13px;">Ma'lumot yo'q</p>
+    </div>
+</div>
+
+<script>
+let sessionInterval = null;
+
+// Load cameras and session status on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadCameras();
+    loadSessionStatus();
+    sessionInterval = setInterval(loadSessionStatus, 5000); // Update every 5 seconds
+});
+
+async function loadCameras() {
+    try {
+        const response = await fetch('/face-id/cameras/');
+        const data = await response.json();
+        
+        const cameraList = document.getElementById('cameraList');
+        
+        if (!data.cameras || data.cameras.length === 0) {
+            cameraList.innerHTML = '<p style="color:#888;font-size:13px;">Hech qanday kamera qo\'shilmagan. Yuqoridagi forma orqali qo\'shing.</p>';
+            return;
+        }
+        
+        let html = '';
+        data.cameras.forEach(camera => {
+            const isActiveClass = camera.is_active ? 'active' : '';
+            const isDefaultClass = camera.is_default ? 'default' : '';
+            const statusClass = camera.is_active ? 'status-active' : 'status-inactive';
+            const statusText = camera.is_active ? 'Faol' : 'O\'chirilgan';
+            const statusIcon = camera.is_active ? '✅' : '❌';
+            const defaultBadge = camera.is_default ? '<span class="camera-status status-default">⭐ Asosiy</span>' : '';
+            
+            html += `
+                <div class="camera-card ${isActiveClass} ${isDefaultClass}">
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                        <div>
+                            <div style="font-size:16px;font-weight:700;color:#2f2a25;margin-bottom:6px;">
+                                ${statusIcon} ${camera.name}
+                                ${defaultBadge}
+                            </div>
+                            <div style="font-size:12px;color:#666;">
+                                Kamera ID: <strong>${camera.camera_id}</strong>
+                                ${camera.last_used ? ` • Oxirgi ishlatilgan: ${new Date(camera.last_used).toLocaleString('uz-UZ')}` : ''}
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <span class="camera-status ${statusClass}">${statusText}</span>
+                            ${!camera.is_default ? `
+                                <button class="btn-action btn-set-default" onclick="setDefaultCamera(${camera.id})">
+                                    <i class="fa-solid fa-star"></i> Asosiy
+                                </button>
+                            ` : ''}
+                            <button class="btn-action btn-toggle" onclick="toggleCamera(${camera.id})">
+                                <i class="fa-solid fa-power-off"></i> ${camera.is_active ? 'O\'chirish' : 'Yoqish'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        cameraList.innerHTML = html;
+    } catch (error) {
+        console.error('Kameralarni yuklashda xato:', error);
+        document.getElementById('cameraList').innerHTML = '<p style="color:#dc3545;font-size:13px;">Xato yuz berdi</p>';
+    }
+}
+
+async function loadSessionStatus() {
+    try {
+        const response = await fetch('/face-id/session/');
+        const data = await response.json();
+        
+        const sessionStatus = document.getElementById('sessionStatus');
+        const sessionStats = document.getElementById('sessionStats');
+        const stopBtn = document.getElementById('stopBtn');
+        
+        if (data.active_session) {
+            // Active session
+            sessionStatus.innerHTML = `
+                <div style="background:rgba(40,167,69,0.1);border:2px solid #28a745;border-radius:12px;padding:14px;margin-bottom:12px;">
+                    <div style="font-size:14px;font-weight:700;color:#25713a;margin-bottom:6px;">
+                        🟢 Face ID Monitoring Ishlayapti
+                    </div>
+                    <div style="font-size:12px;color:#1a5a2a;">
+                        Kamera: <strong>${data.active_session.camera_name || 'Noma\'lum'}</strong> • 
+                        Boshlangan: <strong>${new Date(data.active_session.started_at).toLocaleString('uz-UZ')}</strong>
+                    </div>
+                </div>
+            `;
+            
+            sessionStats.style.display = 'grid';
+            document.getElementById('checkInsCount').textContent = data.active_session.total_check_ins;
+            document.getElementById('checkOutsCount').textContent = data.active_session.total_check_outs;
+            
+            // Calculate duration
+            if (data.active_session.started_at) {
+                const start = new Date(data.active_session.started_at);
+                const now = new Date();
+                const diffMs = now - start;
+                const diffMins = Math.floor(diffMs / 60000);
+                const hours = Math.floor(diffMins / 60);
+                const mins = diffMins % 60;
+                document.getElementById('sessionDuration').textContent = 
+                    `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+            }
+            
+            stopBtn.disabled = false;
+        } else {
+            // No active session
+            sessionStatus.innerHTML = `
+                <div style="background:rgba(108,117,125,0.1);border:2px solid #6c757d;border-radius:12px;padding:14px;margin-bottom:12px;">
+                    <div style="font-size:14px;font-weight:700;color:#495057;margin-bottom:6px;">
+                        ⚪ Monitoring To'xtatilgan
+                    </div>
+                    <div style="font-size:12px;color:#343a40;">
+                        Face ID monitoringni boshlash uchun yuqoridagi "Monitoringni Boshlash" tugmasini bosing.
+                    </div>
+                </div>
+            `;
+            
+            sessionStats.style.display = 'none';
+            stopBtn.disabled = true;
+        }
+        
+        // Load recent sessions
+        const recentSessionsDiv = document.getElementById('recentSessions');
+        if (data.recent_sessions && data.recent_sessions.length > 0) {
+            let html = '<div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>ID</th><th>Kamera</th><th>Boshlangan</th><th>To\'xtagan</th><th>Kirishlar</th><th>Chiqishlar</th></tr></thead><tbody>';
+            data.recent_sessions.forEach(session => {
+                html += `
+                    <tr>
+                        <td>${session.id}</td>
+                        <td>${session.camera_name || 'Noma\'lum'}</td>
+                        <td>${session.started_at ? new Date(session.started_at).toLocaleString('uz-UZ') : '-'}</td>
+                        <td>${session.stopped_at ? new Date(session.stopped_at).toLocaleString('uz-UZ') : '-'}</td>
+                        <td>${session.total_check_ins}</td>
+                        <td>${session.total_check_outs}</td>
+                    </tr>
+                `;
+            });
+            html += '</tbody></table></div>';
+            recentSessionsDiv.innerHTML = html;
+        } else {
+            recentSessionsDiv.innerHTML = '<p style="color:#888;font-size:13px;">Hozircha sessiya tarixi yo\'q</p>';
+        }
+        
+    } catch (error) {
+        console.error('Sessiya holatini yuklashda xato:', error);
+    }
+}
+
+async function addCamera(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    
+    try {
+        const response = await fetch('/face-id/cameras/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': getCsrfToken()
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert(data.message);
+            form.reset();
+            loadCameras();
+        } else {
+            alert('Xato: ' + (data.error || 'Noma\'lum xato'));
+        }
+    } catch (error) {
+        alert('Xato yuz berdi: ' + error.message);
+    }
+}
+
+async function setDefaultCamera(cameraId) {
+    if (!confirm('Ushbu kamerani asosiy kamera qilib o\'rnatmoqchimisiz?')) return;
+    
+    const formData = new FormData();
+    formData.append('action', 'set_default_camera');
+    formData.append('camera_id', cameraId);
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
+    
+    try {
+        const response = await fetch('/face-id/cameras/', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            alert(data.message);
+            loadCameras();
+        } else {
+            alert('Xato: ' + (data.error || 'Noma\'lum xato'));
+        }
+    } catch (error) {
+        alert('Xato yuz berdi: ' + error.message);
+    }
+}
+
+async function toggleCamera(cameraId) {
+    const formData = new FormData();
+    formData.append('action', 'toggle_camera');
+    formData.append('camera_id', cameraId);
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
+    
+    try {
+        const response = await fetch('/face-id/cameras/', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            alert(data.message);
+            loadCameras();
+        } else {
+            alert('Xato: ' + (data.error || 'Noma\'lum xato'));
+        }
+    } catch (error) {
+        alert('Xato yuz berdi: ' + error.message);
+    }
+}
+
+async function startSession() {
+    if (!confirm('Face ID monitoringni boshlamoqchimisiz? Xodimlar avtomatik tanlab, keldi-ketdi qayd etiladi.')) return;
+    
+    const formData = new FormData();
+    formData.append('action', 'start');
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
+    
+    try {
+        const response = await fetch('/face-id/session/', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            alert(data.message);
+            loadSessionStatus();
+        } else {
+            alert('Xato: ' + (data.error || 'Noma\'lum xato'));
+        }
+    } catch (error) {
+        alert('Xato yuz berdi: ' + error.message);
+    }
+}
+
+async function stopSession() {
+    if (!confirm('Face ID monitoringni to\'xtatmoqchimisiz?')) return;
+    
+    const formData = new FormData();
+    formData.append('action', 'stop');
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
+    
+    try {
+        const response = await fetch('/face-id/session/', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            alert(data.message);
+            loadSessionStatus();
+        } else {
+            alert('Xato: ' + (data.error || 'Noma\'lum xato'));
+        }
+    } catch (error) {
+        alert('Xato yuz berdi: ' + error.message);
+    }
+}
+
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+</script>
+{% endblock %}

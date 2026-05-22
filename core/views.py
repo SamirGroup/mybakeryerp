@@ -268,13 +268,31 @@ def admin_users(request):
     else:
         users = User.objects.all().prefetch_related('groups', 'profile__branch')
 
+    from .models import BranchTelegramSettings
+    # Filial Telegram sozlamalari
+    branch_tg = None
+    if is_branch_mgr and my_branch:
+        branch_tg = BranchTelegramSettings.get_for_branch(my_branch)
+
+    # Superadmin: barcha filiallar va ularning TG sozlamalari
+    all_branches = []
+    if is_super:
+        from branches.models import Branch as BranchModel
+        all_branches_qs = BranchModel.objects.all().order_by('name')
+        for br in all_branches_qs:
+            br.telegram_settings_obj = BranchTelegramSettings.objects.filter(branch=br).first()
+        all_branches = list(all_branches_qs)
+
     return render(request, 'admin_users.html', {
         'users': users,
         'branches': branches,
         'is_branch_mgr': is_branch_mgr,
+        'is_superadmin': is_super,
         'my_branch': my_branch,
         'branch_allowed_roles': BRANCH_ALLOWED_ROLES,
         'tg': tg,
+        'branch_tg': branch_tg,
+        'all_branches': all_branches,
     })
 
 @login_required
@@ -430,8 +448,9 @@ def save_telegram_settings(request):
     tg.bot_token = request.POST.get('bot_token', '').strip()
     tg.chat_id = request.POST.get('chat_id', '').strip()
     tg.is_active = request.POST.get('is_active') == 'on'
+    tg.is_persistent = request.POST.get('is_persistent') == 'on'  # Doimiy ulanish
     tg.save()
-    messages.success(request, "Telegram sozlamalari saqlandi.")
+    messages.success(request, "Telegram sozlamalari saqlandi. Doimiy ulanish faol." if tg.is_persistent else "Telegram sozlamalari saqlandi.")
     return redirect('admin_users')
 
 
@@ -450,18 +469,328 @@ def test_telegram(request):
     if not token or not chat_id:
         return JsonResponse({'error': 'Bot token yoki Chat ID kiritilmagan'})
 
+    return _do_telegram_test(token, chat_id)
+
+
+def _do_telegram_test(token, chat_id):
+    """Telegram test xabarini yuborish — aniq xato xabari bilan."""
+    from django.http import JsonResponse
+    import requests as http_req
+
     try:
         resp = http_req.post(
             f'https://api.telegram.org/bot{token}/sendMessage',
-            json={'chat_id': chat_id,
-                  'text': '✅ <b>NovvoyERP</b> — Telegram muvaffaqiyatli ulandi!',
-                  'parse_mode': 'HTML'},
+            json={
+                'chat_id': chat_id,
+                'text': '<b>NovvoyERP</b> — Telegram muvaffaqiyatli ulandi!\n\n✅ Doimiy ulanish faol.\nBot har doim xabarlarni yuborishga tayyor.',
+                'parse_mode': 'HTML'
+            },
             timeout=8,
         )
         data = resp.json()
         if data.get('ok'):
-            return JsonResponse({'success': True, 'message': 'Test xabari yuborildi!'})
-        else:
-            return JsonResponse({'error': data.get('description', 'Noma\'lum xato')})
+            return JsonResponse({'success': True, 'message': 'Test xabari yuborildi! Doimiy ulanish tayyor.'})
+
+        desc = data.get('description', '')
+        if 'not enough rights' in desc or 'forbidden' in desc.lower():
+            return JsonResponse({
+                'error': (
+                    'Bot guruhda xabar yubora olmaydi. '
+                    'Yechim: Guruh → Sozlamalar → Adminlar → Botni admin qiling '
+                    '("Post Messages" ruxsati kerak). '
+                    'Yoki shaxsiy chat ID dan foydalaning: botga /start yuboring.'
+                )
+            })
+        return JsonResponse({'error': desc or 'Noma\'lum xato'})
     except Exception as e:
         return JsonResponse({'error': str(e)})
+
+
+@login_required
+def get_telegram_chat_id(request):
+    """Bot oxirgi yozuvlar orqali chat ID larni qaytaradi."""
+    from django.http import JsonResponse
+    import requests as http_req
+    from .models import TelegramSettings, BranchTelegramSettings
+
+    is_super = request.user.is_superuser
+    is_branch = request.user.groups.filter(name='branch_admin').exists()
+    if not is_super and not is_branch:
+        return JsonResponse({'error': 'Ruxsat yo\'q'}, status=403)
+
+    # Tokenni aniqlash
+    if is_super:
+        tg = TelegramSettings.get()
+        token = tg.bot_token or ''
+    else:
+        try:
+            br = request.user.profile.branch
+            tg = BranchTelegramSettings.get_for_branch(br)
+            token = tg.bot_token or ''
+        except Exception:
+            return JsonResponse({'error': 'Filial topilmadi'})
+
+    if not token:
+        return JsonResponse({'error': 'Bot token kiritilmagan'})
+
+    try:
+        resp = http_req.get(
+            f'https://api.telegram.org/bot{token}/getUpdates',
+            params={'limit': 20},
+            timeout=8,
+        )
+        data = resp.json()
+        if not data.get('ok'):
+            return JsonResponse({'error': data.get('description', 'Bot token noto\'g\'ri')})
+
+        chats = {}
+        for item in data.get('result', []):
+            for key in ['message', 'channel_post', 'my_chat_member']:
+                m = item.get(key, {})
+                chat = m.get('chat', {})
+                cid = chat.get('id')
+                if cid:
+                    chats[str(cid)] = {
+                        'id': str(cid),
+                        'type': chat.get('type', '?'),
+                        'name': chat.get('title') or chat.get('first_name') or chat.get('username', ''),
+                    }
+
+        if not chats:
+            return JsonResponse({
+                'chats': [],
+                'hint': 'Bot hech kimdan xabar olmagan. Botga /start yuboring yoki guruhga qo\'shing.'
+            })
+        return JsonResponse({'chats': list(chats.values())})
+    except Exception as e:
+        return JsonResponse({'error': str(e)})
+
+
+@login_required
+def save_branch_telegram(request):
+    from django.http import JsonResponse
+    from .models import BranchTelegramSettings
+
+    is_super = request.user.is_superuser
+    is_branch = request.user.groups.filter(name='branch_admin').exists()
+    if not is_super and not is_branch:
+        return JsonResponse({'error': 'Ruxsat yo\'q'}, status=403)
+
+    if request.method != 'POST':
+        return redirect('admin_users')
+
+    branch_id = request.POST.get('branch_id', '')
+
+    if is_super and branch_id:
+        from branches.models import Branch
+        try:
+            branch = Branch.objects.get(id=branch_id)
+        except Branch.DoesNotExist:
+            messages.error(request, "Filial topilmadi.")
+            return redirect('admin_users')
+    elif is_branch:
+        try:
+            branch = request.user.profile.branch
+        except Exception:
+            messages.error(request, "Filial topilmadi.")
+            return redirect('admin_users')
+    else:
+        messages.error(request, "Filial tanlanmagan.")
+        return redirect('admin_users')
+
+    tg = BranchTelegramSettings.get_for_branch(branch)
+    tg.bot_token = request.POST.get('bot_token', '').strip()
+    tg.chat_id = request.POST.get('chat_id', '').strip()
+    tg.is_active = request.POST.get('is_active') == 'on'
+    tg.is_persistent = request.POST.get('is_persistent') == 'on'  # Doimiy ulanish
+    tg.save()
+    messages.success(request, f"{branch.name} Telegram sozlamalari saqlandi. Doimiy ulanish faol." if tg.is_persistent else f"{branch.name} Telegram sozlamalari saqlandi.")
+    return redirect('admin_users')
+
+
+@login_required
+def test_branch_telegram(request):
+    from django.http import JsonResponse
+    from .models import BranchTelegramSettings
+
+    is_super = request.user.is_superuser
+    is_branch = request.user.groups.filter(name='branch_admin').exists()
+    if not is_super and not is_branch:
+        return JsonResponse({'error': 'Ruxsat yo\'q'}, status=403)
+
+    branch_id = request.GET.get('branch_id', '')
+    if is_super and branch_id:
+        from branches.models import Branch
+        try:
+            branch = Branch.objects.get(id=branch_id)
+        except Branch.DoesNotExist:
+            return JsonResponse({'error': 'Filial topilmadi'})
+    elif is_branch:
+        try:
+            branch = request.user.profile.branch
+        except Exception:
+            return JsonResponse({'error': 'Filial topilmadi'})
+    else:
+        return JsonResponse({'error': 'Filial tanlanmagan'})
+
+    tg = BranchTelegramSettings.get_for_branch(branch)
+    if not tg.bot_token or not tg.chat_id:
+        return JsonResponse({'error': 'Bot token yoki Chat ID kiritilmagan'})
+
+    return _do_telegram_test(tg.bot_token, tg.chat_id)
+
+
+@login_required
+def camera_management(request):
+    """Kamera qurilmalarini boshqarish"""
+    from django.http import JsonResponse
+    from .models import CameraDevice, FaceIDSession
+    
+    if request.method == 'GET':
+        cameras = CameraDevice.objects.all()
+        active_session = FaceIDSession.objects.filter(is_running=True).first()
+        
+        return JsonResponse({
+            'cameras': [
+                {
+                    'id': c.id,
+                    'name': c.name,
+                    'camera_id': c.camera_id,
+                    'is_active': c.is_active,
+                    'is_default': c.is_default,
+                    'last_used': str(c.last_used) if c.last_used else None,
+                }
+                for c in cameras
+            ],
+            'active_session': {
+                'id': active_session.id,
+                'camera_id': active_session.camera.camera_id if active_session.camera else None,
+                'started_at': str(active_session.started_at) if active_session.started_at else None,
+                'total_check_ins': active_session.total_check_ins,
+                'total_check_outs': active_session.total_check_outs,
+            } if active_session else None,
+        })
+    
+    elif request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'add_camera':
+            name = request.POST.get('name', f'Kamera {request.POST.get("camera_id", 0)}')
+            camera_id = int(request.POST.get('camera_id', 0))
+            
+            # Agar yangi kamera asosiy qilib belgilansa, boshqalar asosiy emas
+            if request.POST.get('is_default') == 'on':
+                CameraDevice.objects.filter(is_default=True).update(is_default=False)
+            
+            camera, created = CameraDevice.objects.get_or_create(
+                camera_id=camera_id,
+                defaults={
+                    'name': name,
+                    'is_active': True,
+                    'is_default': request.POST.get('is_default') == 'on',
+                }
+            )
+            if not created:
+                camera.name = name
+                camera.is_active = True
+                camera.is_default = request.POST.get('is_default') == 'on'
+                camera.save()
+            
+            return JsonResponse({'success': True, 'message': f'Kamera qo\'shildi: {camera.name}'})
+        
+        elif action == 'set_default_camera':
+            camera_id = int(request.POST.get('camera_id'))
+            CameraDevice.objects.filter(is_default=True).update(is_default=False)
+            CameraDevice.objects.filter(id=camera_id).update(is_default=True, is_active=True)
+            return JsonResponse({'success': True, 'message': 'Asosiy kamera o\'rnatildi'})
+        
+        elif action == 'toggle_camera':
+            camera_id = request.POST.get('camera_id')
+            camera = CameraDevice.objects.get(id=camera_id)
+            camera.is_active = not camera.is_active
+            camera.save()
+            return JsonResponse({'success': True, 'message': f'Kamera {camera.name} {("faol" if camera.is_active else "o\'chirilgan")}'})
+        
+        return JsonResponse({'error': 'Noto\'g\'ri amal'}, status=400)
+
+
+@login_required
+def face_id_session_control(request):
+    """Face ID sessiyasini boshqarish"""
+    from django.http import JsonResponse
+    from .models import CameraDevice, FaceIDSession
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'start':
+            # Faol sessiya yo'qligini tekshirish
+            existing = FaceIDSession.objects.filter(is_running=True).first()
+            if existing:
+                return JsonResponse({'error': 'Boshqa sessiya allaqachon ishlayapti'})
+            
+            # Asosiy kamerani topish
+            default_camera = CameraDevice.objects.filter(is_default=True).first()
+            if not default_camera:
+                default_camera = CameraDevice.objects.filter(is_active=True).first()
+            
+            if not default_camera:
+                return JsonResponse({'error': 'Hech qanday faol kamera topilmadi'})
+            
+            # Yangi sessiya yaratish
+            session = FaceIDSession.objects.create(
+                camera=default_camera,
+                is_running=True,
+                started_at=timezone.now(),
+            )
+            default_camera.last_used = timezone.now()
+            default_camera.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Face ID monitoring boshlandi',
+                'session_id': session.id,
+                'camera_name': default_camera.name,
+            })
+        
+        elif action == 'stop':
+            session = FaceIDSession.objects.filter(is_running=True).first()
+            if not session:
+                return JsonResponse({'error': 'Ishlayotgan sessiya yo\'q'})
+            
+            session.is_running = False
+            session.stopped_at = timezone.now()
+            session.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Face ID monitoring to\'xtatildi',
+                'duration': str(session.stopped_at - session.started_at) if session.started_at else 'N/A',
+            })
+        
+        return JsonResponse({'error': 'Noto\'g\'ri amal'}, status=400)
+    
+    elif request.method == 'GET':
+        active_session = FaceIDSession.objects.filter(is_running=True).first()
+        recent_sessions = FaceIDSession.objects.filter(is_running=False).order_by('-stopped_at')[:5]
+        
+        return JsonResponse({
+            'active_session': {
+                'id': active_session.id,
+                'camera_name': active_session.camera.name if active_session.camera else None,
+                'started_at': str(active_session.started_at) if active_session.started_at else None,
+                'total_check_ins': active_session.total_check_ins,
+                'total_check_outs': active_session.total_check_outs,
+            } if active_session else None,
+            'recent_sessions': [
+                {
+                    'id': s.id,
+                    'camera_name': s.camera.name if s.camera else None,
+                    'started_at': str(s.started_at) if s.started_at else None,
+                    'stopped_at': str(s.stopped_at) if s.stopped_at else None,
+                    'total_check_ins': s.total_check_ins,
+                    'total_check_outs': s.total_check_outs,
+                }
+                for s in recent_sessions
+            ],
+        })
