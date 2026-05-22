@@ -260,7 +260,12 @@ def admin_users(request):
         return redirect('admin_users')
 
     from .models import TelegramSettings
-    tg = TelegramSettings.get()
+    try:
+        tg = TelegramSettings.get()
+    except Exception:
+        # Agar TelegramSettings yaratilmagan bo'lsa, yangisini yaratamiz
+        from .models import TelegramSettings as TS
+        tg = TS.objects.create(pk=1, is_active=True, is_persistent=True)
 
     # Branch admin faqat o'z filialining foydalanuvchilarini ko'radi
     if is_branch_mgr:
@@ -272,7 +277,10 @@ def admin_users(request):
     # Filial Telegram sozlamalari
     branch_tg = None
     if is_branch_mgr and my_branch:
-        branch_tg = BranchTelegramSettings.get_for_branch(my_branch)
+        try:
+            branch_tg = BranchTelegramSettings.get_for_branch(my_branch)
+        except Exception:
+            branch_tg = BranchTelegramSettings.objects.create(branch=my_branch, is_active=True, is_persistent=True)
 
     # Superadmin: barcha filiallar va ularning TG sozlamalari
     all_branches = []
@@ -280,7 +288,10 @@ def admin_users(request):
         from branches.models import Branch as BranchModel
         all_branches_qs = BranchModel.objects.all().order_by('name')
         for br in all_branches_qs:
-            br.telegram_settings_obj = BranchTelegramSettings.objects.filter(branch=br).first()
+            try:
+                br.telegram_settings_obj = BranchTelegramSettings.objects.filter(branch=br).first()
+            except Exception:
+                br.telegram_settings_obj = None
         all_branches = list(all_branches_qs)
 
     return render(request, 'admin_users.html', {
@@ -504,7 +515,7 @@ def _do_telegram_test(token, chat_id):
         return JsonResponse({'error': desc or 'Noma\'lum xato'})
     except Exception as e:
         return JsonResponse({'error': str(e)})
-
+        
 
 @login_required
 def get_telegram_chat_id(request):
@@ -564,7 +575,7 @@ def get_telegram_chat_id(request):
         return JsonResponse({'chats': list(chats.values())})
     except Exception as e:
         return JsonResponse({'error': str(e)})
-
+        
 
 @login_required
 def save_branch_telegram(request):
@@ -670,7 +681,7 @@ def camera_management(request):
                 'total_check_outs': active_session.total_check_outs,
             } if active_session else None,
         })
-    
+
     elif request.method == 'POST':
         action = request.POST.get('action')
         
