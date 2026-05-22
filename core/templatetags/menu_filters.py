@@ -10,6 +10,13 @@ def startswith(value, arg):
     return value.startswith(arg)
 
 @register.filter
+def endswith(value, arg):
+    """Check if string ends with arg"""
+    if not value:
+        return False
+    return str(value).endswith(str(arg))
+
+@register.filter
 def divide(value, arg):
     """Divide value by arg, return 0 if arg is 0"""
     try:

@@ -1,5 +1,5 @@
 """
-Django settings for bakery_erp project — Railway production-ready.
+Django settings for bakery_erp project — Railway/Render production-ready.
 """
 
 from pathlib import Path
@@ -7,7 +7,7 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# ── Security ────────────────────────────────────────────────────────────────
+# ── Security ─────────────────────────────────────────────────────────────────
 SECRET_KEY = os.getenv(
     'SECRET_KEY',
     '0tynt^-cd#o^)oxz*kdz#v51^2t-&o(1apepdi%s&!1qp9f^847jid=i!e5f0_@-'
@@ -15,17 +15,28 @@ SECRET_KEY = os.getenv(
 
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.getenv(
-    'ALLOWED_HOSTS',
-    'localhost,127.0.0.1,.render.com,.onrender.com,testserver'
-).split(',')
+# Railway va Render uchun barcha hostlar
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'testserver',
+    # Railway
+    'mybakeryerp-production.up.railway.app',
+    '.railway.app',
+    # Render
+    '.onrender.com',
+    '.render.com',
+    # RAILWAY_PUBLIC_DOMAIN env var bo'lsa qo'shish
+] + [h for h in [os.getenv('RAILWAY_PUBLIC_DOMAIN', ''), os.getenv('RENDER_EXTERNAL_HOSTNAME', '')] if h]
 
 CSRF_TRUSTED_ORIGINS = [
     'https://mybakeryerp-production.up.railway.app',
     'https://*.railway.app',
+    'https://*.onrender.com',
+    'https://*.render.com',
 ]
 
-# Production security (Railway HTTPS'ni o'zi boshqaradi)
+# Production security (Railway/Render HTTPS'ni o'zi boshqaradi)
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SESSION_COOKIE_SECURE = True
@@ -34,7 +45,7 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 
-# ── Apps ────────────────────────────────────────────────────────────────────
+# ── Apps ──────────────────────────────────────────────────────────────────────
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -86,9 +97,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'bakery_erp.wsgi.application'
 
-# ── Database ─────────────────────────────────────────────────────────────────
-import dj_database_url
-
+# ── Database ──────────────────────────────────────────────────────────────────
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -96,13 +105,17 @@ DATABASES = {
     }
 }
 
-# Render/Railway PostgreSQL (DATABASE_URL muhit o'zgaruvchisi orqali)
-if 'DATABASE_URL' in os.environ:
-    DATABASES['default'] = dj_database_url.config(
-        env='DATABASE_URL',
-        conn_max_age=600,
-        ssl_require=True
-    )
+# DATABASE_URL bo'lsa PostgreSQL ishlatish (Railway/Render)
+if os.getenv('DATABASE_URL'):
+    try:
+        import dj_database_url
+        DATABASES['default'] = dj_database_url.config(
+            env='DATABASE_URL',
+            conn_max_age=600,
+            ssl_require=True,
+        )
+    except ImportError:
+        pass  # dj-database-url o'rnatilmagan bo'lsa SQLite ishlatiladi
 
 # ── Password validation ───────────────────────────────────────────────────────
 AUTH_PASSWORD_VALIDATORS = [
@@ -148,8 +161,8 @@ STORAGES = {
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# ── Telegram Bot ──────────────────────────────────────────────────────────────
-# Doimiy qiymatlar — admin panel yoki env var bilan ustiga yozish mumkin
+# ── Telegram Bot (doimiy qiymatlar) ──────────────────────────────────────────
+# Ustunlik: DB (admin panel) > env var > shu yergi default
 TELEGRAM_BOT_TOKEN = os.getenv(
     'TELEGRAM_BOT_TOKEN',
     '8306874742:AAEhMFKCfniNI4XkpYR8IfJ4fHBiUsVwNv0'

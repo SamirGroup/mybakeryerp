@@ -310,11 +310,21 @@ body { background: var(--bg); }
 
             <!-- Camera selector -->
             <div class="cam-select-row">
-                <select id="camSelect" onchange="switchCamera()">
+                <select id="camSelect" onchange="">
                     <option value="">— Kamerani tanlang —</option>
                 </select>
-                <button class="btn btn-outline btn-sm" onclick="refreshCameraList()">
+                <button class="btn btn-outline btn-sm" onclick="refreshCameraList()" title="Kameralarni yangilash">
                     <i class="fa-solid fa-rotate"></i>
+                </button>
+            </div>
+            <!-- Kamerani saqlash / almashtirish -->
+            <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+                <button class="btn btn-gold" id="btnSaveCam" onclick="saveCamera()" style="flex:1;padding:8px 12px;font-size:12.5px;">
+                    <i class="fa-solid fa-bookmark"></i>
+                    <span id="saveCamLabel">Kamerani saqlash</span>
+                </button>
+                <button class="btn btn-outline btn-sm" onclick="switchCamera()" style="flex:1;font-size:12.5px;" title="Kamerani uzib boshqasini ulash">
+                    <i class="fa-solid fa-arrows-rotate"></i> Kamerani almashtirish
                 </button>
             </div>
 
@@ -451,11 +461,13 @@ let selectedEmpId = null;
 let selectedEmpName = '';
 let cameraActive = false;
 
+const LS_CAM_ID   = 'faceid_saved_camera_id';
+const LS_CAM_SAVE = 'faceid_camera_persistent'; // 'true' = doimiy saqlangan
+
 // ── Camera device list ─────────────────────────────────────────────────────────
 
 async function refreshCameraList() {
     try {
-        // Enumerate available cameras
         const devices = await navigator.mediaDevices.enumerateDevices();
         const cameras = devices.filter(d => d.kind === 'videoinput');
         const sel = document.getElementById('camSelect');
@@ -472,22 +484,66 @@ async function refreshCameraList() {
         if (cameras.length === 0) {
             sel.innerHTML = '<option value="">Kamera topilmadi</option>';
             toast('Kompyuterga kamera ulanmagan', 'err');
-        } else if (cameras.length === 1) {
-            sel.value = cameras[0].deviceId;
-            toast(`${cameras.length} ta kamera topildi`, 'ok');
         } else {
-            if (prev) sel.value = prev;
-            toast(`${cameras.length} ta kamera topildi`, 'ok');
+            // Saqlangan kamerani tiklash
+            const savedId = localStorage.getItem(LS_CAM_ID);
+            if (savedId && [...sel.options].find(o => o.value === savedId)) {
+                sel.value = savedId;
+            } else if (prev && [...sel.options].find(o => o.value === prev)) {
+                sel.value = prev;
+            } else {
+                sel.selectedIndex = 1;
+            }
         }
+        updateSaveBtn();
     } catch (err) {
         toast('Kamera ro\'yxatini olishda xato: ' + err.message, 'err');
     }
 }
 
+function updateSaveBtn() {
+    const saved = localStorage.getItem(LS_CAM_SAVE) === 'true';
+    const btn = document.getElementById('btnSaveCam');
+    const lbl = document.getElementById('saveCamLabel');
+    if (!btn) return;
+    if (saved) {
+        btn.style.background = '#27ae60';
+        btn.title = 'Kamera saqlangan — bekor qilish uchun bosing';
+        if (lbl) lbl.textContent = 'Saqlangan ✓';
+    } else {
+        btn.style.background = '#D4A373';
+        btn.title = 'Bu kamerani doimiy saqlash';
+        if (lbl) lbl.textContent = 'Kamerani saqlash';
+    }
+}
+
+function saveCamera() {
+    const sel = document.getElementById('camSelect');
+    const devId = sel.value;
+    const already = localStorage.getItem(LS_CAM_SAVE) === 'true';
+    if (already) {
+        // Bekor qilish
+        localStorage.removeItem(LS_CAM_ID);
+        localStorage.removeItem(LS_CAM_SAVE);
+        toast('Saqlangan kamera bekor qilindi', 'info');
+    } else {
+        if (!devId) { toast('Avval kamerani tanlang!', 'warn'); return; }
+        localStorage.setItem(LS_CAM_ID, devId);
+        localStorage.setItem(LS_CAM_SAVE, 'true');
+        const label = sel.options[sel.selectedIndex]?.textContent || 'Kamera';
+        toast('Kamera saqlandi: ' + label, 'ok');
+    }
+    updateSaveBtn();
+}
+
 async function switchCamera() {
+    // Yangi kameraga o'tish — saqlangan ma'lumotni tozalash
+    localStorage.removeItem(LS_CAM_SAVE);
+    localStorage.removeItem(LS_CAM_ID);
+    updateSaveBtn();
     if (cameraActive) {
         stopCamera();
-        await startCamera();
+        toast('Kamera uzildi. Ro\'yxatdan yangi kamerani tanlang.', 'info');
     }
 }
 
@@ -511,16 +567,16 @@ async function startCamera() {
         document.getElementById('valCam').textContent = 'Faol';
         cameraActive = true;
 
-        // Kamera ro'yxatini yangilash (label olish uchun)
         await refreshCameraList();
         if (deviceId) document.getElementById('camSelect').value = deviceId;
 
-        toast('Kamera yoqildi ✅', 'ok');
+        const label = document.getElementById('camSelect').options[document.getElementById('camSelect').selectedIndex]?.textContent || '';
+        toast('Kamera yoqildi: ' + label, 'ok');
     } catch (err) {
         if (err.name === 'NotAllowedError') {
-            toast('Kamera ruxsati rad etildi. Brauzer sozlamalarini tekshiring.', 'err');
+            toast('Kamera ruxsati rad etildi.', 'err');
         } else if (err.name === 'NotFoundError') {
-            toast('Kamera topilmadi. Kamerani ulang va qayta urinib ko\'ring.', 'err');
+            toast('Kamera topilmadi. Boshqa kamera tanlang.', 'err');
         } else {
             toast('Kamera xatosi: ' + err.message, 'err');
         }
@@ -677,13 +733,27 @@ function toast(msg, type = 'info') {
 // ── Init ───────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async function () {
-    // First enumerate devices (may get generic labels before permission)
     await refreshCameraList();
-    // Auto-start if a camera is available
-    const sel = document.getElementById('camSelect');
-    if (sel.options.length > 1) {
-        sel.selectedIndex = 1;  // first real camera
-        await startCamera();
+    updateSaveBtn();
+
+    // Agar doimiy saqlangan kamera bo'lsa — avtomatik yoqish
+    const isPersistent = localStorage.getItem(LS_CAM_SAVE) === 'true';
+    const savedId      = localStorage.getItem(LS_CAM_ID);
+    const sel          = document.getElementById('camSelect');
+
+    if (isPersistent && savedId) {
+        // Saqlangan kamerani tanlash va yoqish
+        const opt = [...sel.options].find(o => o.value === savedId);
+        if (opt) {
+            sel.value = savedId;
+            await startCamera();
+            toast('Saqlangan kamera avtomatik yoqildi ✅', 'ok');
+        } else {
+            toast('Saqlangan kamera topilmadi, boshqa kamera tanlang.', 'warn');
+        }
+    } else if (sel.options.length > 1) {
+        // Saqlangan kamera yo'q — birinchi kamerani tanlash lekin yoqmaslik
+        sel.selectedIndex = 1;
     }
 });
 </script>

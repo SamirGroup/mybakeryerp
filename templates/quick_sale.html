@@ -133,19 +133,23 @@ body.qs-fs .qs-shell { height:100vh; border-radius:0; }
 
 /* ── Modal: tanlangan mahsulotlar ── */
 .qs-review-modal{
-    display:none; position:fixed; inset:0;
+    display:none;
+    position:fixed; top:0; left:0; right:0; bottom:0;
     background:rgba(0,0,0,.55); z-index:8000;
-    align-items:center; justify-content:center;
-    padding:16px;
+    align-items:flex-start; justify-content:center;
+    padding:40px 16px 16px;
+    overflow-y:auto;
 }
 .qs-review-modal.show{ display:flex; }
 .qs-review-box{
     background:#fff; border-radius:20px;
-    width:480px; max-width:98vw; max-height:92vh;
+    width:480px; max-width:98vw;
     display:flex; flex-direction:column;
     box-shadow:0 20px 60px rgba(0,0,0,.28);
     animation:rIn .22s ease;
     overflow:hidden;
+    /* Modal o'zi scroll qilmaydi — sahifa scroll qiladi */
+    flex-shrink:0;
 }
 @keyframes rIn{ from{transform:translateY(20px);opacity:0} to{transform:none;opacity:1} }
 
@@ -427,16 +431,20 @@ body.qs-fs .qs-shell { height:100vh; border-radius:0; }
 
 /* Chek modal */
 .qs-modal{
-    display:none; position:fixed; inset:0;
+    display:none;
+    position:fixed; top:0; left:0; right:0; bottom:0;
     background:rgba(0,0,0,.55); z-index:9999;
-    align-items:center; justify-content:center;
+    align-items:flex-start; justify-content:center;
+    padding:40px 16px 16px;
+    overflow-y:auto;
 }
 .qs-modal.show{ display:flex; }
 .qs-mbox{
     background:#fff; border-radius:20px; padding:24px;
-    width:360px; max-width:95vw; max-height:90vh;
-    overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.3);
+    width:400px; max-width:95vw;
+    box-shadow:0 20px 60px rgba(0,0,0,.3);
     animation:mIn .22s ease;
+    flex-shrink:0;
 }
 @keyframes mIn{ from{transform:scale(.9);opacity:0} to{transform:scale(1);opacity:1} }
 .qs-mclose{
@@ -916,10 +924,14 @@ function openReview() {
     });
 
     document.getElementById('qsReviewModal').classList.add('show');
+    document.body.style.overflow = 'hidden'; // Sahifa scroll bloklash
+    // Modalning tepasiga scroll
+    document.getElementById('qsReviewModal').scrollTop = 0;
 }
 
 function closeReview() {
     document.getElementById('qsReviewModal').classList.remove('show');
+    document.body.style.overflow = ''; // Sahifa scrollini qaytarish
 }
 
 function qtyRv(id, d) {
@@ -997,10 +1009,13 @@ function showReceipt(ls) {
 
     cart = []; render();
     document.getElementById('qsModal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('qsModal').scrollTop = 0;
 }
 
 function closeModal() {
     document.getElementById('qsModal').classList.remove('show');
+    document.body.style.overflow = '';
 }
 function closeModalOverlay(e) {
     // Faqat overlay foniga bosilganda yopilsin (modal qutisi ichida emas)
