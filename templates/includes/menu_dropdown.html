@@ -412,10 +412,16 @@
                 <i class="fa-solid fa-briefcase"></i>
                 <span>Lavozimlar</span>
             </a>
-            <a href="/hr/?tab=face-id" class="dropdown-item">
+            <a href="/hr/?tab=face-id" class="dropdown-item {% if request.path|endswith:'/face-id/' %}active{% endif %}">
                 <i class="fa-solid fa-camera"></i>
                 <span>Face ID</span>
             </a>
+            {% if is_superadmin %}
+            <a href="/face-id/cameras/" class="dropdown-item {% if request.path == '/face-id/cameras/' %}active{% endif %}" style="padding-left:60px;">
+                <i class="fa-solid fa-video"></i>
+                <span>Kamera Boshqaruvi</span>
+            </a>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -466,6 +472,10 @@
     <a href="/admin-users/#telegram" class="sidebar-main-link" style="margin-top:2px;">
         <i class="fa-brands fa-telegram"></i>
         <span>Telegram Sozlamalari</span>
+    </a>
+    <a href="/face-id/cameras/" class="sidebar-main-link" style="margin-top:2px;">
+        <i class="fa-solid fa-video"></i>
+        <span>Face ID Kamera</span>
     </a>
     {% endif %}
 </div>
